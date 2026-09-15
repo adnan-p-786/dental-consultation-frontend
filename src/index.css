@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@config "../tailwind.config.ts";
+
+:root {
+  --font-fraunces: "Fraunces", Georgia, serif;
+  --font-inter: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--font-inter);
+  color: #16241F;
+  background-color: #F8FAF9;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .input {
+    @apply w-full text-[14.5px] px-3.5 py-2.5 rounded-lg border border-line bg-white text-ink
+      outline-none transition-colors duration-150
+      placeholder:text-[#A8B5AE]
+      focus:border-mint-deep focus:ring-4 focus:ring-mint-deep/15;
+  }
+}
