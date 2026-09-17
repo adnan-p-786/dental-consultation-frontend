@@ -5,6 +5,36 @@
 :root {
   --font-fraunces: "Fraunces", Georgia, serif;
   --font-inter: "Inter", system-ui, -apple-system, sans-serif;
+
+  --background: 154 20% 98%;
+  --foreground: 160 25% 12%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 160 25% 12%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 160 25% 12%;
+
+  --primary: 170 56% 14%;
+  --primary-foreground: 140 30% 98%;
+
+  --secondary: 154 25% 93%;
+  --secondary-foreground: 170 56% 14%;
+
+  --muted: 150 15% 94%;
+  --muted-foreground: 160 12% 42%;
+
+  --accent: 158 37% 48%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 6 52% 47%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 147 16% 88%;
+  --input: 147 16% 88%;
+  --ring: 170 56% 14%;
+
+  --radius: 0.75rem;
 }
 
 body {
