@@ -1,18 +1,18 @@
-
 import { useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import {
   Calendar,
-  Upload,
-  Phone,
-  Mail,
-  Sparkles,
-  User,
   CheckCircle2,
+  Mail,
+  Phone,
+  Sparkles,
+  Upload,
+  User,
 } from "lucide-react";
+import { appointmentService } from "@/lib/appointmentService";
 
-// Treatment / Case categories from the Scope of Work
+// SOW Section 2: Treatment / Case Selection categories
 export const documentTreatmentCategories = [
   "General Dental Consultation",
   "Dental Implant",
@@ -26,7 +26,7 @@ export const documentTreatmentCategories = [
   "Other",
 ] as const;
 
-export type TreatmentCategory =
+type TreatmentCategory =
   (typeof documentTreatmentCategories)[number];
 
 type ContactMethod = "Phone" | "Email" | "Other";
@@ -39,6 +39,7 @@ export default function Contact() {
     useState<ContactMethod>("Email");
 
   const [submitted, setSubmitted] = useState(false);
+  const [createdRefNo, setCreatedRefNo] = useState<string>("");
 
   const [formData, setFormData] = useState({
     patientName: "",
@@ -77,10 +78,21 @@ export default function Contact() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // UI only for now.
-    // Backend integration can create the appointment with
-    // initial status: "Pending".
+    const newApt = appointmentService.createAppointment({
+      patient: {
+        name: formData.patientName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        preferredContact: (contactMethod.toLowerCase() || "email") as any,
+      },
+      treatment: selectedTreatment as any,
+      consultationType: "video",
+      requestedDate: formData.preferredDate || new Date().toISOString().split("T")[0],
+      requestedTime: formData.preferredTime || "10:00 AM",
+      patientMessage: formData.message.trim(),
+    });
 
+    setCreatedRefNo(newApt.referenceNo);
     setSubmitted(true);
   };
 
@@ -141,14 +153,21 @@ export default function Contact() {
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
 
-                <h2 className="font-display text-2xl sm:text-3xl font-medium text-teal-deep mb-3">
+                <h2 className="font-display text-2xl sm:text-3xl font-medium text-teal-deep mb-2">
                   Appointment Request Submitted
                 </h2>
 
                 <p className="text-sm text-ink-soft leading-relaxed max-w-md mx-auto mb-6">
                   Your appointment request has been submitted
-                  successfully and is now pending review.
+                  successfully and is now available in the clinic management portal for scheduling.
                 </p>
+
+                {createdRefNo && (
+                  <div className="mb-4 inline-flex items-center gap-2 bg-[#EDF6F2] border border-teal-deep/20 px-4 py-2 rounded-xl text-xs font-mono font-bold text-teal-deep">
+                    <span>Reference ID:</span>
+                    <span className="text-sm tracking-wide">{createdRefNo}</span>
+                  </div>
+                )}
 
                 <div className="bg-paper/70 border border-line rounded-2xl p-5 max-w-md mx-auto mb-6">
                   <p className="text-xs text-ink-soft mb-1">
@@ -156,7 +175,7 @@ export default function Contact() {
                   </p>
 
                   <p className="text-base font-semibold text-teal-deep">
-                    Pending
+                    Pending Review
                   </p>
                 </div>
 
@@ -183,6 +202,7 @@ export default function Contact() {
                     required.
                   </p>
                 </div>
+
 
                 {/* 1. Treatment / Case */}
                 <div>
@@ -211,24 +231,6 @@ export default function Contact() {
                       </option>
                     ))}
                   </select>
-
-                  {/* Quick Selection */}
-                  <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    {documentTreatmentCategories.map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setSelectedTreatment(cat)}
-                        className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
-                          selectedTreatment === cat
-                            ? "bg-teal-deep text-white border-teal-deep font-semibold shadow-2xs"
-                            : "bg-paper text-ink-soft border-line hover:border-mint/50"
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 {/* 2. Patient Details */}
@@ -318,7 +320,7 @@ export default function Contact() {
 
                     <div className="grid grid-cols-3 gap-2">
                       {(
-                        ["Phone", "Email", "Other"] as const
+                        ["Email" , "Phone"] as const
                       ).map((method) => (
                         <button
                           key={method}
@@ -376,9 +378,6 @@ export default function Contact() {
                       required
                       className="w-full text-sm px-4 py-3 rounded-xl border border-line bg-paper/30 text-ink outline-none transition-colors focus:border-mint-deep focus:bg-white focus:ring-4 focus:ring-mint-deep/15 cursor-pointer"
                     >
-                      <option value="">
-                        Select preferred time
-                      </option>
                       <option value="Morning">
                         Morning
                       </option>

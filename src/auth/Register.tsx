@@ -1,10 +1,20 @@
-import React from "react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
 
-import { Check, Eye, EyeOff, Stethoscope, User } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Loader2,
+  Stethoscope,
+  User,
+} from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { useAuth } from "./AuthContext";
 
 const benefits = [
   "Request appointments without calling the clinic",
@@ -18,9 +28,144 @@ const roles = [
 ];
 
 function Register() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get("redirect");
+  const { login, isAuthenticated, user } = useAuth();
+
+  // If already logged in, immediately route to the respective dashboard
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (redirectPath) {
+        navigate(redirectPath, { replace: true });
+      } else if (user.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (user.role === "doctor") {
+        navigate("/doctor/dashboard", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate, redirectPath]);
+
   const [userType, setUserType] = useState("Patient");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    terms: false,
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [id]: type === "checkbox" ? checked : value,
+    }));
+    if (error) setError(null);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^\d+]/g, "");
+    setFormData((prev) => ({
+      ...prev,
+      phone: raw,
+    }));
+    if (error) setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    // Required fields validation
+    if (
+      !formData.firstName.trim() ||
+      !formData.lastName.trim() ||
+      !formData.email.trim() ||
+      !formData.phone.trim() ||
+      !formData.password
+    ) {
+      setError("All fields are required.");
+      return;
+    }
+
+    // Phone number sanitization and validation (10-digit Indian mobile number)
+    let cleanPhone = formData.phone.replace(/\D/g, "");
+    if (cleanPhone.length === 12 && cleanPhone.startsWith("91")) {
+      cleanPhone = cleanPhone.slice(2);
+    }
+
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      setError("Please enter a valid 10-digit mobile number starting with 6-9.");
+      return;
+    }
+
+    // Password validation
+    if (formData.password.length < 8) {
+      setError("Password must contain at least 8 characters.");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (!formData.terms) {
+      setError("You must agree to the terms of use and privacy policy.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await axios.post("/api/users/register", {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phoneNumber: cleanPhone,
+        password: formData.password,
+        role: userType.toLowerCase(),
+      });
+
+      if (response.data?.token && response.data?.data) {
+        login(response.data.token, response.data.data);
+      }
+
+      setSuccess(response.data?.message || "Account created successfully!");
+
+      setTimeout(() => {
+        if (redirectPath) {
+          navigate(redirectPath);
+        } else if (userType.toLowerCase() === "doctor") {
+          navigate("/doctor/dashboard");
+        } else {
+          navigate("/");
+        }
+      }, 1200);
+    } catch (err: any) {
+      const serverError =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Registration failed. Please check your details and try again.";
+      setError(serverError);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -110,15 +255,34 @@ function Register() {
               </p>
             </div>
 
-            <form className="flex flex-col gap-4">
+            {/* Error banner */}
+            {error && (
+              <div className="mb-4 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+                <span className="leading-relaxed">{error}</span>
+              </div>
+            )}
+
+            {/* Success banner */}
+            {success && (
+              <div className="mb-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 mt-0.5" />
+                <span className="leading-relaxed font-medium">{success}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
                 <Field label="First name" htmlFor="firstName">
                   <input
                     id="firstName"
                     type="text"
                     required
+                    disabled={loading}
+                    value={formData.firstName}
+                    onChange={handleChange}
                     placeholder="First name"
-                    className="input"
+                    className="input disabled:opacity-60"
                   />
                 </Field>
                 <Field label="Last name" htmlFor="lastName">
@@ -126,8 +290,11 @@ function Register() {
                     id="lastName"
                     type="text"
                     required
+                    disabled={loading}
+                    value={formData.lastName}
+                    onChange={handleChange}
                     placeholder="Last name"
-                    className="input"
+                    className="input disabled:opacity-60"
                   />
                 </Field>
               </div>
@@ -137,8 +304,11 @@ function Register() {
                   id="email"
                   type="email"
                   required
+                  disabled={loading}
+                  value={formData.email}
+                  onChange={handleChange}
                   placeholder="Email"
-                  className="input"
+                  className="input disabled:opacity-60"
                 />
               </Field>
 
@@ -147,14 +317,17 @@ function Register() {
                   id="phone"
                   type="tel"
                   required
+                  disabled={loading}
+                  value={formData.phone}
+                  onChange={handlePhoneChange}
                   placeholder="+91 98765 43210"
-                  className="input"
+                  className="input disabled:opacity-60"
                 />
               </Field>
 
               <Field label="I am registering as" htmlFor="userType">
                 <div
-                  className="grid grid-cols-3 gap-2"
+                  className="grid grid-cols-2 gap-2"
                   role="radiogroup"
                   aria-label="Select user type"
                 >
@@ -166,6 +339,7 @@ function Register() {
                         key={role.id}
                         type="button"
                         role="radio"
+                        disabled={loading}
                         aria-checked={isSelected}
                         onClick={() => setUserType(role.id)}
                         className={`group relative flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border transition-all duration-150 cursor-pointer text-center ${
@@ -213,13 +387,16 @@ function Register() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     required
+                    disabled={loading}
+                    value={formData.password}
+                    onChange={handleChange}
                     placeholder="At least 8 characters"
-                    className="input pr-10"
+                    className="input pr-10 disabled:opacity-60"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink transition-colors p-1"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink transition-colors p-1 cursor-pointer"
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
@@ -239,13 +416,16 @@ function Register() {
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     required
+                    disabled={loading}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
                     placeholder="Re-enter your password"
-                    className="input pr-10"
+                    className="input pr-10 disabled:opacity-60"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink transition-colors p-1"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink transition-colors p-1 cursor-pointer"
                     aria-label={
                       showConfirmPassword ? "Hide password" : "Show password"
                     }
@@ -264,18 +444,21 @@ function Register() {
                   id="terms"
                   type="checkbox"
                   required
-                  className="mt-[3px] w-[15px] h-[15px] accent-mint-deep flex-shrink-0"
+                  disabled={loading}
+                  checked={formData.terms}
+                  onChange={handleChange}
+                  className="mt-[3px] w-[15px] h-[15px] accent-mint-deep flex-shrink-0 cursor-pointer"
                 />
                 <label
                   htmlFor="terms"
-                  className="text-[13px] text-ink-soft leading-relaxed"
+                  className="text-[13px] text-ink-soft leading-relaxed cursor-pointer"
                 >
                   I agree to the{" "}
-                  <Link to="/terms" className="text-ink font-medium">
+                  <Link to="/terms" className="text-ink font-medium hover:underline">
                     terms of use
                   </Link>{" "}
                   and{" "}
-                  <Link to="/privacy" className="text-ink font-medium">
+                  <Link to="/privacy" className="text-ink font-medium hover:underline">
                     privacy policy
                   </Link>
                   , including how my health information is handled.
@@ -284,9 +467,17 @@ function Register() {
 
               <button
                 type="submit"
-                className="mt-1.5 rounded-lg bg-teal-deep hover:bg-mint-deep active:scale-[0.99] transition-colors text-paper text-[14.5px] font-semibold py-3.5 px-4.5"
+                disabled={loading}
+                className="mt-1.5 rounded-lg bg-teal-deep hover:bg-mint-deep active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed transition-all text-paper text-[14.5px] font-semibold py-3.5 px-4.5 flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
-                Create account
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-mint" />
+                    <span>Creating account...</span>
+                  </>
+                ) : (
+                  <span>Create account</span>
+                )}
               </button>
 
               {/* <div className="text-[12.5px] text-ink-soft bg-line-soft rounded-lg px-3.5 py-2.5 leading-relaxed">
@@ -301,7 +492,7 @@ function Register() {
           </div>
         </div>
       </div>
-      <Footer/>
+      <Footer />
     </>
   );
 }

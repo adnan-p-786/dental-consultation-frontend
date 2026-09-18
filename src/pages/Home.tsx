@@ -138,7 +138,7 @@ export default function Home() {
 
             <div className="flex flex-wrap gap-4 mb-14">
               <Link
-                to="/auth/register?redirect=/appointments/new"
+                to="/contact"
                 className="px-6 py-3.5 rounded-xl bg-mint text-[#0C2420] text-sm font-semibold hover:bg-[#5EC29F] transition-colors flex items-center gap-2"
               >
                 <span>Request an appointment</span>
@@ -358,7 +358,7 @@ export default function Home() {
             </div>
             <div className="flex flex-wrap gap-3 shrink-0">
               <Link
-                to="/auth/register?redirect=/appointments/new"
+                to="/contact"
                 className="px-6 py-3 rounded-xl bg-teal-deep hover:bg-mint-deep text-white text-sm font-semibold transition-colors flex items-center gap-2"
               >
                 <span>Request an appointment</span>

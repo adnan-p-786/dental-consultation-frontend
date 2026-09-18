@@ -10,8 +10,10 @@ import Contact from "./pages/Contact.tsx";
 import About from "./pages/About.tsx";
 import DashboardDoctor from "./doctor/pages/Dashboard.tsx";
 import DashboardAdmin from "./admin/pages/Dashboard.tsx";
+import { AuthProvider } from "./auth/AuthContext.tsx";
+import { ProtectedRoute } from "./auth/ProtectedRoute.tsx";
 
-const router = createBrowserRouter([  
+const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
@@ -21,12 +23,28 @@ const router = createBrowserRouter([
   { path: "/contact", element: <Contact /> },
   { path: "/auth/login", element: <Login /> },
   { path: "/auth/register", element: <Register /> },
-  { path: "/doctor/dashboard", element: <DashboardDoctor /> },
-  { path: "/admin/dashboard", element: <DashboardAdmin /> },
+  {
+    path: "/doctor/dashboard",
+    element: (
+      <ProtectedRoute allowedRoles={["doctor"]}>
+        <DashboardDoctor />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/dashboard",
+    element: (
+      <ProtectedRoute allowedRoles={["admin"]}>
+        <DashboardAdmin />
+      </ProtectedRoute>
+    ),
+  },
 ]);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </StrictMode>,
 );

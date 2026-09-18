@@ -4,11 +4,16 @@ import { Link, useLocation } from "react-router-dom";
 import {
   Calendar,
   Clock,
+  LogOut,
   Menu,
   Phone,
+  ShieldCheck,
   Sparkles,
+  Stethoscope,
+  User,
   X,
 } from "lucide-react";
+import { useAuth } from "../auth/AuthContext";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -21,6 +26,7 @@ function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const pathname = location.pathname;
+  const { user, isAuthenticated, logout, isAdmin, isDoctor } = useAuth();
 
   const isLinkActive = (href: string) => {
     if (href === "/") {
@@ -114,30 +120,79 @@ function Header() {
 
           {/* Action Buttons */}
           <div className="hidden md:flex items-center gap-2.5">
-            <Link
-              to="/auth/login"
-              className="text-[14px] font-medium text-ink hover:text-teal-deep px-3.5 py-2 rounded-xl hover:bg-line-soft/60 transition-colors"
-            >
-              Log in
-            </Link>
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <Link
+                    to="/admin/dashboard"
+                    className="flex items-center gap-1.5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] transition-all text-paper text-[13.5px] font-semibold py-2 px-3.5 shadow-xs"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-mint" />
+                    <span>Admin Dashboard</span>
+                  </Link>
+                )}
+                {isDoctor && (
+                  <Link
+                    to="/doctor/dashboard"
+                    className="flex items-center gap-1.5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] transition-all text-paper text-[13.5px] font-semibold py-2 px-3.5 shadow-xs"
+                  >
+                    <Stethoscope className="w-4 h-4 text-mint" />
+                    <span>Doctor Dashboard</span>
+                  </Link>
+                )}
+                {!isAdmin && !isDoctor && (
+                  <span className="flex items-center gap-1.5 text-[13.5px] text-ink font-medium px-2 py-1 bg-line-soft/60 rounded-lg">
+                    <User className="w-3.5 h-3.5 text-teal-deep" />
+                    <span>{user?.firstName}</span>
+                  </span>
+                )}
+                <button
+                  onClick={() => logout()}
+                  className="flex items-center gap-1 text-[13px] font-medium text-ink-soft hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
+                  title="Sign out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link
+                  to="/auth/login"
+                  className="text-[14px] font-medium text-ink hover:text-teal-deep px-3.5 py-2 rounded-xl hover:bg-line-soft/60 transition-colors"
+                >
+                  Log in
+                </Link>
 
-            <Link
-              to="/auth/register"
-              className="flex items-center gap-1.5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] transition-all duration-150 text-paper text-[13.5px] font-semibold py-2.5 px-4 shadow-xs"
-            >
-              <Calendar className="w-3.5 h-3.5 text-mint" />
-              <span>Register</span>
-            </Link>
+                <Link
+                  to="/auth/register"
+                  className="flex items-center gap-1.5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] transition-all duration-150 text-paper text-[13.5px] font-semibold py-2.5 px-4 shadow-xs"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-mint" />
+                  <span>Register</span>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu trigger */}
           <div className="flex md:hidden items-center gap-2">
-            <Link
-              to="/auth/register"
-              className="text-[13px] font-semibold bg-teal-deep text-white px-3 py-1.5 rounded-lg"
-            >
-              Register
-            </Link>
+            {isAuthenticated ? (
+              <button
+                onClick={() => logout()}
+                className="p-1.5 rounded-lg text-ink-soft hover:text-red-600"
+                title="Log out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            ) : (
+              <Link
+                to="/auth/register"
+                className="text-[13px] font-semibold bg-teal-deep text-white px-3 py-1.5 rounded-lg"
+              >
+                Register
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -194,23 +249,58 @@ function Header() {
               </a>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <Link
-                to="/auth/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center py-2.5 px-3 rounded-xl border border-line text-[14px] font-medium text-ink hover:bg-line-soft/50 text-center transition-colors"
-              >
-                Log in
-              </Link>
-              <Link
-                to="/auth/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-teal-deep text-white text-[14px] font-semibold text-center hover:bg-mint-deep transition-colors"
-              >
-                <Calendar className="w-3.5 h-3.5 text-mint" />
-                <span>Register</span>
-              </Link>
-            </div>
+            {isAuthenticated ? (
+              <div className="flex flex-col gap-2 mt-1">
+                {isAdmin && (
+                  <Link
+                    to="/admin/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-teal-deep text-white text-[14px] font-semibold"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-mint" />
+                    <span>Admin Dashboard</span>
+                  </Link>
+                )}
+                {isDoctor && (
+                  <Link
+                    to="/doctor/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-teal-deep text-white text-[14px] font-semibold"
+                  >
+                    <Stethoscope className="w-4 h-4 text-mint" />
+                    <span>Doctor Dashboard</span>
+                  </Link>
+                )}
+                <button
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-[14px] font-semibold"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Log out ({user?.firstName})</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <Link
+                  to="/auth/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center py-2.5 px-3 rounded-xl border border-line text-[14px] font-medium text-ink hover:bg-line-soft/50 text-center transition-colors"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/auth/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-teal-deep text-white text-[14px] font-semibold text-center hover:bg-mint-deep transition-colors"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-mint" />
+                  <span>Register</span>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}

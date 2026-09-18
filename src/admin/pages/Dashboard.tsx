@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   MoreVertical,
   CheckCircle2,
@@ -38,10 +38,83 @@ import { ReportsView } from '../components/ReportsView';
 import { SettingsView } from '../components/SettingsView';
 import { initialAppointments, initialDoctors } from '../data/mockData';
 import type { Appointment, AppointmentStatus, Doctor, TreatmentType } from '../types';
+import { appointmentService } from '@/lib/appointmentService';
 
 function Dashboard() {
-  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
-  const [doctors, setDoctors] = useState<Doctor[]>(initialDoctors);
+  const [appointments, setAppointments] = useState<Appointment[]>(() => {
+    const saved = appointmentService.getAppointments();
+    return saved.length > 0 ? saved : initialAppointments;
+  });
+
+  // Sync to appointmentService whenever appointments change
+  useEffect(() => {
+    appointmentService.saveAppointments(appointments);
+  }, [appointments]);
+
+  // Listen to cross-component appointment updates
+  useEffect(() => {
+    const handleSync = () => {
+      setAppointments(appointmentService.getAppointments());
+    };
+    window.addEventListener('dental_appointments_updated', handleSync);
+    return () => window.removeEventListener('dental_appointments_updated', handleSync);
+  }, []);
+
+  const [doctors, setDoctors] = useState<Doctor[]>(() => {
+    try {
+      const saved = localStorage.getItem('dental_doctors_v1');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return initialDoctors;
+  });
+
+  // Sync doctors to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('dental_doctors_v1', JSON.stringify(doctors));
+    } catch (e) {}
+  }, [doctors]);
+
+  // Fetch registered doctors from backend
+  useEffect(() => {
+    const fetchRegisteredDoctors = async () => {
+      try {
+        const res = await fetch('/api/users/doctors');
+        if (!res.ok) return;
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data)) {
+          const apiDoctors: Doctor[] = result.data.map((u: any) => {
+            const fullName = `Dr. ${u.firstName.charAt(0).toUpperCase() + u.firstName.slice(1)} ${
+              u.lastName ? u.lastName.toUpperCase() : ''
+            }`.trim();
+            return {
+              id: String(u.id),
+              name: fullName,
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.firstName}`,
+              specialization: 'General Dental Consultation & Surgery',
+              email: u.email,
+              phone: u.phoneNumber || '+1 (555) 234-CARE',
+              workingHours: '08:00 AM - 05:00 PM',
+              status: 'available',
+              activeAppointments: 0,
+            };
+          });
+
+          setDoctors((prev) => {
+            const existingIds = new Set(apiDoctors.map((d) => d.id));
+            const customDoctors = prev.filter((d) => !existingIds.has(d.id));
+            return [...apiDoctors, ...customDoctors];
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch doctors:', err);
+      }
+    };
+
+    fetchRegisteredDoctors();
+  }, []);
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

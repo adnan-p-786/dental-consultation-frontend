@@ -10,11 +10,13 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  LogOut,
   X,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/auth/AuthContext';
 
 export type AdminTab = 'overview' | 'appointments' | 'doctors' | 'reports' | 'settings';
 
@@ -37,6 +39,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   mobileOpen = false,
   onCloseMobile,
 }) => {
+  const { user, logout } = useAuth();
+  const adminName = user ? `${user.firstName} ${user.lastName}` : "Admin";
+  const adminInitials = user ? `${user.firstName[0] || ''}${user.lastName[0] || ''}`.toUpperCase() || "AD" : "SA";
+  const adminRoleLabel = user?.role === "admin" ? "Administrator" : "Staff";
+
   const navItems = [
     {
       id: 'overview' as AdminTab,
@@ -220,20 +227,34 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           )}
         >
           <Avatar className="w-9 h-9 border border-teal-deep/20">
-            <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256" />
-            <AvatarFallback>SA</AvatarFallback>
+            <AvatarFallback className="bg-teal-deep text-white text-xs font-bold">
+              {adminInitials}
+            </AvatarFallback>
           </Avatar>
 
           {!collapsed && (
             <div className="flex flex-col truncate flex-1 min-w-0">
               <div className="flex items-center gap-1">
-                <span className="text-xs font-semibold text-ink truncate">Claire Kensington</span>
+                <span className="text-xs font-semibold text-ink truncate">{adminName}</span>
                 <ShieldCheck className="w-3.5 h-3.5 text-teal-deep shrink-0" />
               </div>
-              <span className="text-[11px] text-ink-soft truncate">Super Administrator</span>
+              <span className="text-[11px] text-ink-soft truncate">{adminRoleLabel}</span>
             </div>
           )}
         </div>
+
+        {/* Sign out button */}
+        <button
+          onClick={() => logout()}
+          className={cn(
+            "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer",
+            collapsed && "justify-center px-2"
+          )}
+          title="Sign Out"
+        >
+          <LogOut className="w-4 h-4 shrink-0" />
+          {!collapsed && <span>Sign Out</span>}
+        </button>
       </div>
     </aside>
     </>
