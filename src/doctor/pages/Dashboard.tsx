@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/auth/AuthContext";
 import { appointmentService } from "@/lib/appointmentService";
 import type { Appointment, ConsultationNotes } from "@/admin/types";
+import { initialAppointments } from "@/admin/data/mockData";
 import {
   Activity,
   Calendar,
@@ -26,7 +27,10 @@ type ScheduleTab = "today" | "upcoming" | "completed" | "all";
 
 export default function DoctorDashboard() {
   const { user, logout } = useAuth();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>(() => {
+    const all = appointmentService.getAppointments();
+    return all.length > 0 ? all : initialAppointments;
+  });
   const [activeTab, setActiveTab] = useState<ScheduleTab>("today");
   const [searchQuery, setSearchQuery] = useState("");
   const [availability, setAvailability] = useState<"available" | "busy" | "offline">("available");
@@ -52,17 +56,10 @@ export default function DoctorDashboard() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Load real doctor appointments from appointmentService (NO DUMMY DATA)
+  // Load appointments directly for UI display (all appointments / mock data)
   const loadDoctorAppointments = () => {
-    if (!user) return;
-    const docData = {
-      id: user.id,
-      name: `${user.firstName} ${user.lastName}`,
-      email: user.email,
-    };
-    // Strictly fetch appointments assigned to this doctor
-    const myApts = appointmentService.getDoctorAppointments(docData);
-    setAppointments(myApts);
+    const all = appointmentService.getAppointments();
+    setAppointments(all.length > 0 ? all : initialAppointments);
   };
 
   useEffect(() => {
@@ -76,10 +73,10 @@ export default function DoctorDashboard() {
     return () => {
       window.removeEventListener("dental_appointments_updated", handleSync);
     };
-  }, [user]);
+  }, []);
 
-  const doctorName = user ? `Dr. ${user.firstName} ${user.lastName}` : "Dr. Dental Provider";
-  const doctorEmail = user?.email || "doctor@cedarview.com";
+  const doctorName = user ? `Dr. ${user.firstName} ${user.lastName}` : "Dr. Sarah Jenkins";
+  const doctorEmail = user?.email || "sarah.jenkins@cedarview.com";
 
   // Filter appointments according to SOW Section 7 schedule views
   const filteredAppointments = useMemo(() => {

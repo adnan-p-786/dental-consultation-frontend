@@ -15,6 +15,7 @@ import {
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "./AuthContext";
+import { toast } from "react-toastify";
 
 const benefits = [
   "Request appointments without calling the clinic",
@@ -34,7 +35,9 @@ function Login() {
   const redirectPath = searchParams.get("redirect");
   const { login, isAuthenticated, user } = useAuth();
 
-  const [userType, setUserType] = useState<"Patient" | "Doctor" | "Admin">("Patient");
+  const [userType, setUserType] = useState<"Patient" | "Doctor" | "Admin">(
+    "Patient",
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -129,8 +132,10 @@ function Login() {
         err?.response?.data?.message ||
         "Login failed. Please check your credentials and try again.";
       setError(serverError);
+      toast.error(serverError || "Login failed");
     } finally {
       setLoading(false);
+      toast.success("Login successful");
     }
   };
 
@@ -271,7 +276,9 @@ function Login() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink cursor-pointer p-0.5 transition-colors focus:outline-none"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -298,7 +305,11 @@ function Login() {
                         role="radio"
                         aria-checked={isSelected}
                         disabled={loading}
-                        onClick={() => handleRoleSelect(role.id as "Patient" | "Doctor" | "Admin")}
+                        onClick={() =>
+                          handleRoleSelect(
+                            role.id as "Patient" | "Doctor" | "Admin",
+                          )
+                        }
                         className={`group relative flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border transition-all duration-150 cursor-pointer text-center ${
                           isSelected
                             ? "border-teal-deep bg-[#EDF6F2] text-teal-deep font-semibold shadow-xs ring-2 ring-teal-deep/15"

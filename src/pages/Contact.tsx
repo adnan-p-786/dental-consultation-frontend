@@ -2,15 +2,19 @@ import { useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import {
+  AlertCircle,
   Calendar,
   CheckCircle2,
+  Loader2,
   Mail,
   Phone,
   Sparkles,
   Upload,
   User,
 } from "lucide-react";
+import axios from "axios";
 import { appointmentService } from "@/lib/appointmentService";
+import { toast } from "react-toastify";
 
 // SOW Section 2: Treatment / Case Selection categories
 export const documentTreatmentCategories = [
@@ -40,13 +44,15 @@ export default function Contact() {
 
   const [submitted, setSubmitted] = useState(false);
   const [createdRefNo, setCreatedRefNo] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     patientName: "",
     email: "",
     phone: "",
     preferredDate: "",
-    preferredTime: "",
+    preferredTime: "Morning",
     message: "",
     supportingFile: null as File | null,
   });
@@ -75,25 +81,114 @@ export default function Contact() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const newApt = appointmentService.createAppointment({
-      patient: {
-        name: formData.patientName.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim(),
-        preferredContact: (contactMethod.toLowerCase() || "email") as any,
-      },
-      treatment: selectedTreatment as any,
-      consultationType: "video",
-      requestedDate: formData.preferredDate || new Date().toISOString().split("T")[0],
-      requestedTime: formData.preferredTime || "10:00 AM",
-      patientMessage: formData.message.trim(),
+  const handleResetForm = () => {
+    setFormData({
+      patientName: "",
+      email: "",
+      phone: "",
+      preferredDate: "",
+      preferredTime: "Morning",
+      message: "",
+      supportingFile: null,
     });
+    setError(null);
+    setSubmitted(false);
+  };
 
-    setCreatedRefNo(newApt.referenceNo);
-    setSubmitted(true);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+
+    // Client-side validation
+    if (!formData.patientName.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      setError("Please enter your email address.");
+      return;
+    }
+
+    if (!formData.phone.trim()) {
+      setError("Please enter your phone number.");
+      return;
+    }
+
+    if (!formData.preferredDate) {
+      setError("Please select a preferred appointment date.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const data = new FormData();
+      data.append("patientName", formData.patientName.trim());
+      data.append("patientEmail", formData.email.trim().toLowerCase());
+      data.append("phoneNumber", formData.phone.trim());
+      data.append("contactMethod", contactMethod.toLowerCase());
+      data.append("tratmentType", selectedTreatment);
+      data.append("preferredDate", formData.preferredDate);
+      data.append("preferredTime", formData.preferredTime || "Morning");
+
+      if (formData.message.trim()) {
+        data.append("additionalDescription", formData.message.trim());
+      }
+
+      if (formData.supportingFile) {
+        data.append("supportingDocument", formData.supportingFile);
+      }
+
+      const response = await axios.post(
+        "/api/appointment/create-appointment",
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      const serverAppointment = response.data?.data;
+      const refNo = serverAppointment?.id
+        ? `APT-2026-${String(serverAppointment.id).padStart(4, "0")}`
+        : `APT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      // Sync with appointmentService for local admin panel & dashboards
+      appointmentService.createAppointment({
+        id: serverAppointment?.id ? String(serverAppointment.id) : undefined,
+        referenceNo: refNo,
+        patient: {
+          name: formData.patientName.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          preferredContact: (contactMethod.toLowerCase() || "email") as any,
+        },
+        treatment: selectedTreatment as any,
+        consultationType: "video",
+        requestedDate:
+          formData.preferredDate ||
+          new Date().toISOString().split("T")[0],
+        requestedTime: formData.preferredTime || "Morning",
+        patientMessage: formData.message.trim(),
+      });
+
+      setCreatedRefNo(refNo);
+      setSubmitted(true);
+      toast.success("Appointment booked successfully");
+    } catch (err: any) {
+      console.error("Appointment submission error:", err);
+      const serverMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to submit appointment request. Please make sure the backend server is running and try again.";
+      setError(serverMessage);
+      toast.error(serverMessage || "Appointment booking failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -183,6 +278,16 @@ export default function Contact() {
                   An acknowledgement email may be sent with your
                   appointment request details.
                 </p>
+
+                <div className="mt-8 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={handleResetForm}
+                    className="px-6 py-2.5 rounded-xl bg-teal-deep hover:bg-mint-deep text-white font-semibold text-xs transition-colors shadow-xs cursor-pointer"
+                  >
+                    Book Another Appointment
+                  </button>
+                </div>
               </div>
             ) : (
               <form
@@ -202,6 +307,21 @@ export default function Contact() {
                     required.
                   </p>
                 </div>
+
+                {/* Error Banner */}
+                {error && (
+                  <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-start gap-3 text-sm animate-in fade-in-50">
+                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-500" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-xs uppercase tracking-wide text-rose-800">
+                        Submission Failed
+                      </p>
+                      <p className="text-xs text-rose-600 mt-0.5">
+                        {error}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
 
                 {/* 1. Treatment / Case */}
@@ -355,6 +475,7 @@ export default function Contact() {
                     <input
                       type="date"
                       id="preferredDate"
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.preferredDate}
                       onChange={handleChange}
                       required
@@ -435,9 +556,24 @@ export default function Contact() {
                     </span>
 
                     {formData.supportingFile && (
-                      <span className="text-xs text-mint-deep font-medium block mt-3">
-                        Selected: {formData.supportingFile.name}
-                      </span>
+                      <div className="mt-3 inline-flex items-center gap-2 bg-paper/80 border border-line px-3 py-1.5 rounded-lg text-xs text-mint-deep font-medium">
+                        <span>Selected: {formData.supportingFile.name}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setFormData((prev) => ({
+                              ...prev,
+                              supportingFile: null,
+                            }));
+                          }}
+                          className="w-4 h-4 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-600 flex items-center justify-center font-bold text-xs transition-colors cursor-pointer"
+                          title="Remove file"
+                        >
+                          ×
+                        </button>
+                      </div>
                     )}
 
                     <input
@@ -454,11 +590,24 @@ export default function Contact() {
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full py-4 rounded-xl bg-teal-deep hover:bg-mint-deep text-white font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 active:scale-[0.99] cursor-pointer"
+                    disabled={loading}
+                    className={`w-full py-4 rounded-xl bg-teal-deep hover:bg-mint-deep text-white font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 cursor-pointer ${
+                      loading
+                        ? "opacity-70 cursor-not-allowed"
+                        : "active:scale-[0.99]"
+                    }`}
                   >
-                    <Calendar className="w-4 h-4 text-mint" />
-
-                    <span>Submit Appointment Request</span>
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-mint" />
+                        <span>Submitting Appointment Request...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Calendar className="w-4 h-4 text-mint" />
+                        <span>Submit Appointment Request</span>
+                      </>
+                    )}
                   </button>
 
                   <p className="text-center text-[11.5px] text-ink-soft mt-3">

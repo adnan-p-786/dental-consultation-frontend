@@ -15,6 +15,7 @@ import {
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "./AuthContext";
+import { toast } from "react-toastify";
 
 const benefits = [
   "Request appointments without calling the clinic",
@@ -108,7 +109,9 @@ function Register() {
     }
 
     if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
-      setError("Please enter a valid 10-digit mobile number starting with 6-9.");
+      setError(
+        "Please enter a valid 10-digit mobile number starting with 6-9.",
+      );
       return;
     }
 
@@ -161,8 +164,10 @@ function Register() {
         err?.response?.data?.message ||
         "Registration failed. Please check your details and try again.";
       setError(serverError);
+      toast.error(serverError || "Registration failed");
     } finally {
       setLoading(false);
+      toast.success("Registration successful");
     }
   };
 
@@ -454,11 +459,17 @@ function Register() {
                   className="text-[13px] text-ink-soft leading-relaxed cursor-pointer"
                 >
                   I agree to the{" "}
-                  <Link to="/terms" className="text-ink font-medium hover:underline">
+                  <Link
+                    to="/terms"
+                    className="text-ink font-medium hover:underline"
+                  >
                     terms of use
                   </Link>{" "}
                   and{" "}
-                  <Link to="/privacy" className="text-ink font-medium hover:underline">
+                  <Link
+                    to="/privacy"
+                    className="text-ink font-medium hover:underline"
+                  >
                     privacy policy
                   </Link>
                   , including how my health information is handled.

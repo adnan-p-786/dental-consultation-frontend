@@ -12,6 +12,8 @@ import DashboardDoctor from "./doctor/pages/Dashboard.tsx";
 import DashboardAdmin from "./admin/pages/Dashboard.tsx";
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import { ProtectedRoute } from "./auth/ProtectedRoute.tsx";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const router = createBrowserRouter([
   {
@@ -45,6 +47,17 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider>
       <RouterProvider router={router} />
+      <ToastContainer
+        position="top-center"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </AuthProvider>
   </StrictMode>,
 );
