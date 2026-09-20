@@ -9,7 +9,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  Stethoscope,
   User,
 } from "lucide-react";
 import Header from "../components/Header";
@@ -25,7 +24,6 @@ const benefits = [
 
 const roles = [
   { id: "Patient", label: "Patient", icon: User, desc: "Personal care" },
-  { id: "Doctor", label: "Doctor", icon: Stethoscope, desc: "Care provider" },
 ];
 
 function Register() {

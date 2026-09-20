@@ -81,31 +81,66 @@ function Dashboard() {
   useEffect(() => {
     const fetchRegisteredDoctors = async () => {
       try {
-        const res = await fetch('/api/users/doctors');
-        if (!res.ok) return;
-        const result = await res.json();
-        if (result.success && Array.isArray(result.data)) {
-          const apiDoctors: Doctor[] = result.data.map((u: any) => {
-            const fullName = `Dr. ${u.firstName.charAt(0).toUpperCase() + u.firstName.slice(1)} ${
-              u.lastName ? u.lastName.toUpperCase() : ''
-            }`.trim();
-            return {
-              id: String(u.id),
-              name: fullName,
-              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.firstName}`,
-              specialization: 'General Dental Consultation & Surgery',
-              email: u.email,
-              phone: u.phoneNumber || '+1 (555) 234-CARE',
-              workingHours: '08:00 AM - 05:00 PM',
-              status: 'available',
-              activeAppointments: 0,
-            };
-          });
+        const fetchedDoctors: Doctor[] = [];
 
+        // 1. Fetch from doctor table
+        try {
+          const docRes = await fetch('/api/doctor/get-doctors');
+          if (docRes.ok) {
+            const docResult = await docRes.json();
+            if (docResult.success && Array.isArray(docResult.data)) {
+              const tableDoctors: Doctor[] = docResult.data.map((d: any) => ({
+                id: String(d.id),
+                name: d.doctorName,
+                avatar: d.doctorPhoto || '',
+                specialization: d.specialization,
+                email: d.doctorEmail,
+                phone: d.phoneNumber,
+                workingHours: d.workingHours,
+                status: (d.status as 'available' | 'busy' | 'on_leave') || 'available',
+                activeAppointments: 0,
+              }));
+              fetchedDoctors.push(...tableDoctors);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to fetch doctor table records:', e);
+        }
+
+        // 2. Fetch from users table (role=doctor)
+        try {
+          const res = await fetch('/api/users/doctors');
+          if (res.ok) {
+            const result = await res.json();
+            if (result.success && Array.isArray(result.data)) {
+              const apiDoctors: Doctor[] = result.data.map((u: any) => {
+                const fullName = `Dr. ${u.firstName.charAt(0).toUpperCase() + u.firstName.slice(1)} ${
+                  u.lastName ? u.lastName.toUpperCase() : ''
+                }`.trim();
+                return {
+                  id: `user-${u.id}`,
+                  name: fullName,
+                  avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.firstName}`,
+                  specialization: 'General Dental Consultation & Surgery',
+                  email: u.email,
+                  phone: u.phoneNumber || '+1 (555) 234-CARE',
+                  workingHours: '08:00 AM - 05:00 PM',
+                  status: 'available',
+                  activeAppointments: 0,
+                };
+              });
+              fetchedDoctors.push(...apiDoctors);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to fetch users doctors:', e);
+        }
+
+        if (fetchedDoctors.length > 0) {
           setDoctors((prev) => {
-            const existingIds = new Set(apiDoctors.map((d) => d.id));
+            const existingIds = new Set(fetchedDoctors.map((d) => d.id));
             const customDoctors = prev.filter((d) => !existingIds.has(d.id));
-            return [...apiDoctors, ...customDoctors];
+            return [...fetchedDoctors, ...customDoctors];
           });
         }
       } catch (err) {
@@ -414,6 +449,13 @@ function Dashboard() {
         if (d.id === doctorId) {
           const nextStatus =
             d.status === 'available' ? 'busy' : d.status === 'busy' ? 'on_leave' : 'available';
+          if (!isNaN(Number(doctorId))) {
+            fetch(`/api/doctor/${doctorId}/status`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: nextStatus }),
+            }).catch((err) => console.error('Failed to sync status to backend:', err));
+          }
           return { ...d, status: nextStatus };
         }
         return d;
@@ -427,8 +469,20 @@ function Dashboard() {
     showToast(`${newDoctor.name} added to clinic roster.`);
   };
 
+  const handleUpdateDoctor = (updatedDoctor: Doctor) => {
+    setDoctors((prev) =>
+      prev.map((d) => (d.id === updatedDoctor.id ? updatedDoctor : d))
+    );
+    showToast(`${updatedDoctor.name}'s profile updated.`);
+  };
+
   const handleDeleteDoctor = (doctorId: string) => {
     setDoctors((prev) => prev.filter((d) => d.id !== doctorId));
+    if (!isNaN(Number(doctorId))) {
+      fetch(`/api/doctor/${doctorId}`, { method: 'DELETE' }).catch((err) =>
+        console.error('Failed to delete doctor from backend:', err)
+      );
+    }
     showToast('Doctor profile removed.');
   };
 
@@ -970,6 +1024,7 @@ function Dashboard() {
               doctors={doctors}
               onToggleStatus={handleToggleDoctorStatus}
               onAddDoctor={handleAddDoctor}
+              onUpdateDoctor={handleUpdateDoctor}
               onDeleteDoctor={handleDeleteDoctor}
             />
           )}

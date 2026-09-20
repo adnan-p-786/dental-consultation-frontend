@@ -8,6 +8,7 @@ import {
   User,
   Plus,
   Trash2,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ interface DoctorManagementViewProps {
   doctors: Doctor[];
   onToggleStatus: (doctorId: string) => void;
   onAddDoctor?: (doctor: Doctor) => void;
+  onUpdateDoctor?: (doctor: Doctor) => void;
   onDeleteDoctor?: (doctorId: string) => void;
 }
 
@@ -27,10 +29,12 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
   doctors,
   onToggleStatus,
   onAddDoctor,
+  onUpdateDoctor,
   onDeleteDoctor,
 }) => {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
 
   const specialties = ['all', ...Array.from(new Set(doctors.map((d) => d.specialization.split('&')[0].trim())))];
 
@@ -70,7 +74,10 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
 
           {onAddDoctor && (
             <Button
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={() => {
+                setEditingDoctor(null);
+                setIsAddModalOpen(true);
+              }}
               className="bg-teal-deep text-white hover:bg-teal-mid text-xs h-9 px-3.5 shadow-xs gap-1.5 cursor-pointer font-medium"
             >
               <Plus className="w-4 h-4" />
@@ -115,7 +122,10 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
             </div>
             {onAddDoctor && (
               <Button
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={() => {
+                  setEditingDoctor(null);
+                  setIsAddModalOpen(true);
+                }}
                 className="bg-teal-deep text-white hover:bg-teal-mid text-xs h-9 shadow-xs gap-1.5 mx-auto cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
@@ -220,6 +230,18 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
                 >
                   Toggle Availability
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setEditingDoctor(doc);
+                    setIsAddModalOpen(true);
+                  }}
+                  className="text-xs h-8 text-teal-deep hover:text-teal-700 hover:bg-teal-50 p-2 cursor-pointer"
+                  title="Edit Doctor"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
                 {onDeleteDoctor && (
                   <Button
                     variant="ghost"
@@ -237,12 +259,17 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
         ))}
       </div>
 
-      {/* Add Doctor Modal */}
-      {onAddDoctor && (
+      {/* Add / Edit Doctor Modal */}
+      {(onAddDoctor || onUpdateDoctor) && (
         <AddDoctorModal
           isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onAddDoctor={onAddDoctor}
+          onClose={() => {
+            setIsAddModalOpen(false);
+            setEditingDoctor(null);
+          }}
+          onAddDoctor={onAddDoctor || (() => {})}
+          onUpdateDoctor={onUpdateDoctor}
+          doctorToEdit={editingDoctor}
         />
       )}
     </div>
