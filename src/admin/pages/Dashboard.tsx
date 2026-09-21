@@ -177,9 +177,9 @@ function Dashboard() {
   const kpis = useMemo(() => {
     const todayDate = '2026-09-17';
     return {
-      newRequests: appointments.filter((a) => a.status === 'requested').length,
+      newRequests: appointments.filter((a) => a.status === 'requested' || a.status === 'pending').length,
       pendingApprovals: appointments.filter(
-        (a) => a.status === 'requested' || a.status === 'under_review'
+        (a) => a.status === 'requested' || a.status === 'pending' || a.status === 'under_review'
       ).length,
       todayAppointments: appointments.filter(
         (a) => (a.confirmedDate || a.requestedDate) === todayDate && a.status === 'approved'
@@ -212,8 +212,14 @@ function Dashboard() {
       }
 
       // Status filter
-      if (selectedStatusFilter !== 'all' && apt.status !== selectedStatusFilter) {
-        return false;
+      if (selectedStatusFilter !== 'all') {
+        if (selectedStatusFilter === 'pending') {
+          if (apt.status !== 'pending' && apt.status !== 'requested') return false;
+        } else if (selectedStatusFilter === 'requested') {
+          if (apt.status !== 'requested' && apt.status !== 'pending') return false;
+        } else if (apt.status !== selectedStatusFilter) {
+          return false;
+        }
       }
 
       // Doctor filter
@@ -274,7 +280,7 @@ function Dashboard() {
             ...apt,
             assignedDoctorId: doctorId,
             assignedDoctor: doctorObj,
-            status: apt.status === 'requested' ? 'under_review' : apt.status,
+            status: (apt.status === 'requested' || apt.status === 'pending') ? 'under_review' : apt.status,
             timeline: [
               {
                 id: `tl-${Date.now()}`,
@@ -417,7 +423,7 @@ function Dashboard() {
       patient: data.patient!,
       treatment: data.treatment as TreatmentType,
       consultationType: data.consultationType || 'video',
-      status: data.status || 'requested',
+      status: data.status || 'pending',
       requestedDate: data.requestedDate || '2026-09-18',
       requestedTime: data.requestedTime || '10:00 AM',
       assignedDoctorId: data.assignedDoctorId,
@@ -517,7 +523,7 @@ function Dashboard() {
           onSearchChange={setSearchQuery}
           onNewAppointmentClick={() => setIsNewModalOpen(true)}
           pendingAppointments={appointments.filter(
-            (a) => a.status === 'requested' || a.status === 'under_review'
+            (a) => a.status === 'requested' || a.status === 'pending' || a.status === 'under_review'
           )}
           onSelectAppointment={handleOpenDetail}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
@@ -639,7 +645,7 @@ function Dashboard() {
 
                   <div className="space-y-3">
                     {appointments
-                      .filter((a) => a.status === 'requested' || a.status === 'under_review')
+                      .filter((a) => a.status === 'requested' || a.status === 'pending' || a.status === 'under_review')
                       .map((apt) => (
                         <div
                           key={apt.id}
@@ -768,6 +774,7 @@ function Dashboard() {
                   <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
                     {[
                       { id: 'all', label: 'All' },
+                      { id: 'pending', label: 'Pending' },
                       { id: 'requested', label: 'Requested' },
                       { id: 'under_review', label: 'Under Review' },
                       { id: 'proposed', label: 'Proposed' },

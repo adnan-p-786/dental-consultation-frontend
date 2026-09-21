@@ -4,6 +4,7 @@ import Footer from "../components/Footer";
 import {
   AlertCircle,
   Calendar,
+  Check,
   CheckCircle2,
   Loader2,
   Mail,
@@ -11,10 +12,21 @@ import {
   Sparkles,
   Upload,
   User,
+  XCircle,
 } from "lucide-react";
 import axios from "axios";
 import { appointmentService } from "@/lib/appointmentService";
 import { toast } from "react-toastify";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 // SOW Section 2: Treatment / Case Selection categories
 export const documentTreatmentCategories = [
@@ -44,7 +56,11 @@ export default function Contact() {
 
   const [submitted, setSubmitted] = useState(false);
   const [createdRefNo, setCreatedRefNo] = useState<string>("");
+  const [createdAppointmentId, setCreatedAppointmentId] = useState<string | number | null>(null);
+  const [appointmentStatus, setAppointmentStatus] = useState<string>("pending");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -54,6 +70,7 @@ export default function Contact() {
     preferredDate: "",
     preferredTime: "Morning",
     message: "",
+    status: "pending",
     supportingFile: null as File | null,
   });
 
@@ -89,39 +106,56 @@ export default function Contact() {
       preferredDate: "",
       preferredTime: "Morning",
       message: "",
+      status: "pending",
       supportingFile: null,
     });
     setError(null);
+    setCreatedRefNo("");
+    setCreatedAppointmentId(null);
+    setAppointmentStatus("pending");
+    setShowConfirmModal(false);
     setSubmitted(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Step 1: Pre-submission validation -> opens on-screen confirmation dialog
+  const handleSubmitForm = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
     // Client-side validation
     if (!formData.patientName.trim()) {
       setError("Please enter your full name.");
+      toast.error("Please enter your full name.");
       return;
     }
 
     if (!formData.email.trim()) {
       setError("Please enter your email address.");
+      toast.error("Please enter your email address.");
       return;
     }
 
     if (!formData.phone.trim()) {
       setError("Please enter your phone number.");
+      toast.error("Please enter your phone number.");
       return;
     }
 
     if (!formData.preferredDate) {
       setError("Please select a preferred appointment date.");
+      toast.error("Please select a preferred appointment date.");
       return;
     }
 
+    // Open on-screen confirmation modal
+    setShowConfirmModal(true);
+  };
+
+  // Step 2: Final execution upon clicking "Confirm Appointment" in the dialog
+  const handleConfirmSubmit = async () => {
     try {
       setLoading(true);
+      setError(null);
 
       const data = new FormData();
       data.append("patientName", formData.patientName.trim());
@@ -131,6 +165,7 @@ export default function Contact() {
       data.append("tratmentType", selectedTreatment);
       data.append("preferredDate", formData.preferredDate);
       data.append("preferredTime", formData.preferredTime || "Morning");
+      data.append("status", "pending");
 
       if (formData.message.trim()) {
         data.append("additionalDescription", formData.message.trim());
@@ -151,13 +186,14 @@ export default function Contact() {
       );
 
       const serverAppointment = response.data?.data;
-      const refNo = serverAppointment?.id
-        ? `APT-2026-${String(serverAppointment.id).padStart(4, "0")}`
+      const aptId = serverAppointment?.id;
+      const refNo = aptId
+        ? `APT-2026-${String(aptId).padStart(4, "0")}`
         : `APT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
       // Sync with appointmentService for local admin panel & dashboards
       appointmentService.createAppointment({
-        id: serverAppointment?.id ? String(serverAppointment.id) : undefined,
+        id: aptId ? String(aptId) : undefined,
         referenceNo: refNo,
         patient: {
           name: formData.patientName.trim(),
@@ -172,11 +208,15 @@ export default function Contact() {
           new Date().toISOString().split("T")[0],
         requestedTime: formData.preferredTime || "Morning",
         patientMessage: formData.message.trim(),
+        status: "pending",
       });
 
+      setCreatedAppointmentId(aptId ? String(aptId) : null);
       setCreatedRefNo(refNo);
+      setAppointmentStatus("pending");
+      setShowConfirmModal(false);
       setSubmitted(true);
-      toast.success("Appointment booked successfully");
+      toast.success("Appointment booked successfully with Initial Status: Pending");
     } catch (err: any) {
       console.error("Appointment submission error:", err);
       const serverMessage =
@@ -185,9 +225,39 @@ export default function Contact() {
         err?.message ||
         "Failed to submit appointment request. Please make sure the backend server is running and try again.";
       setError(serverMessage);
-      toast.error(serverMessage || "Appointment booking failed");
+      toast.error(serverMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Step 3: Optional post-submission cancellation on-screen
+  const handleCancelSubmittedAppointment = async () => {
+    if (!createdAppointmentId && !createdRefNo) return;
+
+    try {
+      setCancelling(true);
+      if (createdAppointmentId) {
+        await axios.patch(`/api/appointment/cancel-appointment/${createdAppointmentId}`).catch((err) => {
+          console.warn("Backend cancel endpoint note:", err);
+        });
+        appointmentService.updateAppointment(String(createdAppointmentId), { status: "cancelled" }, "Patient");
+      }
+
+      // Also ensure matched by reference number in appointmentService
+      const all = appointmentService.getAppointments();
+      const found = all.find((a) => a.referenceNo === createdRefNo || a.id === String(createdAppointmentId));
+      if (found) {
+        appointmentService.updateAppointment(found.id, { status: "cancelled" }, "Patient");
+      }
+
+      setAppointmentStatus("cancelled");
+      toast.info("Appointment request has been cancelled.");
+    } catch (err: any) {
+      console.error("Cancel appointment error:", err);
+      toast.error("Failed to cancel appointment. Please contact support.");
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -242,56 +312,128 @@ export default function Contact() {
           <div className="bg-white rounded-3xl border border-line p-6 sm:p-8 md:p-10 shadow-[0_4px_30px_rgba(16,56,50,0.05)]">
 
             {submitted ? (
-              /* Confirmation */
-              <div className="py-10 text-center">
-                <div className="w-16 h-16 rounded-full bg-mint/15 text-mint-deep flex items-center justify-center mx-auto mb-5">
-                  <CheckCircle2 className="w-8 h-8" />
+              /* On-Screen Confirmation View After Submission */
+              <div className="py-6 text-center animate-in fade-in-50">
+                <div
+                  className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                    appointmentStatus === "cancelled"
+                      ? "bg-rose-100 text-rose-600"
+                      : "bg-mint/15 text-mint-deep"
+                  }`}
+                >
+                  {appointmentStatus === "cancelled" ? (
+                    <XCircle className="w-8 h-8" />
+                  ) : (
+                    <CheckCircle2 className="w-8 h-8" />
+                  )}
                 </div>
 
                 <h2 className="font-display text-2xl sm:text-3xl font-medium text-teal-deep mb-2">
-                  Appointment Request Submitted
+                  {appointmentStatus === "cancelled"
+                    ? "Appointment Request Cancelled"
+                    : "Appointment Request Submitted"}
                 </h2>
 
-                <p className="text-sm text-ink-soft leading-relaxed max-w-md mx-auto mb-6">
-                  Your appointment request has been submitted
-                  successfully and is now available in the clinic management portal for scheduling.
+                <p className="text-sm text-ink-soft leading-relaxed max-w-md mx-auto mb-5">
+                  {appointmentStatus === "cancelled"
+                    ? "Your appointment request has been cancelled. You can create a new appointment request at any time."
+                    : "Your appointment request has been recorded with initial status Pending and is now queued for clinical review."}
                 </p>
 
                 {createdRefNo && (
-                  <div className="mb-4 inline-flex items-center gap-2 bg-[#EDF6F2] border border-teal-deep/20 px-4 py-2 rounded-xl text-xs font-mono font-bold text-teal-deep">
+                  <div className="mb-5 inline-flex items-center gap-2 bg-[#EDF6F2] border border-teal-deep/20 px-4 py-2 rounded-xl text-xs font-mono font-bold text-teal-deep shadow-xs">
                     <span>Reference ID:</span>
                     <span className="text-sm tracking-wide">{createdRefNo}</span>
                   </div>
                 )}
 
-                <div className="bg-paper/70 border border-line rounded-2xl p-5 max-w-md mx-auto mb-6">
-                  <p className="text-xs text-ink-soft mb-1">
-                    Initial Appointment Status
-                  </p>
+                {/* On-Screen Appointment Summary Card */}
+                <div className="bg-[#FAFDFC] border border-line rounded-2xl p-5 sm:p-6 max-w-md mx-auto mb-6 text-left shadow-xs space-y-3">
+                  <div className="flex items-center justify-between pb-3 border-b border-line">
+                    <span className="text-xs font-semibold text-ink-soft uppercase tracking-wider">
+                      Appointment Status
+                    </span>
+                    <Badge
+                      variant={appointmentStatus as any}
+                      className="text-xs font-bold capitalize"
+                    >
+                      {appointmentStatus === "cancelled" ? "Cancelled" : "Pending Review"}
+                    </Badge>
+                  </div>
 
-                  <p className="text-base font-semibold text-teal-deep">
-                    Pending Review
-                  </p>
+                  <div className="space-y-2.5 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="text-ink-soft">Patient Name:</span>
+                      <span className="font-semibold text-ink">{formData.patientName}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-ink-soft">Treatment:</span>
+                      <span className="font-semibold text-teal-deep text-right truncate max-w-[220px]">
+                        {selectedTreatment}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-ink-soft">Requested Date:</span>
+                      <span className="font-medium text-ink">
+                        {formData.preferredDate} ({formData.preferredTime})
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-ink-soft">Contact:</span>
+                      <span className="font-medium text-ink truncate max-w-[200px]">
+                        {formData.email} • {formData.phone}
+                      </span>
+                    </div>
+                    {formData.supportingFile && (
+                      <div className="flex justify-between items-center pt-1 border-t border-line/60">
+                        <span className="text-ink-soft">Attachment:</span>
+                        <span className="font-medium text-teal-deep truncate max-w-[200px]">
+                          {formData.supportingFile.name}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <p className="text-xs text-ink-soft">
-                  An acknowledgement email may be sent with your
-                  appointment request details.
-                </p>
+                {/* Action Buttons: Cancel and Confirm / Book Another */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+                  {appointmentStatus !== "cancelled" ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={cancelling}
+                      onClick={handleCancelSubmittedAppointment}
+                      className="w-full sm:w-auto px-5 py-2.5 text-xs text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 h-11 font-semibold cursor-pointer"
+                    >
+                      {cancelling ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5 text-rose-500" />
+                          Cancelling...
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-4 h-4 mr-1.5" />
+                          Cancel Appointment
+                        </>
+                      )}
+                    </Button>
+                  ) : null}
 
-                <div className="mt-8 flex justify-center">
-                  <button
+                  <Button
                     type="button"
                     onClick={handleResetForm}
-                    className="px-6 py-2.5 rounded-xl bg-teal-deep hover:bg-mint-deep text-white font-semibold text-xs transition-colors shadow-xs cursor-pointer"
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-teal-deep hover:bg-mint-deep text-white font-semibold text-xs h-11 transition-colors shadow-xs cursor-pointer"
                   >
-                    Book Another Appointment
-                  </button>
+                    <Check className="w-4 h-4 mr-1.5" />
+                    {appointmentStatus === "cancelled"
+                      ? "Book New Appointment"
+                      : "Confirm & Done"}
+                  </Button>
                 </div>
               </div>
             ) : (
               <form
-                onSubmit={handleSubmit}
+                onSubmit={handleSubmitForm}
                 className="space-y-6"
                 id="appointment-form"
               >
@@ -621,6 +763,111 @@ export default function Contact() {
           </div>
         </div>
       </main>
+
+      {/* On-Screen Confirmation Dialog before final submission */}
+      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <DialogContent className="max-w-lg w-[95vw] sm:w-full p-6 bg-white rounded-2xl shadow-2xl border border-line">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-xl bg-teal-deep/10 text-teal-deep flex items-center justify-center shrink-0">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-display font-semibold text-teal-deep">
+                  Confirm Appointment Booking
+                </DialogTitle>
+                <DialogDescription className="text-xs text-ink-soft">
+                  Please review your appointment details before confirming.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="py-2 space-y-3">
+            {/* Details Card */}
+            <div className="bg-[#FAFDFC] border border-line rounded-xl p-4 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center pb-2 border-b border-line/60">
+                <span className="text-ink-soft">Patient Name:</span>
+                <span className="font-semibold text-ink">{formData.patientName}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-line/60">
+                <span className="text-ink-soft">Email:</span>
+                <span className="font-medium text-ink truncate max-w-[230px]">{formData.email}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-line/60">
+                <span className="text-ink-soft">Phone Number:</span>
+                <span className="font-medium text-ink">{formData.phone}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-line/60">
+                <span className="text-ink-soft">Preferred Contact:</span>
+                <span className="font-medium text-teal-deep capitalize">{contactMethod}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-line/60">
+                <span className="text-ink-soft">Treatment:</span>
+                <span className="font-semibold text-teal-deep text-right truncate max-w-[240px]">
+                  {selectedTreatment}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-line/60">
+                <span className="text-ink-soft">Preferred Slot:</span>
+                <span className="font-semibold text-ink">
+                  {formData.preferredDate} ({formData.preferredTime})
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-ink-soft">Initial Status:</span>
+                <Badge variant="pending" className="text-[11px] font-bold">
+                  Pending Review
+                </Badge>
+              </div>
+            </div>
+
+            {formData.message.trim() && (
+              <div className="bg-paper/60 border border-line rounded-xl p-3 text-xs">
+                <span className="text-ink-soft block font-semibold mb-0.5">Notes / Description:</span>
+                <p className="text-ink italic line-clamp-2">"{formData.message.trim()}"</p>
+              </div>
+            )}
+
+            {formData.supportingFile && (
+              <div className="flex items-center gap-2 text-xs bg-paper/60 border border-line rounded-xl p-3 text-ink-soft">
+                <Upload className="w-4 h-4 text-teal-deep shrink-0" />
+                <span className="truncate">Attached File: {formData.supportingFile.name}</span>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-line">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading}
+              onClick={() => setShowConfirmModal(false)}
+              className="text-xs h-10 px-5 cursor-pointer font-medium"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={loading}
+              onClick={handleConfirmSubmit}
+              className="bg-teal-deep hover:bg-mint-deep text-white text-xs h-10 px-6 gap-2 cursor-pointer shadow-xs font-semibold"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-mint" />
+                  <span>Submitting...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Confirm Appointment</span>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

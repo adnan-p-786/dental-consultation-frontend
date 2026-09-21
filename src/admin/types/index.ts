@@ -1,4 +1,5 @@
 export type AppointmentStatus =
+  | 'pending'
   | 'requested'
   | 'under_review'
   | 'proposed'

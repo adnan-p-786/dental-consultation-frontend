@@ -15,6 +15,8 @@ const badgeVariants = cva(
           "bg-red-100 text-red-700 border border-red-200",
         outline:
           "border border-line text-ink",
+        pending:
+          "bg-amber-50 text-amber-700 border border-amber-200",
         requested:
           "bg-amber-50 text-amber-700 border border-amber-200",
         under_review:

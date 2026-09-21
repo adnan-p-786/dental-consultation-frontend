@@ -64,7 +64,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
       requestedTime,
       assignedDoctorId: assignedDoctorId || undefined,
       patientMessage,
-      status: 'requested',
+      status: 'pending',
     });
 
     // Reset form

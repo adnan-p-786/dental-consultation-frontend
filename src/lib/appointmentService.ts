@@ -76,7 +76,7 @@ export const appointmentService = {
     const referenceNo =
       data.referenceNo || `APT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const initialStatus: AppointmentStatus = data.status || "requested";
+    const initialStatus: AppointmentStatus = data.status || "pending";
 
     const initialTimeline: AuditLog[] = [
       {

@@ -218,7 +218,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       if (isEditMode && doctorToEdit) {
         let savedDoctor = null;
         if (!isNaN(Number(doctorToEdit.id))) {
-          const response = await axios.put(`/api/doctor/${doctorToEdit.id}`, formData, {
+          const response = await axios.put(`/api/doctor/update-doctor/${doctorToEdit.id}`, formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
