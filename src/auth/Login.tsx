@@ -115,6 +115,8 @@ function Login() {
       const resolvedRole =
         response.data?.data?.role?.toLowerCase() || userType.toLowerCase();
 
+      toast.success("Login successful");
+
       setTimeout(() => {
         if (redirectPath) {
           navigate(redirectPath);
@@ -135,7 +137,6 @@ function Login() {
       toast.error(serverError || "Login failed");
     } finally {
       setLoading(false);
-      toast.success("Login successful");
     }
   };
 
@@ -144,7 +145,7 @@ function Login() {
       <Header />
       <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
         {/* Left: brand panel */}
-        <div className="relative overflow-hidden bg-teal-deep text-[#EFF6F2] px-8 py-12 md:px-14 md:py-14 flex flex-col justify-between min-h-[260px]">
+        <div className="relative overflow-hidden bg-teal-deep text-[#EFF6F2] px-8 py-12 md:px-14 md:py-14 flex flex-col justify-between min-h-65">
           {/* dot texture */}
           <div
             className="absolute inset-0 opacity-90"
@@ -170,7 +171,7 @@ function Login() {
           Cedarview Dental
         </div> */}
 
-          <div className="relative z-10 max-w-[420px]">
+          <div className="relative z-10 max-w-105">
             <h1 className="font-display font-medium text-[34px] md:text-[40px] leading-[1.12] tracking-[-0.01em] text-white mb-4">
               One account for booking, records, and your care team.
             </h1>
@@ -186,7 +187,7 @@ function Login() {
                   key={b}
                   className="flex items-start gap-3 text-[14.5px] text-[#DCEAE4]"
                 >
-                  <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-mint" />
+                  <Check className="w-4 h-4 mt-0.5 shrink-0 text-mint" />
                   {b}
                 </li>
               ))}
@@ -200,7 +201,7 @@ function Login() {
           <svg
             viewBox="0 0 200 200"
             fill="none"
-            className="absolute -right-16 -bottom-16 w-[380px] h-[380px] opacity-[0.16] z-0"
+            className="absolute -right-16 -bottom-16 w-95 h-95 opacity-[0.16] z-0"
           >
             <path
               d="M100 20c-30 0-52 18-52 46 0 21 6 35 11 54 4 15 7 36 17 45 4 4 9 2 11-3 4-10 5-28 11-28s7 18 11 28c2 5 7 7 11 3 10-9 13-30 17-45 5-19 11-33 11-54 0-28-22-46-52-46z"
@@ -212,7 +213,7 @@ function Login() {
 
         {/* Right: form panel */}
         <div className="flex items-center justify-center px-6 py-12 md:px-8">
-          <div className="w-full max-w-[380px]">
+          <div className="w-full max-w-95">
             <div className="mb-7">
               <h2 className="font-display font-medium text-[27px] mb-2">
                 Login
@@ -220,7 +221,11 @@ function Login() {
               <p className="text-sm text-ink-soft">
                 Not registered yet?{" "}
                 <Link
-                  to="/auth/register"
+                  to={
+                    redirectPath
+                      ? `/auth/register?redirect=${encodeURIComponent(redirectPath)}`
+                      : "/auth/register"
+                  }
                   className="text-mint-deep font-medium border-b border-transparent hover:border-mint-deep"
                 >
                   Register here
@@ -231,7 +236,7 @@ function Login() {
             {/* Error banner */}
             {error && (
               <div className="mb-4 flex items-start gap-2.5 p-3.5 rounded-xl bg-red-50 border border-red-200/80 text-red-800 text-[13px] leading-snug">
-                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
             )}
@@ -239,7 +244,7 @@ function Login() {
             {/* Success banner */}
             {success && (
               <div className="mb-4 flex items-start gap-2.5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[13px] leading-snug">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <span>{success} Redirecting to your dashboard...</span>
               </div>
             )}
@@ -369,7 +374,7 @@ function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 rounded-lg bg-teal-deep hover:bg-mint-deep active:scale-[0.99] transition-all text-paper text-[14.5px] font-semibold py-3.5 px-4.5 flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-2 rounded-lg bg-teal-deep hover:bg-mint-deep active:scale-[0.99] transition-all text-paper text-[14.5px] font-semibold py-3.5 px-4.5 flex items-center justify-center gap-2 enabled:cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

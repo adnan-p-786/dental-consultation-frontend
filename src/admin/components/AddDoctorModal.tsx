@@ -499,7 +499,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   <div className="flex items-center justify-between px-3 py-1.5 rounded-lg border border-teal-200 bg-teal-50/50 text-xs">
                     <div className="min-w-0 flex items-center gap-2">
                       <ImageIcon className="w-3.5 h-3.5 text-teal-deep shrink-0" />
-                      <span className="font-medium text-teal-deep truncate max-w-[180px] sm:max-w-[240px]">
+                      <span className="font-medium text-teal-deep truncate max-w-45 sm:max-w-60">
                         {photoFile ? photoFile.name : 'Current Profile Photo'}
                       </span>
                       {photoFile && (

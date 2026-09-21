@@ -369,7 +369,7 @@ export default function DoctorDashboard() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search patient, reference, treatment..."
-                  className="text-xs pl-9 pr-3 py-2 rounded-xl border border-line bg-paper/50 focus:bg-white focus:border-mint-deep outline-none w-full sm:w-64 transition-all"
+                  className="text-xs pl-9 pr-3 py-2 rounded-xl border border-line bg-paper/50 focus:bg-white focus:border-mint-deep focus:outline-none w-full sm:w-64 transition-all"
                 />
               </div>
 
@@ -650,7 +650,7 @@ export default function DoctorDashboard() {
                       setWorkspaceNotes((prev) => ({ ...prev, chiefComplaint: e.target.value }))
                     }
                     placeholder="Patient's reported dental symptoms, pain location, onset, or treatment inquiry..."
-                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep outline-none transition-colors"
+                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep focus:outline-none transition-colors"
                   />
                 </div>
 
@@ -666,7 +666,7 @@ export default function DoctorDashboard() {
                       setWorkspaceNotes((prev) => ({ ...prev, findings: e.target.value }))
                     }
                     placeholder="Clinical observations, tooth condition, soft tissue, occlusion, visual assessment..."
-                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep outline-none transition-colors"
+                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep focus:outline-none transition-colors"
                   />
                 </div>
 
@@ -682,7 +682,7 @@ export default function DoctorDashboard() {
                       setWorkspaceNotes((prev) => ({ ...prev, diagnosis: e.target.value }))
                     }
                     placeholder="Clinical assessment (e.g. Class I Malocclusion, Pulpal Necrosis #19, Missing #14)..."
-                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep outline-none transition-colors"
+                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep focus:outline-none transition-colors"
                   />
                 </div>
 
@@ -701,7 +701,7 @@ export default function DoctorDashboard() {
                       }))
                     }
                     placeholder="Recommended procedure, clear aligner plan, implant protocol, restoration..."
-                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep outline-none transition-colors"
+                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep focus:outline-none transition-colors"
                   />
                 </div>
 
@@ -720,7 +720,7 @@ export default function DoctorDashboard() {
                       }))
                     }
                     placeholder="Pre/post care instructions, oral hygiene recommendations, medication guidance..."
-                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep outline-none transition-colors"
+                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep focus:outline-none transition-colors"
                   />
                 </div>
 
@@ -739,7 +739,7 @@ export default function DoctorDashboard() {
                       }))
                     }
                     placeholder="Required follow-up visit timeline (e.g. In-clinic scan in 2 weeks, review in 1 month)..."
-                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep outline-none transition-colors"
+                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep focus:outline-none transition-colors"
                   />
                 </div>
 
@@ -761,7 +761,7 @@ export default function DoctorDashboard() {
                       }))
                     }
                     placeholder="Internal clinic observation, complexity rating, doctor notes..."
-                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep outline-none transition-colors"
+                    className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep focus:outline-none transition-colors"
                   />
                 </div>
               </div>

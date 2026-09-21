@@ -146,12 +146,15 @@ function Register() {
       }
 
       setSuccess(response.data?.message || "Account created successfully!");
+      toast.success("Registration successful");
 
       setTimeout(() => {
         if (redirectPath) {
           navigate(redirectPath);
         } else if (userType.toLowerCase() === "doctor") {
           navigate("/doctor/dashboard");
+        } else if (userType.toLowerCase() === "admin") {
+          navigate("/admin/dashboard");
         } else {
           navigate("/");
         }
@@ -165,7 +168,6 @@ function Register() {
       toast.error(serverError || "Registration failed");
     } finally {
       setLoading(false);
-      toast.success("Registration successful");
     }
   };
 
@@ -250,7 +252,11 @@ function Register() {
               <p className="text-sm text-ink-soft">
                 Already registered?{" "}
                 <Link
-                  to="/auth/login"
+                  to={
+                    redirectPath
+                      ? `/auth/login?redirect=${encodeURIComponent(redirectPath)}`
+                      : "/auth/login"
+                  }
                   className="text-mint-deep font-medium border-b border-transparent hover:border-mint-deep"
                 >
                   Log in instead
@@ -450,7 +456,7 @@ function Register() {
                   disabled={loading}
                   checked={formData.terms}
                   onChange={handleChange}
-                  className="mt-[3px] w-[15px] h-[15px] accent-mint-deep flex-shrink-0 cursor-pointer"
+                  className="mt-0.75 w-3.75 h-3.75 accent-mint-deep shrink-0 cursor-pointer"
                 />
                 <label
                   htmlFor="terms"
@@ -477,7 +483,7 @@ function Register() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-1.5 rounded-lg bg-teal-deep hover:bg-mint-deep active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed transition-all text-paper text-[14.5px] font-semibold py-3.5 px-4.5 flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                className="mt-1.5 rounded-lg bg-teal-deep hover:bg-mint-deep active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed transition-all text-paper text-[14.5px] font-semibold py-3.5 px-4.5 flex items-center justify-center gap-2 enabled:cursor-pointer shadow-xs"
               >
                 {loading ? (
                   <>

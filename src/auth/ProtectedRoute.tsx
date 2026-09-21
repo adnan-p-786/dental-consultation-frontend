@@ -4,12 +4,14 @@ import { useAuth, type UserRole } from "./AuthContext";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
-  allowedRoles: UserRole[];
+  allowedRoles?: UserRole[];
+  redirectTo?: string;
   children: React.ReactNode;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
+  redirectTo = "/auth/login",
   children,
 }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -36,17 +38,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated || !user) {
-    // Redirect unauthenticated user to login with redirect param
+    // Redirect unauthenticated user to registration or login with redirect param
     return (
       <Navigate
-        to={`/auth/login?redirect=${encodeURIComponent(location.pathname)}`}
+        to={`${redirectTo}?redirect=${encodeURIComponent(location.pathname)}`}
         replace
       />
     );
   }
 
   // If user role is not allowed on this route, redirect to their role-specific home
-  if (!allowedRoles.includes(user.role)) {
+  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     if (user.role === "admin") {
       return <Navigate to="/admin/dashboard" replace />;
     }

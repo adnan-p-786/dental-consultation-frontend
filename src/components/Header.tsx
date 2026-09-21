@@ -27,6 +27,7 @@ function Header() {
   const location = useLocation();
   const pathname = location.pathname;
   const { user, isAuthenticated, logout, isAdmin, isDoctor } = useAuth();
+  const isPatient = isAuthenticated && !isAdmin && !isDoctor;
 
   const isLinkActive = (href: string) => {
     if (href === "/") {
@@ -63,20 +64,19 @@ function Header() {
         </div>
       </div>
 
-      {/* Main navigation bar */}
-      <div className="bg-white/90 backdrop-blur-md border-b border-line/80 shadow-[0_2px_12px_rgba(16,56,50,0.03)]">
+      {/* Main Navigation Bar */}
+      <div className="bg-white/95 backdrop-blur-md border-b border-line/80 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-          {/* Brand logo */}
+          {/* Brand Logo */}
           <Link
             to="/"
-            className="flex items-center gap-3 group focus:outline-none"
-            aria-label="Cedarview Dental Home"
+            className="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-mint-deep rounded-xl p-1"
           >
-            <div className="w-10 h-10 rounded-xl bg-teal-deep flex items-center justify-center text-paper shadow-xs group-hover:bg-mint-deep transition-all duration-200 group-hover:scale-105">
+            <div className="w-10 h-10 rounded-2xl bg-teal-deep flex items-center justify-center text-[#EFF6F2] shadow-xs group-hover:bg-mint-deep transition-colors duration-200">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
-                className="w-5 h-5 text-[#EFF6F2]"
+                className="w-5 h-5 text-mint"
               >
                 <path
                   d="M12 3C8.5 3 6 5.2 6 8.6c0 2.6.7 4.3 1.3 6.6.5 1.9.9 4.4 2 5.5.5.5 1.1.3 1.4-.4.5-1.2.6-3.4 1.3-3.4s.8 2.2 1.3 3.4c.3.7.9.9 1.4.4 1.1-1.1 1.5-3.6 2-5.5.6-2.3 1.3-4 1.3-6.6C18 5.2 15.5 3 12 3z"
@@ -140,11 +140,20 @@ function Header() {
                     <span>Doctor Dashboard</span>
                   </Link>
                 )}
-                {!isAdmin && !isDoctor && (
-                  <span className="flex items-center gap-1.5 text-[13.5px] text-ink font-medium px-2 py-1 bg-line-soft/60 rounded-lg">
-                    <User className="w-3.5 h-3.5 text-teal-deep" />
-                    <span>{user?.firstName}</span>
-                  </span>
+                {isPatient && (
+                  <>
+                    <span className="hidden lg:flex items-center gap-1.5 text-[13.5px] text-ink font-medium px-2.5 py-1.5 bg-line-soft/60 rounded-xl">
+                      <User className="w-3.5 h-3.5 text-teal-deep" />
+                      <span>{user?.firstName}</span>
+                    </span>
+                    <Link
+                      to="/patient/portal"
+                      className="flex items-center gap-1.5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] transition-all text-paper text-[13.5px] font-semibold py-2 px-3.5 shadow-xs"
+                    >
+                      <Calendar className="w-4 h-4 text-mint" />
+                      <span>My Appointments</span>
+                    </Link>
+                  </>
                 )}
                 <button
                   onClick={() => logout()}
@@ -269,6 +278,16 @@ function Header() {
                   >
                     <Stethoscope className="w-4 h-4 text-mint" />
                     <span>Doctor Dashboard</span>
+                  </Link>
+                )}
+                {isPatient && (
+                  <Link
+                    to="/patient/portal"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-teal-deep text-white text-[14px] font-semibold shadow-xs"
+                  >
+                    <Calendar className="w-4 h-4 text-mint" />
+                    <span>My Appointments ({user?.firstName})</span>
                   </Link>
                 )}
                 <button

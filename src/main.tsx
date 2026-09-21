@@ -10,10 +10,12 @@ import Contact from "./pages/Contact.tsx";
 import About from "./pages/About.tsx";
 import DashboardDoctor from "./doctor/pages/Dashboard.tsx";
 import DashboardAdmin from "./admin/pages/Dashboard.tsx";
+import PatientPortal from "./patient/pages/PatientPortal.tsx";
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import { ProtectedRoute } from "./auth/ProtectedRoute.tsx";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Appointment from "./pages/Appointment.tsx";
 
 const router = createBrowserRouter([
   {
@@ -25,6 +27,28 @@ const router = createBrowserRouter([
   { path: "/contact", element: <Contact /> },
   { path: "/auth/login", element: <Login /> },
   { path: "/auth/register", element: <Register /> },
+  {
+    path: "/appointment",
+    element: (
+      <ProtectedRoute
+        allowedRoles={["patient", "admin", "doctor"]}
+        redirectTo="/auth/register"
+      >
+        <Appointment />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/appointments",
+    element: (
+      <ProtectedRoute
+        allowedRoles={["patient", "admin", "doctor"]}
+        redirectTo="/auth/register"
+      >
+        <Appointment />
+      </ProtectedRoute>
+    ),
+  },
   {
     path: "/doctor/dashboard",
     element: (
@@ -38,6 +62,22 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={["admin"]}>
         <DashboardAdmin />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/patient/portal",
+    element: (
+      <ProtectedRoute allowedRoles={["patient", "admin"]}>
+        <PatientPortal />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/patient/dashboard",
+    element: (
+      <ProtectedRoute allowedRoles={["patient", "admin"]}>
+        <PatientPortal />
       </ProtectedRoute>
     ),
   },

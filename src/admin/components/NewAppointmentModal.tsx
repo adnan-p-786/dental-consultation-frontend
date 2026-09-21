@@ -232,7 +232,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               placeholder="Describe symptoms, requirements, or reason for booking..."
               value={patientMessage}
               onChange={(e) => setPatientMessage(e.target.value)}
-              className="w-full text-xs p-2.5 rounded-lg border border-line bg-white text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
+              className="w-full text-xs p-2.5 rounded-lg border border-line bg-white text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 focus:outline-none"
             />
           </div>
 

@@ -993,7 +993,7 @@ function Dashboard() {
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => handleUpdateStatus(apt.id, 'cancelled', 'Cancelled by admin.')}
-                                  className="text-red-600 focus:text-red-700"
+                                  className="text-red-600"
                                 >
                                   <XCircle className="w-3.5 h-3.5 mr-2" /> Cancel Booking
                                 </DropdownMenuItem>

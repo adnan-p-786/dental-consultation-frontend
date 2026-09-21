@@ -62,24 +62,6 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             <Menu className="h-5 w-5" />
           </button>
         )}
-        <div className="relative flex items-center w-full min-w-0">
-          <Search className="absolute left-3 h-3.5 w-3.5 sm:left-3.5 sm:h-4 sm:w-4 text-ink-soft/60" />
-          <Input
-            type="text"
-            placeholder="Search patient, doctor, ID..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-8 sm:pl-9 h-9 sm:h-10 w-full bg-[#F9FCFA] border-line focus-visible:bg-white text-xs sm:text-sm"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => onSearchChange('')}
-              className="absolute right-2.5 sm:right-3 text-xs text-ink-soft hover:text-ink cursor-pointer"
-            >
-              Clear
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Right controls */}
