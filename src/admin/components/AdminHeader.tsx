@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Search,
   Bell,
@@ -8,10 +8,10 @@ import {
   CheckCircle2,
   Video,
   Menu,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,8 +19,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import type { Appointment } from '../types';
+} from "@/components/ui/dropdown-menu";
+import type { Appointment } from "../types";
 
 interface AdminHeaderProps {
   searchQuery: string;
@@ -40,11 +40,11 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   onOpenMobileMenu,
 }) => {
   const [activeDate] = useState(() => {
-    return new Date().toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date().toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   });
 
@@ -93,7 +93,9 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80 p-2">
             <DropdownMenuLabel className="flex items-center justify-between py-2">
-              <span className="font-semibold text-sm text-ink">Appointment Requests</span>
+              <span className="font-semibold text-sm text-ink">
+                Appointment Requests
+              </span>
               <Badge variant="requested" className="text-[10px]">
                 {pendingAppointments.length} pending
               </Badge>
@@ -114,8 +116,12 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                     className="flex flex-col items-start gap-1 p-2.5 rounded-lg cursor-pointer hover:bg-line-soft transition-colors"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-semibold text-xs text-ink">{apt.patient.name}</span>
-                      <span className="text-[10px] font-mono text-ink-soft">{apt.referenceNo}</span>
+                      <span className="font-semibold text-xs text-ink">
+                        {apt.patient.name}
+                      </span>
+                      <span className="text-[10px] font-mono text-ink-soft">
+                        {apt.referenceNo}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-[11px] text-ink-soft">
                       <Clock className="w-3 h-3 text-mint-deep" />
@@ -127,7 +133,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-medium">
                         {apt.treatment}
                       </span>
-                      {apt.consultationType === 'video' && (
+                      {apt.consultationType === "video" && (
                         <span className="flex items-center gap-1 text-[10px] text-teal-deep font-medium">
                           <Video className="w-2.5 h-2.5" /> Video
                         </span>

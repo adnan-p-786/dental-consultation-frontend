@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Phone,
   Mail,
@@ -9,13 +9,13 @@ import {
   Plus,
   Trash2,
   Pencil,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card } from '@/components/ui/card';
-import { AddDoctorModal } from './AddDoctorModal';
-import type { Doctor } from '../types';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
+import { AddDoctorModal } from "./AddDoctorModal";
+import type { Doctor } from "../types";
 
 interface DoctorManagementViewProps {
   doctors: Doctor[];
@@ -32,15 +32,22 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
   onUpdateDoctor,
   onDeleteDoctor,
 }) => {
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string>('all');
+  const [selectedSpecialty, setSelectedSpecialty] = useState<string>("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
 
-  const specialties = ['all', ...Array.from(new Set(doctors.map((d) => d.specialization.split('&')[0].trim())))];
+  const specialties = [
+    "all",
+    ...Array.from(
+      new Set(doctors.map((d) => d.specialization.split("&")[0].trim())),
+    ),
+  ];
 
   const filteredDoctors = doctors.filter((doc) => {
-    if (selectedSpecialty === 'all') return true;
-    return doc.specialization.toLowerCase().includes(selectedSpecialty.toLowerCase());
+    if (selectedSpecialty === "all") return true;
+    return doc.specialization
+      .toLowerCase()
+      .includes(selectedSpecialty.toLowerCase());
   });
 
   return (
@@ -52,7 +59,8 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
             Doctor & Availability Management
           </h3>
           <p className="text-xs text-ink-soft mt-1">
-            Configure working hours, availability schedules, and room assignments for dental providers.
+            Configure working hours, availability schedules, and room
+            assignments for dental providers.
           </p>
         </div>
 
@@ -61,13 +69,14 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-paper border border-line text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <span className="font-semibold text-ink">
-                {doctors.filter((d) => d.status === 'available').length} Available
+                {doctors.filter((d) => d.status === "available").length}{" "}
+                Available
               </span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-paper border border-line text-xs">
               <span className="w-2 h-2 rounded-full bg-amber-500" />
               <span className="font-semibold text-ink">
-                {doctors.filter((d) => d.status === 'busy').length} In Session
+                {doctors.filter((d) => d.status === "busy").length} In Session
               </span>
             </div>
           </div>
@@ -90,15 +99,17 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
       {/* Specialty Filter */}
       {specialties.length > 1 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-ink-soft mr-1">Specialty:</span>
+          <span className="text-xs font-semibold text-ink-soft mr-1">
+            Specialty:
+          </span>
           {specialties.map((spec) => (
             <button
               key={spec}
               onClick={() => setSelectedSpecialty(spec)}
               className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer ${
                 selectedSpecialty === spec
-                  ? 'bg-teal-deep text-white shadow-xs'
-                  : 'bg-white text-ink-soft border border-line hover:border-mint-deep'
+                  ? "bg-teal-deep text-white shadow-xs"
+                  : "bg-white text-ink-soft border border-line hover:border-mint-deep"
               }`}
             >
               {spec}
@@ -115,9 +126,13 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
               <User className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h4 className="font-semibold text-base text-ink">No Doctors Registered</h4>
+              <h4 className="font-semibold text-base text-ink">
+                No Doctors Registered
+              </h4>
               <p className="text-xs text-ink-soft max-w-sm mx-auto">
-                There are currently no doctor profiles in the database. When dental providers are added, their profiles, working hours, and schedules will appear here.
+                There are currently no doctor profiles in the database. When
+                dental providers are added, their profiles, working hours, and
+                schedules will appear here.
               </p>
             </div>
             {onAddDoctor && (
@@ -146,17 +161,25 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
                   <Avatar className="w-14 h-14 border-2 border-line-soft shrink-0">
                     <AvatarImage src={doc.avatar} />
                     <AvatarFallback className="bg-teal-50 text-teal-deep font-bold">
-                      {doc.name.replace('Dr. ', '').slice(0, 2).toUpperCase()}
+                      {doc.name.replace("Dr. ", "").slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <h4 className="font-semibold text-sm text-ink truncate">{doc.name}</h4>
-                    <p className="text-xs text-mint-deep font-medium truncate">{doc.specialization}</p>
+                    <h4 className="font-semibold text-sm text-ink truncate">
+                      {doc.name}
+                    </h4>
+                    <p className="text-xs text-mint-deep font-medium truncate">
+                      {doc.specialization}
+                    </p>
                     {doc.rating && (
                       <div className="flex items-center gap-1 mt-0.5">
                         <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                        <span className="text-[11px] font-bold text-ink">{doc.rating}</span>
-                        <span className="text-[10px] text-ink-soft">(50+ consultations)</span>
+                        <span className="text-[11px] font-bold text-ink">
+                          {doc.rating}
+                        </span>
+                        <span className="text-[10px] text-ink-soft">
+                          (50+ consultations)
+                        </span>
                       </div>
                     )}
                   </div>
@@ -164,15 +187,15 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
 
                 <Badge
                   variant={
-                    doc.status === 'available'
-                      ? 'approved'
-                      : doc.status === 'busy'
-                      ? 'requested'
-                      : 'no_show'
+                    doc.status === "available"
+                      ? "approved"
+                      : doc.status === "busy"
+                        ? "requested"
+                        : "no_show"
                   }
                   className="text-[10px] capitalize font-bold"
                 >
-                  {doc.status.replace('_', ' ')}
+                  {doc.status.replace("_", " ")}
                 </Badge>
               </div>
 
@@ -183,7 +206,9 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
                     <Clock className="w-3.5 h-3.5 text-mint-deep" />
                     Hours:
                   </span>
-                  <span className="font-medium text-ink">{doc.workingHours}</span>
+                  <span className="font-medium text-ink">
+                    {doc.workingHours}
+                  </span>
                 </div>
                 {doc.room && (
                   <div className="flex items-center justify-between text-ink-soft">

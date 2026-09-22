@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 export default function Contact() {
   const { user } = useAuth();
@@ -66,20 +67,46 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+    if (
+      !formData.name.trim() ||
+      !formData.email.trim() ||
+      !formData.phone.trim() ||
+      !formData.message.trim()
+    ) {
       toast.error("Please fill in all required fields.");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      // Simulate network request for contact inquiry
-      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      setSubmitted(true);
-      toast.success("Thank you! Your message has been sent to our care desk.");
-    } catch (err) {
-      toast.error("Failed to send message. Please try again or call us directly.");
+      const response = await axios.post("/api/contact/create-contact", {
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phoneNumber: formData.phone.trim(),
+        phone: formData.phone.trim(),
+        subject: formData.subject,
+        message: formData.message.trim(),
+      });
+
+      if (response.data?.success) {
+        setSubmitted(true);
+        toast.success(
+          response.data.toast ||
+            "Thank you! Your message has been sent to our care desk."
+        );
+      } else {
+        toast.error(
+          response.data?.message || "Failed to send message. Please try again."
+        );
+      }
+    } catch (err: any) {
+      console.error("Contact form submission error:", err);
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to send message. Please try again or call us directly.";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -332,7 +359,7 @@ export default function Contact() {
                       htmlFor="phone"
                       className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5"
                     >
-                      Phone Number
+                      Phone Number <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="tel"
@@ -340,6 +367,7 @@ export default function Contact() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
+                      required
                       placeholder="+91 98765 43210"
                       className="w-full text-sm px-4 py-3 rounded-xl border border-line bg-paper/30 text-ink outline-none transition-colors placeholder:text-ink-soft/50 focus:border-mint-deep focus:bg-white focus:ring-4 focus:ring-mint-deep/15"
                     />

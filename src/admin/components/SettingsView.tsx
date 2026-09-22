@@ -1,15 +1,9 @@
-import React, { useState } from 'react';
-import {
-  Bell,
-  Video,
-  Check,
-  Building,
-  Save,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { defaultSettings } from '../data/mockData';
+import React, { useState } from "react";
+import { Bell, Video, Check, Building, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { defaultSettings } from "../data/mockData";
 
 export const SettingsView: React.FC = () => {
   const [settings, setSettings] = useState(defaultSettings);
@@ -30,7 +24,8 @@ export const SettingsView: React.FC = () => {
             Admin & Clinic Configuration
           </h3>
           <p className="text-xs text-ink-soft mt-1">
-            Global scheduling rules, video meeting integrations, and patient email reminder triggers.
+            Global scheduling rules, video meeting integrations, and patient
+            email reminder triggers.
           </p>
         </div>
 
@@ -38,8 +33,12 @@ export const SettingsView: React.FC = () => {
           type="submit"
           className="gap-2 bg-teal-deep text-white hover:bg-teal-mid text-xs h-9 shadow-xs"
         >
-          {saved ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Save className="w-3.5 h-3.5" />}
-          {saved ? 'Changes Saved!' : 'Save Settings'}
+          {saved ? (
+            <Check className="w-3.5 h-3.5 text-emerald-300" />
+          ) : (
+            <Save className="w-3.5 h-3.5" />
+          )}
+          {saved ? "Changes Saved!" : "Save Settings"}
         </Button>
       </div>
 
@@ -53,45 +52,61 @@ export const SettingsView: React.FC = () => {
         </CardHeader>
         <CardContent className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-ink">Clinic Name</label>
+            <label className="text-xs font-semibold text-ink">
+              Clinic Name
+            </label>
             <Input
               value={settings.clinicName}
-              onChange={(e) => setSettings({ ...settings, clinicName: e.target.value })}
+              onChange={(e) =>
+                setSettings({ ...settings, clinicName: e.target.value })
+              }
               className="text-xs"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-ink">Support Email for Confirmations</label>
+            <label className="text-xs font-semibold text-ink">
+              Support Email for Confirmations
+            </label>
             <Input
               type="email"
               value={settings.supportEmail}
-              onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
+              onChange={(e) =>
+                setSettings({ ...settings, supportEmail: e.target.value })
+              }
               className="text-xs"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-ink">Clinic Hotline Phone</label>
+            <label className="text-xs font-semibold text-ink">
+              Clinic Hotline Phone
+            </label>
             <Input
               value={settings.clinicPhone}
-              onChange={(e) => setSettings({ ...settings, clinicPhone: e.target.value })}
+              onChange={(e) =>
+                setSettings({ ...settings, clinicPhone: e.target.value })
+              }
               className="text-xs"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-ink">Default Consultation Duration</label>
+            <label className="text-xs font-semibold text-ink">
+              Default Consultation Duration
+            </label>
             <div className="flex items-center gap-2">
               {[30, 45, 60].map((mins) => (
                 <button
                   type="button"
                   key={mins}
-                  onClick={() => setSettings({ ...settings, defaultDuration: mins })}
+                  onClick={() =>
+                    setSettings({ ...settings, defaultDuration: mins })
+                  }
                   className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
                     settings.defaultDuration === mins
-                      ? 'bg-teal-deep text-white border-teal-deep shadow-xs'
-                      : 'bg-white text-ink-soft border-line hover:border-mint-deep'
+                      ? "bg-teal-deep text-white border-teal-deep shadow-xs"
+                      : "bg-white text-ink-soft border-line hover:border-mint-deep"
                   }`}
                 >
                   {mins} mins
@@ -112,7 +127,8 @@ export const SettingsView: React.FC = () => {
         </CardHeader>
         <CardContent className="pt-4 space-y-4">
           <p className="text-xs text-ink-soft">
-            Supported video consultation platforms for remote patient assessments.
+            Supported video consultation platforms for remote patient
+            assessments.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -123,7 +139,9 @@ export const SettingsView: React.FC = () => {
                   Connected
                 </span>
               </div>
-              <p className="text-[11px] text-ink-soft">Auto-generates Google Meet room on approval.</p>
+              <p className="text-[11px] text-ink-soft">
+                Auto-generates Google Meet room on approval.
+              </p>
             </div>
 
             <div className="p-3.5 rounded-xl border border-line bg-[#FAFDFC] space-y-1.5">
@@ -133,17 +151,23 @@ export const SettingsView: React.FC = () => {
                   Active
                 </span>
               </div>
-              <p className="text-[11px] text-ink-soft">Generates unique meeting ID with passcode.</p>
+              <p className="text-[11px] text-ink-soft">
+                Generates unique meeting ID with passcode.
+              </p>
             </div>
 
             <div className="p-3.5 rounded-xl border border-line bg-[#FAFDFC] space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-ink">Microsoft Teams</span>
+                <span className="text-xs font-bold text-ink">
+                  Microsoft Teams
+                </span>
                 <span className="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.5 rounded">
                   Enabled
                 </span>
               </div>
-              <p className="text-[11px] text-ink-soft">Enterprise tenant video link dispatching.</p>
+              <p className="text-[11px] text-ink-soft">
+                Enterprise tenant video link dispatching.
+              </p>
             </div>
           </div>
         </CardContent>
@@ -160,32 +184,46 @@ export const SettingsView: React.FC = () => {
         <CardContent className="pt-4 space-y-3">
           <div className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#FAFDFC]">
             <div>
-              <span className="text-xs font-bold text-ink block">Instant Request Acknowledgement</span>
+              <span className="text-xs font-bold text-ink block">
+                Instant Request Acknowledgement
+              </span>
               <span className="text-[11px] text-ink-soft">
-                Sends automated email with appointment reference code immediately upon patient submission.
+                Sends automated email with appointment reference code
+                immediately upon patient submission.
               </span>
             </div>
-            <span className="text-xs font-semibold text-emerald-700">Enabled</span>
+            <span className="text-xs font-semibold text-emerald-700">
+              Enabled
+            </span>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#FAFDFC]">
             <div>
-              <span className="text-xs font-bold text-ink block">24-Hour Prior Consultation Reminder</span>
+              <span className="text-xs font-bold text-ink block">
+                24-Hour Prior Consultation Reminder
+              </span>
               <span className="text-[11px] text-ink-soft">
-                Sends email with preparation tips and meeting joining link 24 hours in advance.
+                Sends email with preparation tips and meeting joining link 24
+                hours in advance.
               </span>
             </div>
-            <span className="text-xs font-semibold text-emerald-700">Enabled</span>
+            <span className="text-xs font-semibold text-emerald-700">
+              Enabled
+            </span>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#FAFDFC]">
             <div>
-              <span className="text-xs font-bold text-ink block">1-Hour Prior Direct SMS / Email Ping</span>
+              <span className="text-xs font-bold text-ink block">
+                1-Hour Prior Direct SMS / Email Ping
+              </span>
               <span className="text-[11px] text-ink-soft">
                 Urgent reminder with one-click direct consultation room URL.
               </span>
             </div>
-            <span className="text-xs font-semibold text-emerald-700">Enabled</span>
+            <span className="text-xs font-semibold text-emerald-700">
+              Enabled
+            </span>
           </div>
         </CardContent>
       </Card>

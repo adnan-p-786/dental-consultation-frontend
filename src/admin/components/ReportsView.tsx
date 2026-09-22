@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Download,
   TrendingUp,
@@ -6,27 +6,28 @@ import {
   XCircle,
   Video,
   Activity,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Appointment, Doctor } from '../types';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Appointment, Doctor } from "../types";
 
 interface ReportsViewProps {
   appointments: Appointment[];
   doctors?: Doctor[];
 }
 
-export const ReportsView: React.FC<ReportsViewProps> = ({
-  appointments,
-}) => {
+export const ReportsView: React.FC<ReportsViewProps> = ({ appointments }) => {
   const total = appointments.length;
-  const completed = appointments.filter((a) => a.status === 'completed').length;
-  const approved = appointments.filter((a) => a.status === 'approved').length;
-  const cancelled = appointments.filter((a) => a.status === 'cancelled').length;
-  const noShow = appointments.filter((a) => a.status === 'no_show').length;
-  const videoCalls = appointments.filter((a) => a.consultationType === 'video').length;
+  const completed = appointments.filter((a) => a.status === "completed").length;
+  const approved = appointments.filter((a) => a.status === "approved").length;
+  const cancelled = appointments.filter((a) => a.status === "cancelled").length;
+  const noShow = appointments.filter((a) => a.status === "no_show").length;
+  const videoCalls = appointments.filter(
+    (a) => a.consultationType === "video",
+  ).length;
 
-  const completionRate = total > 0 ? Math.round(((completed + approved) / total) * 100) : 0;
+  const completionRate =
+    total > 0 ? Math.round(((completed + approved) / total) * 100) : 0;
   const cancelRate = total > 0 ? Math.round((cancelled / total) * 100) : 0;
 
   // Breakdown by treatment
@@ -35,17 +36,32 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     treatmentCounts[apt.treatment] = (treatmentCounts[apt.treatment] || 0) + 1;
   });
 
-  const treatmentData = Object.entries(treatmentCounts).sort((a, b) => b[1] - a[1]);
+  const treatmentData = Object.entries(treatmentCounts).sort(
+    (a, b) => b[1] - a[1],
+  );
 
   // Breakdown by doctor
   const doctorCounts: Record<string, number> = {};
   appointments.forEach((apt) => {
-    const docName = apt.assignedDoctor ? apt.assignedDoctor.name.split(',')[0] : 'Unassigned';
+    const docName = apt.assignedDoctor
+      ? apt.assignedDoctor.name.split(",")[0]
+      : "Unassigned";
     doctorCounts[docName] = (doctorCounts[docName] || 0) + 1;
   });
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Reference', 'Patient Name', 'Email', 'Phone', 'Treatment', 'Date', 'Time', 'Doctor', 'Status'];
+    const headers = [
+      "ID",
+      "Reference",
+      "Patient Name",
+      "Email",
+      "Phone",
+      "Treatment",
+      "Date",
+      "Time",
+      "Doctor",
+      "Status",
+    ];
     const rows = appointments.map((a) => [
       a.id,
       a.referenceNo,
@@ -55,15 +71,20 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       `"${a.treatment}"`,
       a.confirmedDate || a.requestedDate,
       a.confirmedTime || a.requestedTime,
-      `"${a.assignedDoctor ? a.assignedDoctor.name : 'Unassigned'}"`,
+      `"${a.assignedDoctor ? a.assignedDoctor.name : "Unassigned"}"`,
       a.status,
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Cedarview_Appointments_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `Cedarview_Appointments_Report_${new Date().toISOString().split("T")[0]}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -78,7 +99,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             Clinical & Appointment Analytics
           </h3>
           <p className="text-xs text-ink-soft mt-1">
-            Comprehensive audit reports, consultation outcomes, and treatment volume distributions.
+            Comprehensive audit reports, consultation outcomes, and treatment
+            volume distributions.
           </p>
         </div>
 
@@ -158,7 +180,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 return (
                   <div key={treatment} className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-ink">{treatment}</span>
+                      <span className="font-semibold text-ink">
+                        {treatment}
+                      </span>
                       <span className="text-ink-soft font-mono">
                         {count} ({percentage}%)
                       </span>

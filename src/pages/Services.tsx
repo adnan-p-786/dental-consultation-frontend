@@ -1068,7 +1068,7 @@ export default function Services() {
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
-                to="/auth/register?redirect=/appointments/new"
+                to="/appointment"
                 className="px-6 py-3 rounded-xl bg-mint text-[#0C2420] text-sm font-semibold hover:bg-[#5EC29F] transition-colors flex items-center gap-2"
               >
                 <span>Request an appointment</span>

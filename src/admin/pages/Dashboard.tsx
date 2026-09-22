@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from "react";
 import {
   MoreVertical,
   CheckCircle2,
@@ -9,9 +9,9 @@ import {
   Eye,
   CalendarCheck,
   Check,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -19,26 +19,31 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { AdminSidebar, type AdminTab } from '../components/AdminSidebar';
-import { AdminHeader } from '../components/AdminHeader';
-import { AppointmentDetailModal } from '../components/AppointmentDetailModal';
-import { NewAppointmentModal } from '../components/NewAppointmentModal';
-import { AppointmentCalendarView } from '../components/AppointmentCalendarView';
-import { DoctorManagementView } from '../components/DoctorManagementView';
-import { ReportsView } from '../components/ReportsView';
-import { SettingsView } from '../components/SettingsView';
-import { initialAppointments, initialDoctors } from '../data/mockData';
-import type { Appointment, AppointmentStatus, Doctor, TreatmentType } from '../types';
-import { appointmentService } from '@/lib/appointmentService';
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AdminSidebar, type AdminTab } from "../components/AdminSidebar";
+import { AdminHeader } from "../components/AdminHeader";
+import { AppointmentDetailModal } from "../components/AppointmentDetailModal";
+import { NewAppointmentModal } from "../components/NewAppointmentModal";
+import { AppointmentCalendarView } from "../components/AppointmentCalendarView";
+import { DoctorManagementView } from "../components/DoctorManagementView";
+import { ReportsView } from "../components/ReportsView";
+import { SettingsView } from "../components/SettingsView";
+import { initialAppointments, initialDoctors } from "../data/mockData";
+import type {
+  Appointment,
+  AppointmentStatus,
+  Doctor,
+  TreatmentType,
+} from "../types";
+import { appointmentService } from "@/lib/appointmentService";
 
 function Dashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
@@ -56,13 +61,14 @@ function Dashboard() {
     const handleSync = () => {
       setAppointments(appointmentService.getAppointments());
     };
-    window.addEventListener('dental_appointments_updated', handleSync);
-    return () => window.removeEventListener('dental_appointments_updated', handleSync);
+    window.addEventListener("dental_appointments_updated", handleSync);
+    return () =>
+      window.removeEventListener("dental_appointments_updated", handleSync);
   }, []);
 
   const [doctors, setDoctors] = useState<Doctor[]>(() => {
     try {
-      const saved = localStorage.getItem('dental_doctors_v1');
+      const saved = localStorage.getItem("dental_doctors_v1");
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
@@ -73,7 +79,7 @@ function Dashboard() {
   // Sync doctors to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('dental_doctors_v1', JSON.stringify(doctors));
+      localStorage.setItem("dental_doctors_v1", JSON.stringify(doctors));
     } catch (e) {}
   }, [doctors]);
 
@@ -85,47 +91,50 @@ function Dashboard() {
 
         // 1. Fetch from doctor table
         try {
-          const docRes = await fetch('/api/doctor/get-doctors');
+          const docRes = await fetch("/api/doctor/get-doctors");
           if (docRes.ok) {
             const docResult = await docRes.json();
             if (docResult.success && Array.isArray(docResult.data)) {
               const tableDoctors: Doctor[] = docResult.data.map((d: any) => ({
                 id: String(d.id),
                 name: d.doctorName,
-                avatar: d.doctorPhoto || '',
+                avatar: d.doctorPhoto || "",
                 specialization: d.specialization,
                 email: d.doctorEmail,
                 phone: d.phoneNumber,
                 workingHours: d.workingHours,
-                status: (d.status as 'available' | 'busy' | 'on_leave') || 'available',
+                status:
+                  (d.status as "available" | "busy" | "on_leave") ||
+                  "available",
                 activeAppointments: 0,
               }));
               fetchedDoctors.push(...tableDoctors);
             }
           }
         } catch (e) {
-          console.error('Failed to fetch doctor table records:', e);
+          console.error("Failed to fetch doctor table records:", e);
         }
 
         // 2. Fetch from users table (role=doctor)
         try {
-          const res = await fetch('/api/users/doctors');
+          const res = await fetch("/api/users/doctors");
           if (res.ok) {
             const result = await res.json();
             if (result.success && Array.isArray(result.data)) {
               const apiDoctors: Doctor[] = result.data.map((u: any) => {
-                const fullName = `Dr. ${u.firstName.charAt(0).toUpperCase() + u.firstName.slice(1)} ${
-                  u.lastName ? u.lastName.toUpperCase() : ''
-                }`.trim();
+                const fullName =
+                  `Dr. ${u.firstName.charAt(0).toUpperCase() + u.firstName.slice(1)} ${
+                    u.lastName ? u.lastName.toUpperCase() : ""
+                  }`.trim();
                 return {
                   id: `user-${u.id}`,
                   name: fullName,
                   avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.firstName}`,
-                  specialization: 'General Dental Consultation & Surgery',
+                  specialization: "General Dental Consultation & Surgery",
                   email: u.email,
-                  phone: u.phoneNumber || '+1 (555) 234-CARE',
-                  workingHours: '08:00 AM - 05:00 PM',
-                  status: 'available',
+                  phone: u.phoneNumber || "+1 (555) 234-CARE",
+                  workingHours: "08:00 AM - 05:00 PM",
+                  status: "available",
                   activeAppointments: 0,
                 };
               });
@@ -133,7 +142,7 @@ function Dashboard() {
             }
           }
         } catch (e) {
-          console.error('Failed to fetch users doctors:', e);
+          console.error("Failed to fetch users doctors:", e);
         }
 
         if (fetchedDoctors.length > 0) {
@@ -144,24 +153,29 @@ function Dashboard() {
           });
         }
       } catch (err) {
-        console.error('Failed to fetch doctors:', err);
+        console.error("Failed to fetch doctors:", err);
       }
     };
 
     fetchRegisteredDoctors();
   }, []);
-  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Search & Filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
-  const [selectedDoctorFilter, setSelectedDoctorFilter] = useState<string>('all');
-  const [appointmentViewMode, setAppointmentViewMode] = useState<'table' | 'calendar'>('table');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatusFilter, setSelectedStatusFilter] =
+    useState<string>("all");
+  const [selectedDoctorFilter, setSelectedDoctorFilter] =
+    useState<string>("all");
+  const [appointmentViewMode, setAppointmentViewMode] = useState<
+    "table" | "calendar"
+  >("table");
 
   // Modals state
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
@@ -175,22 +189,36 @@ function Dashboard() {
 
   // KPIs calculation as required by PDF Page 3
   const kpis = useMemo(() => {
-    const todayDate = '2026-09-17';
+    const todayDate = "2026-09-17";
     return {
-      newRequests: appointments.filter((a) => a.status === 'requested' || a.status === 'pending').length,
+      newRequests: appointments.filter(
+        (a) => a.status === "requested" || a.status === "pending",
+      ).length,
       pendingApprovals: appointments.filter(
-        (a) => a.status === 'requested' || a.status === 'pending' || a.status === 'under_review'
+        (a) =>
+          a.status === "requested" ||
+          a.status === "pending" ||
+          a.status === "under_review",
       ).length,
       todayAppointments: appointments.filter(
-        (a) => (a.confirmedDate || a.requestedDate) === todayDate && a.status === 'approved'
+        (a) =>
+          (a.confirmedDate || a.requestedDate) === todayDate &&
+          a.status === "approved",
       ).length,
       upcomingAppointments: appointments.filter(
-        (a) => a.status === 'approved' || a.status === 'proposed'
+        (a) => a.status === "approved" || a.status === "proposed",
       ).length,
-      completedConsultations: appointments.filter((a) => a.status === 'completed').length,
-      cancelledAppointments: appointments.filter((a) => a.status === 'cancelled').length,
-      reschedulingRequests: appointments.filter((a) => a.status === 'reschedule_requested').length,
-      noShowAppointments: appointments.filter((a) => a.status === 'no_show').length,
+      completedConsultations: appointments.filter(
+        (a) => a.status === "completed",
+      ).length,
+      cancelledAppointments: appointments.filter(
+        (a) => a.status === "cancelled",
+      ).length,
+      reschedulingRequests: appointments.filter(
+        (a) => a.status === "reschedule_requested",
+      ).length,
+      noShowAppointments: appointments.filter((a) => a.status === "no_show")
+        .length,
     };
   }, [appointments]);
 
@@ -205,25 +233,39 @@ function Dashboard() {
         const matchesPhone = apt.patient.phone.toLowerCase().includes(query);
         const matchesRef = apt.referenceNo.toLowerCase().includes(query);
         const matchesTreatment = apt.treatment.toLowerCase().includes(query);
-        const matchesDoc = apt.assignedDoctor?.name.toLowerCase().includes(query);
-        if (!matchesName && !matchesEmail && !matchesPhone && !matchesRef && !matchesTreatment && !matchesDoc) {
+        const matchesDoc = apt.assignedDoctor?.name
+          .toLowerCase()
+          .includes(query);
+        if (
+          !matchesName &&
+          !matchesEmail &&
+          !matchesPhone &&
+          !matchesRef &&
+          !matchesTreatment &&
+          !matchesDoc
+        ) {
           return false;
         }
       }
 
       // Status filter
-      if (selectedStatusFilter !== 'all') {
-        if (selectedStatusFilter === 'pending') {
-          if (apt.status !== 'pending' && apt.status !== 'requested') return false;
-        } else if (selectedStatusFilter === 'requested') {
-          if (apt.status !== 'requested' && apt.status !== 'pending') return false;
+      if (selectedStatusFilter !== "all") {
+        if (selectedStatusFilter === "pending") {
+          if (apt.status !== "pending" && apt.status !== "requested")
+            return false;
+        } else if (selectedStatusFilter === "requested") {
+          if (apt.status !== "requested" && apt.status !== "pending")
+            return false;
         } else if (apt.status !== selectedStatusFilter) {
           return false;
         }
       }
 
       // Doctor filter
-      if (selectedDoctorFilter !== 'all' && apt.assignedDoctorId !== selectedDoctorFilter) {
+      if (
+        selectedDoctorFilter !== "all" &&
+        apt.assignedDoctorId !== selectedDoctorFilter
+      ) {
         return false;
       }
 
@@ -237,7 +279,11 @@ function Dashboard() {
     setIsDetailModalOpen(true);
   };
 
-  const handleUpdateStatus = (id: string, newStatus: AppointmentStatus, note?: string) => {
+  const handleUpdateStatus = (
+    id: string,
+    newStatus: AppointmentStatus,
+    note?: string,
+  ) => {
     setAppointments((prev) =>
       prev.map((apt) => {
         if (apt.id === id) {
@@ -248,13 +294,13 @@ function Dashboard() {
               {
                 id: `tl-${Date.now()}`,
                 timestamp: new Date().toLocaleString([], {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
                 }),
-                action: `Status changed to ${newStatus.replace('_', ' ')}`,
-                actor: 'Super Admin',
+                action: `Status changed to ${newStatus.replace("_", " ")}`,
+                actor: "Super Admin",
                 details: note,
               },
               ...apt.timeline,
@@ -266,9 +312,11 @@ function Dashboard() {
           return updated;
         }
         return apt;
-      })
+      }),
     );
-    showToast(`Appointment status updated to "${newStatus.replace('_', ' ')}".`);
+    showToast(
+      `Appointment status updated to "${newStatus.replace("_", " ")}".`,
+    );
   };
 
   const handleAssignDoctor = (id: string, doctorId: string) => {
@@ -280,18 +328,21 @@ function Dashboard() {
             ...apt,
             assignedDoctorId: doctorId,
             assignedDoctor: doctorObj,
-            status: (apt.status === 'requested' || apt.status === 'pending') ? 'under_review' : apt.status,
+            status:
+              apt.status === "requested" || apt.status === "pending"
+                ? "under_review"
+                : apt.status,
             timeline: [
               {
                 id: `tl-${Date.now()}`,
                 timestamp: new Date().toLocaleString([], {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
                 }),
                 action: `Assigned to ${doctorObj?.name}`,
-                actor: 'Super Admin',
+                actor: "Super Admin",
               },
               ...apt.timeline,
             ],
@@ -302,12 +353,17 @@ function Dashboard() {
           return updated;
         }
         return apt;
-      })
+      }),
     );
     showToast(`Assigned to ${doctorObj?.name}.`);
   };
 
-  const handleUpdateSchedule = (id: string, date: string, time: string, note?: string) => {
+  const handleUpdateSchedule = (
+    id: string,
+    date: string,
+    time: string,
+    note?: string,
+  ) => {
     setAppointments((prev) =>
       prev.map((apt) => {
         if (apt.id === id) {
@@ -315,18 +371,18 @@ function Dashboard() {
             ...apt,
             confirmedDate: date,
             confirmedTime: time,
-            status: 'proposed',
+            status: "proposed",
             timeline: [
               {
                 id: `tl-${Date.now()}`,
                 timestamp: new Date().toLocaleString([], {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
                 }),
                 action: `Proposed New Slot: ${date} at ${time}`,
-                actor: 'Super Admin',
+                actor: "Super Admin",
                 details: note,
               },
               ...apt.timeline,
@@ -338,15 +394,15 @@ function Dashboard() {
           return updated;
         }
         return apt;
-      })
+      }),
     );
     showToast(`Proposed new schedule slot (${date} at ${time}).`);
   };
 
   const handleUpdateMeetingLink = (
     id: string,
-    platform: 'google_meet' | 'zoom' | 'teams',
-    link: string
+    platform: "google_meet" | "zoom" | "teams",
+    link: string,
   ) => {
     setAppointments((prev) =>
       prev.map((apt) => {
@@ -359,13 +415,13 @@ function Dashboard() {
               {
                 id: `tl-${Date.now()}`,
                 timestamp: new Date().toLocaleString([], {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
                 }),
-                action: `Video Meeting Link Generated (${platform.replace('_', ' ')})`,
-                actor: 'Super Admin',
+                action: `Video Meeting Link Generated (${platform.replace("_", " ")})`,
+                actor: "Super Admin",
                 details: link,
               },
               ...apt.timeline,
@@ -377,12 +433,15 @@ function Dashboard() {
           return updated;
         }
         return apt;
-      })
+      }),
     );
-    showToast('Video consultation link updated!');
+    showToast("Video consultation link updated!");
   };
 
-  const handleSaveClinicalNotes = (id: string, notes: Appointment['consultationNotes']) => {
+  const handleSaveClinicalNotes = (
+    id: string,
+    notes: Appointment["consultationNotes"],
+  ) => {
     setAppointments((prev) =>
       prev.map((apt) => {
         if (apt.id === id) {
@@ -393,13 +452,13 @@ function Dashboard() {
               {
                 id: `tl-${Date.now()}`,
                 timestamp: new Date().toLocaleString([], {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
                 }),
-                action: 'Clinical Consultation Notes Saved',
-                actor: 'Super Admin',
+                action: "Clinical Consultation Notes Saved",
+                actor: "Super Admin",
               },
               ...apt.timeline,
             ],
@@ -410,9 +469,9 @@ function Dashboard() {
           return updated;
         }
         return apt;
-      })
+      }),
     );
-    showToast('Clinical consultation notes saved.');
+    showToast("Clinical consultation notes saved.");
   };
 
   const handleCreateNewAppointment = (data: Partial<Appointment>) => {
@@ -422,10 +481,10 @@ function Dashboard() {
       referenceNo,
       patient: data.patient!,
       treatment: data.treatment as TreatmentType,
-      consultationType: data.consultationType || 'video',
-      status: data.status || 'pending',
-      requestedDate: data.requestedDate || '2026-09-18',
-      requestedTime: data.requestedTime || '10:00 AM',
+      consultationType: data.consultationType || "video",
+      status: data.status || "pending",
+      requestedDate: data.requestedDate || "2026-09-18",
+      requestedTime: data.requestedTime || "10:00 AM",
       assignedDoctorId: data.assignedDoctorId,
       assignedDoctor: doctors.find((d) => d.id === data.assignedDoctorId),
       patientMessage: data.patientMessage,
@@ -433,13 +492,13 @@ function Dashboard() {
         {
           id: `tl-${Date.now()}`,
           timestamp: new Date().toLocaleString([], {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
           }),
-          action: 'Direct Appointment Created',
-          actor: 'Super Admin (Direct Booking)',
+          action: "Direct Appointment Created",
+          actor: "Super Admin (Direct Booking)",
         },
       ],
       createdAt: new Date().toISOString(),
@@ -454,20 +513,26 @@ function Dashboard() {
       prev.map((d) => {
         if (d.id === doctorId) {
           const nextStatus =
-            d.status === 'available' ? 'busy' : d.status === 'busy' ? 'on_leave' : 'available';
+            d.status === "available"
+              ? "busy"
+              : d.status === "busy"
+                ? "on_leave"
+                : "available";
           if (!isNaN(Number(doctorId))) {
             fetch(`/api/doctor/${doctorId}/status`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status: nextStatus }),
-            }).catch((err) => console.error('Failed to sync status to backend:', err));
+            }).catch((err) =>
+              console.error("Failed to sync status to backend:", err),
+            );
           }
           return { ...d, status: nextStatus };
         }
         return d;
-      })
+      }),
     );
-    showToast('Doctor status updated.');
+    showToast("Doctor status updated.");
   };
 
   const handleAddDoctor = (newDoctor: Doctor) => {
@@ -477,7 +542,7 @@ function Dashboard() {
 
   const handleUpdateDoctor = (updatedDoctor: Doctor) => {
     setDoctors((prev) =>
-      prev.map((d) => (d.id === updatedDoctor.id ? updatedDoctor : d))
+      prev.map((d) => (d.id === updatedDoctor.id ? updatedDoctor : d)),
     );
     showToast(`${updatedDoctor.name}'s profile updated.`);
   };
@@ -485,11 +550,11 @@ function Dashboard() {
   const handleDeleteDoctor = (doctorId: string) => {
     setDoctors((prev) => prev.filter((d) => d.id !== doctorId));
     if (!isNaN(Number(doctorId))) {
-      fetch(`/api/doctor/${doctorId}`, { method: 'DELETE' }).catch((err) =>
-        console.error('Failed to delete doctor from backend:', err)
+      fetch(`/api/doctor/${doctorId}`, { method: "DELETE" }).catch((err) =>
+        console.error("Failed to delete doctor from backend:", err),
       );
     }
-    showToast('Doctor profile removed.');
+    showToast("Doctor profile removed.");
   };
 
   return (
@@ -507,7 +572,7 @@ function Dashboard() {
         activeTab={activeTab}
         onTabChange={(tab) => {
           setActiveTab(tab);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.scrollTo({ top: 0, behavior: "smooth" });
         }}
         pendingRequestsCount={kpis.pendingApprovals}
         collapsed={sidebarCollapsed}
@@ -523,7 +588,10 @@ function Dashboard() {
           onSearchChange={setSearchQuery}
           onNewAppointmentClick={() => setIsNewModalOpen(true)}
           pendingAppointments={appointments.filter(
-            (a) => a.status === 'requested' || a.status === 'pending' || a.status === 'under_review'
+            (a) =>
+              a.status === "requested" ||
+              a.status === "pending" ||
+              a.status === "under_review",
           )}
           onSelectAppointment={handleOpenDetail}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
@@ -531,7 +599,7 @@ function Dashboard() {
 
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 max-w-7xl w-full mx-auto">
           {/* TAB 1: OVERVIEW */}
-          {activeTab === 'overview' && (
+          {activeTab === "overview" && (
             <div className="space-y-5 sm:space-y-6">
               {/* Welcome banner */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-line shadow-xs">
@@ -540,14 +608,15 @@ function Dashboard() {
                     Admin Portal & Clinical Control
                   </h2>
                   <p className="text-xs text-ink-soft mt-1">
-                    Manage online tele-consultations, doctor schedules, approvals, and clinical records.
+                    Manage online tele-consultations, doctor schedules,
+                    approvals, and clinical records.
                   </p>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-2.5">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setActiveTab('appointments')}
+                    onClick={() => setActiveTab("appointments")}
                     className="text-xs font-semibold border-line hover:bg-line-soft h-9 flex-1 sm:flex-none"
                   >
                     View All Appointments ({appointments.length})
@@ -568,64 +637,96 @@ function Dashboard() {
                   <span className="text-[10.5px] sm:text-[11px] font-semibold text-amber-900 leading-tight">
                     New Requests
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-amber-900 mt-1.5 sm:mt-2">{kpis.newRequests}</div>
-                  <span className="text-[9.5px] sm:text-[10px] text-amber-700">Needs review</span>
+                  <div className="text-lg sm:text-xl font-bold text-amber-900 mt-1.5 sm:mt-2">
+                    {kpis.newRequests}
+                  </div>
+                  <span className="text-[9.5px] sm:text-[10px] text-amber-700">
+                    Needs review
+                  </span>
                 </div>
 
                 <div className="p-2.5 sm:p-3.5 rounded-xl border border-purple-200 bg-purple-50/70 shadow-xs flex flex-col justify-between">
                   <span className="text-[10.5px] sm:text-[11px] font-semibold text-purple-900 leading-tight">
                     Pending Approvals
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-purple-900 mt-1.5 sm:mt-2">{kpis.pendingApprovals}</div>
-                  <span className="text-[9.5px] sm:text-[10px] text-purple-700">Action required</span>
+                  <div className="text-lg sm:text-xl font-bold text-purple-900 mt-1.5 sm:mt-2">
+                    {kpis.pendingApprovals}
+                  </div>
+                  <span className="text-[9.5px] sm:text-[10px] text-purple-700">
+                    Action required
+                  </span>
                 </div>
 
                 <div className="p-2.5 sm:p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/70 shadow-xs flex flex-col justify-between">
                   <span className="text-[10.5px] sm:text-[11px] font-semibold text-emerald-900 leading-tight">
                     Today's Consults
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-emerald-900 mt-1.5 sm:mt-2">{kpis.todayAppointments}</div>
-                  <span className="text-[9.5px] sm:text-[10px] text-emerald-700">Live schedule</span>
+                  <div className="text-lg sm:text-xl font-bold text-emerald-900 mt-1.5 sm:mt-2">
+                    {kpis.todayAppointments}
+                  </div>
+                  <span className="text-[9.5px] sm:text-[10px] text-emerald-700">
+                    Live schedule
+                  </span>
                 </div>
 
                 <div className="p-2.5 sm:p-3.5 rounded-xl border border-teal-200 bg-teal-50/70 shadow-xs flex flex-col justify-between">
                   <span className="text-[10.5px] sm:text-[11px] font-semibold text-teal-900 leading-tight">
                     Upcoming
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-teal-900 mt-1.5 sm:mt-2">{kpis.upcomingAppointments}</div>
-                  <span className="text-[9.5px] sm:text-[10px] text-teal-700">Confirmed</span>
+                  <div className="text-lg sm:text-xl font-bold text-teal-900 mt-1.5 sm:mt-2">
+                    {kpis.upcomingAppointments}
+                  </div>
+                  <span className="text-[9.5px] sm:text-[10px] text-teal-700">
+                    Confirmed
+                  </span>
                 </div>
 
                 <div className="p-2.5 sm:p-3.5 rounded-xl border border-blue-200 bg-blue-50/70 shadow-xs flex flex-col justify-between">
                   <span className="text-[10.5px] sm:text-[11px] font-semibold text-blue-900 leading-tight">
                     Completed
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-blue-900 mt-1.5 sm:mt-2">{kpis.completedConsultations}</div>
-                  <span className="text-[9.5px] sm:text-[10px] text-blue-700">Finished</span>
+                  <div className="text-lg sm:text-xl font-bold text-blue-900 mt-1.5 sm:mt-2">
+                    {kpis.completedConsultations}
+                  </div>
+                  <span className="text-[9.5px] sm:text-[10px] text-blue-700">
+                    Finished
+                  </span>
                 </div>
 
                 <div className="p-2.5 sm:p-3.5 rounded-xl border border-orange-200 bg-orange-50/70 shadow-xs flex flex-col justify-between">
                   <span className="text-[10.5px] sm:text-[11px] font-semibold text-orange-900 leading-tight">
                     Reschedules
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-orange-900 mt-1.5 sm:mt-2">{kpis.reschedulingRequests}</div>
-                  <span className="text-[9.5px] sm:text-[10px] text-orange-700">Requested</span>
+                  <div className="text-lg sm:text-xl font-bold text-orange-900 mt-1.5 sm:mt-2">
+                    {kpis.reschedulingRequests}
+                  </div>
+                  <span className="text-[9.5px] sm:text-[10px] text-orange-700">
+                    Requested
+                  </span>
                 </div>
 
                 <div className="p-2.5 sm:p-3.5 rounded-xl border border-rose-200 bg-rose-50/70 shadow-xs flex flex-col justify-between">
                   <span className="text-[10.5px] sm:text-[11px] font-semibold text-rose-900 leading-tight">
                     Cancelled
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-rose-900 mt-1.5 sm:mt-2">{kpis.cancelledAppointments}</div>
-                  <span className="text-[9.5px] sm:text-[10px] text-rose-700">Patient/Clinic</span>
+                  <div className="text-lg sm:text-xl font-bold text-rose-900 mt-1.5 sm:mt-2">
+                    {kpis.cancelledAppointments}
+                  </div>
+                  <span className="text-[9.5px] sm:text-[10px] text-rose-700">
+                    Patient/Clinic
+                  </span>
                 </div>
 
                 <div className="p-2.5 sm:p-3.5 rounded-xl border border-zinc-300 bg-zinc-100 shadow-xs flex flex-col justify-between">
                   <span className="text-[10.5px] sm:text-[11px] font-semibold text-zinc-800 leading-tight">
                     No-Show
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-zinc-900 mt-1.5 sm:mt-2">{kpis.noShowAppointments}</div>
-                  <span className="text-[9.5px] sm:text-[10px] text-zinc-600">Missed</span>
+                  <div className="text-lg sm:text-xl font-bold text-zinc-900 mt-1.5 sm:mt-2">
+                    {kpis.noShowAppointments}
+                  </div>
+                  <span className="text-[9.5px] sm:text-[10px] text-zinc-600">
+                    Missed
+                  </span>
                 </div>
               </div>
 
@@ -637,15 +738,23 @@ function Dashboard() {
                     <div className="flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-amber-600" />
                       <h3 className="font-semibold text-base text-ink">
-                        Pending Request Approvals & Reviews ({kpis.pendingApprovals})
+                        Pending Request Approvals & Reviews (
+                        {kpis.pendingApprovals})
                       </h3>
                     </div>
-                    <span className="text-xs text-ink-soft">Requires Admin Scheduling</span>
+                    <span className="text-xs text-ink-soft">
+                      Requires Admin Scheduling
+                    </span>
                   </div>
 
                   <div className="space-y-3">
                     {appointments
-                      .filter((a) => a.status === 'requested' || a.status === 'pending' || a.status === 'under_review')
+                      .filter(
+                        (a) =>
+                          a.status === "requested" ||
+                          a.status === "pending" ||
+                          a.status === "under_review",
+                      )
                       .map((apt) => (
                         <div
                           key={apt.id}
@@ -656,8 +765,11 @@ function Dashboard() {
                               <span className="font-mono text-xs font-semibold text-ink-soft">
                                 {apt.referenceNo}
                               </span>
-                              <Badge variant={apt.status} className="capitalize text-[10px]">
-                                {apt.status.replace('_', ' ')}
+                              <Badge
+                                variant={apt.status}
+                                className="capitalize text-[10px]"
+                              >
+                                {apt.status.replace("_", " ")}
                               </Badge>
                               <span className="text-xs text-teal-deep font-semibold">
                                 {apt.treatment}
@@ -669,7 +781,8 @@ function Dashboard() {
                                 {apt.patient.name}
                               </h4>
                               <span className="text-xs text-ink-soft">
-                                Preferred: {apt.requestedDate} at {apt.requestedTime}
+                                Preferred: {apt.requestedDate} at{" "}
+                                {apt.requestedTime}
                               </span>
                             </div>
 
@@ -691,7 +804,13 @@ function Dashboard() {
                             </Button>
                             <Button
                               size="sm"
-                              onClick={() => handleUpdateStatus(apt.id, 'approved', 'One-click approved.')}
+                              onClick={() =>
+                                handleUpdateStatus(
+                                  apt.id,
+                                  "approved",
+                                  "One-click approved.",
+                                )
+                              }
                               className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs h-8 gap-1"
                             >
                               <Check className="w-3.5 h-3.5" />
@@ -715,7 +834,9 @@ function Dashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarCheck className="w-4 h-4 text-teal-deep" />
-                      <h3 className="font-semibold text-base text-ink">Today's Consultations</h3>
+                      <h3 className="font-semibold text-base text-ink">
+                        Today's Consultations
+                      </h3>
                     </div>
                     <Badge variant="approved" className="text-[10px]">
                       {kpis.todayAppointments} Live
@@ -723,14 +844,20 @@ function Dashboard() {
                   </div>
 
                   <div className="bg-white p-4 rounded-xl border border-line shadow-xs space-y-3">
-                    {appointments.filter((a) => a.status === 'approved' || a.status === 'completed').length === 0 ? (
+                    {appointments.filter(
+                      (a) =>
+                        a.status === "approved" || a.status === "completed",
+                    ).length === 0 ? (
                       <div className="py-8 text-center text-xs text-ink-soft">
                         <CalendarCheck className="w-8 h-8 text-ink-soft/40 mx-auto mb-2" />
                         No consultations scheduled for today.
                       </div>
                     ) : (
                       appointments
-                        .filter((a) => a.status === 'approved' || a.status === 'completed')
+                        .filter(
+                          (a) =>
+                            a.status === "approved" || a.status === "completed",
+                        )
                         .slice(0, 4)
                         .map((apt) => (
                           <div
@@ -742,14 +869,19 @@ function Dashboard() {
                               <span className="font-mono text-xs font-bold text-teal-deep">
                                 {apt.confirmedTime || apt.requestedTime}
                               </span>
-                              <Badge variant={apt.status} className="text-[9px]">
+                              <Badge
+                                variant={apt.status}
+                                className="text-[9px]"
+                              >
                                 {apt.status}
                               </Badge>
                             </div>
-                            <div className="text-xs font-semibold text-ink">{apt.patient.name}</div>
+                            <div className="text-xs font-semibold text-ink">
+                              {apt.patient.name}
+                            </div>
                             <div className="flex items-center justify-between text-[11px] text-ink-soft">
                               <span className="truncate">{apt.treatment}</span>
-                              {apt.consultationType === 'video' && (
+                              {apt.consultationType === "video" && (
                                 <span className="flex items-center gap-1 text-teal-deep font-semibold">
                                   <Video className="w-3 h-3" /> Meet
                                 </span>
@@ -765,7 +897,7 @@ function Dashboard() {
           )}
 
           {/* TAB 2: APPOINTMENTS MANAGEMENT (PDF Section 3, 4, 6) */}
-          {activeTab === 'appointments' && (
+          {activeTab === "appointments" && (
             <div className="space-y-5">
               {/* Header with Search, Filter & View Toggle */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white p-3.5 sm:p-5 rounded-2xl border border-line shadow-xs">
@@ -773,24 +905,24 @@ function Dashboard() {
                   {/* Status filter buttons */}
                   <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
                     {[
-                      { id: 'all', label: 'All' },
-                      { id: 'pending', label: 'Pending' },
-                      { id: 'requested', label: 'Requested' },
-                      { id: 'under_review', label: 'Under Review' },
-                      { id: 'proposed', label: 'Proposed' },
-                      { id: 'approved', label: 'Approved' },
-                      { id: 'completed', label: 'Completed' },
-                      { id: 'reschedule_requested', label: 'Reschedules' },
-                      { id: 'cancelled', label: 'Cancelled' },
-                      { id: 'no_show', label: 'No Show' },
+                      { id: "all", label: "All" },
+                      { id: "pending", label: "Pending" },
+                      { id: "requested", label: "Requested" },
+                      { id: "under_review", label: "Under Review" },
+                      { id: "proposed", label: "Proposed" },
+                      { id: "approved", label: "Approved" },
+                      { id: "completed", label: "Completed" },
+                      { id: "reschedule_requested", label: "Reschedules" },
+                      { id: "cancelled", label: "Cancelled" },
+                      { id: "no_show", label: "No Show" },
                     ].map((st) => (
                       <button
                         key={st.id}
                         onClick={() => setSelectedStatusFilter(st.id)}
                         className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                           selectedStatusFilter === st.id
-                            ? 'bg-teal-deep text-white shadow-xs'
-                            : 'bg-[#F4F8F6] text-ink-soft hover:text-ink hover:bg-line'
+                            ? "bg-teal-deep text-white shadow-xs"
+                            : "bg-[#F4F8F6] text-ink-soft hover:text-ink hover:bg-line"
                         }`}
                       >
                         {st.label}
@@ -807,7 +939,7 @@ function Dashboard() {
                     <option value="all">All Doctors</option>
                     {doctors.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.name.split(',')[0]}
+                        {d.name.split(",")[0]}
                       </option>
                     ))}
                   </select>
@@ -816,21 +948,21 @@ function Dashboard() {
                 {/* View Mode Toggle: Table vs Calendar */}
                 <div className="flex items-center gap-1 bg-line-soft p-1 rounded-xl shrink-0 self-start sm:self-auto">
                   <button
-                    onClick={() => setAppointmentViewMode('table')}
+                    onClick={() => setAppointmentViewMode("table")}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                      appointmentViewMode === 'table'
-                        ? 'bg-white text-teal-deep shadow-xs font-bold'
-                        : 'text-ink-soft hover:text-ink'
+                      appointmentViewMode === "table"
+                        ? "bg-white text-teal-deep shadow-xs font-bold"
+                        : "text-ink-soft hover:text-ink"
                     }`}
                   >
                     List Table
                   </button>
                   <button
-                    onClick={() => setAppointmentViewMode('calendar')}
+                    onClick={() => setAppointmentViewMode("calendar")}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                      appointmentViewMode === 'calendar'
-                        ? 'bg-white text-teal-deep shadow-xs font-bold'
-                        : 'text-ink-soft hover:text-ink'
+                      appointmentViewMode === "calendar"
+                        ? "bg-white text-teal-deep shadow-xs font-bold"
+                        : "text-ink-soft hover:text-ink"
                     }`}
                   >
                     Calendar
@@ -839,17 +971,17 @@ function Dashboard() {
               </div>
 
               {/* View 1: Tabular Appointments List */}
-              {appointmentViewMode === 'table' && (
+              {appointmentViewMode === "table" && (
                 <div className="bg-white rounded-2xl border border-line shadow-xs overflow-hidden">
                   <div className="p-4 border-b border-line flex items-center justify-between bg-[#FCFDFD]">
                     <div className="text-xs font-semibold text-ink">
                       Showing {filteredAppointments.length} appointment records
                     </div>
-                    {selectedStatusFilter !== 'all' && (
+                    {selectedStatusFilter !== "all" && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setSelectedStatusFilter('all')}
+                        onClick={() => setSelectedStatusFilter("all")}
                         className="text-xs h-7 text-mint-deep"
                       >
                         Reset filters
@@ -897,9 +1029,13 @@ function Dashboard() {
 
                           {/* Treatment */}
                           <TableCell>
-                            <div className="text-xs font-medium text-ink">{apt.treatment}</div>
+                            <div className="text-xs font-medium text-ink">
+                              {apt.treatment}
+                            </div>
                             <div className="text-[11px] text-ink-soft">
-                              {apt.consultationType === 'video' ? 'Online Tele-Dentistry' : 'In-Clinic'}
+                              {apt.consultationType === "video"
+                                ? "Online Tele-Dentistry"
+                                : "In-Clinic"}
                             </div>
                           </TableCell>
 
@@ -918,13 +1054,15 @@ function Dashboard() {
                             {apt.assignedDoctor ? (
                               <div className="flex items-center gap-2">
                                 <Avatar className="w-6 h-6 border border-line">
-                                  <AvatarImage src={apt.assignedDoctor.avatar} />
+                                  <AvatarImage
+                                    src={apt.assignedDoctor.avatar}
+                                  />
                                   <AvatarFallback>
                                     {apt.assignedDoctor.name.slice(0, 2)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <span className="text-xs font-medium text-ink">
-                                  {apt.assignedDoctor.name.split(',')[0]}
+                                  {apt.assignedDoctor.name.split(",")[0]}
                                 </span>
                               </div>
                             ) : (
@@ -936,8 +1074,11 @@ function Dashboard() {
 
                           {/* Status */}
                           <TableCell>
-                            <Badge variant={apt.status} className="capitalize text-[10px]">
-                              {apt.status.replace('_', ' ')}
+                            <Badge
+                              variant={apt.status}
+                              className="capitalize text-[10px]"
+                            >
+                              {apt.status.replace("_", " ")}
                             </Badge>
                           </TableCell>
 
@@ -953,7 +1094,7 @@ function Dashboard() {
                                 <Video className="w-3 h-3 text-teal-deep" />
                                 Join Call
                               </a>
-                            ) : apt.consultationType === 'video' ? (
+                            ) : apt.consultationType === "video" ? (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -963,39 +1104,67 @@ function Dashboard() {
                                 + Add Link
                               </Button>
                             ) : (
-                              <span className="text-[11px] text-ink-soft">In-Clinic</span>
+                              <span className="text-[11px] text-ink-soft">
+                                In-Clinic
+                              </span>
                             )}
                           </TableCell>
 
                           {/* Actions Menu */}
-                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          <TableCell
+                            className="text-right"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-ink-soft">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-ink-soft"
+                                >
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={() => handleOpenDetail(apt)}>
-                                  <Eye className="w-3.5 h-3.5 mr-2" /> Inspect Details
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenDetail(apt)}
+                                >
+                                  <Eye className="w-3.5 h-3.5 mr-2" /> Inspect
+                                  Details
                                 </DropdownMenuItem>
-                                {apt.status !== 'approved' && (
+                                {apt.status !== "approved" && (
                                   <DropdownMenuItem
-                                    onClick={() => handleUpdateStatus(apt.id, 'approved', 'Approved by admin.')}
+                                    onClick={() =>
+                                      handleUpdateStatus(
+                                        apt.id,
+                                        "approved",
+                                        "Approved by admin.",
+                                      )
+                                    }
                                   >
                                     <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-600" />
                                     Approve Slot
                                   </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem onClick={() => handleOpenDetail(apt)}>
-                                  <RotateCcw className="w-3.5 h-3.5 mr-2 text-blue-600" /> Reschedule
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenDetail(apt)}
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5 mr-2 text-blue-600" />{" "}
+                                  Reschedule
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  onClick={() => handleUpdateStatus(apt.id, 'cancelled', 'Cancelled by admin.')}
+                                  onClick={() =>
+                                    handleUpdateStatus(
+                                      apt.id,
+                                      "cancelled",
+                                      "Cancelled by admin.",
+                                    )
+                                  }
                                   className="text-red-600"
                                 >
-                                  <XCircle className="w-3.5 h-3.5 mr-2" /> Cancel Booking
+                                  <XCircle className="w-3.5 h-3.5 mr-2" />{" "}
+                                  Cancel Booking
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -1005,8 +1174,12 @@ function Dashboard() {
 
                       {filteredAppointments.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-10 text-xs text-ink-soft">
-                            No appointments found matching your search and filter criteria.
+                          <TableCell
+                            colSpan={7}
+                            className="text-center py-10 text-xs text-ink-soft"
+                          >
+                            No appointments found matching your search and
+                            filter criteria.
                           </TableCell>
                         </TableRow>
                       )}
@@ -1016,7 +1189,7 @@ function Dashboard() {
               )}
 
               {/* View 2: Calendar Schedule View */}
-              {appointmentViewMode === 'calendar' && (
+              {appointmentViewMode === "calendar" && (
                 <AppointmentCalendarView
                   appointments={filteredAppointments}
                   onSelectAppointment={handleOpenDetail}
@@ -1026,7 +1199,7 @@ function Dashboard() {
           )}
 
           {/* TAB 3: DOCTOR MANAGEMENT (PDF Section 10) */}
-          {activeTab === 'doctors' && (
+          {activeTab === "doctors" && (
             <DoctorManagementView
               doctors={doctors}
               onToggleStatus={handleToggleDoctorStatus}
@@ -1037,15 +1210,12 @@ function Dashboard() {
           )}
 
           {/* TAB 4: REPORTS & ANALYTICS (PDF Section 11) */}
-          {activeTab === 'reports' && (
-            <ReportsView
-              appointments={appointments}
-              doctors={doctors}
-            />
+          {activeTab === "reports" && (
+            <ReportsView appointments={appointments} doctors={doctors} />
           )}
 
           {/* TAB 5: CLINIC SETTINGS (PDF Section 14) */}
-          {activeTab === 'settings' && <SettingsView />}
+          {activeTab === "settings" && <SettingsView />}
         </main>
       </div>
 

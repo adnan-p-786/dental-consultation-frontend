@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Mail,
   Phone,
@@ -10,31 +10,47 @@ import {
   Copy,
   Check,
   FileSpreadsheet,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { Appointment, AppointmentStatus, Doctor } from '../types';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { Appointment, AppointmentStatus, Doctor } from "../types";
 
 interface AppointmentDetailModalProps {
   appointment: Appointment | null;
   isOpen: boolean;
   onClose: () => void;
   doctors: Doctor[];
-  onUpdateStatus: (id: string, newStatus: AppointmentStatus, note?: string) => void;
+  onUpdateStatus: (
+    id: string,
+    newStatus: AppointmentStatus,
+    note?: string,
+  ) => void;
   onAssignDoctor: (id: string, doctorId: string) => void;
-  onUpdateSchedule: (id: string, date: string, time: string, note?: string) => void;
-  onUpdateMeetingLink: (id: string, platform: 'google_meet' | 'zoom' | 'teams', link: string) => void;
-  onSaveClinicalNotes: (id: string, notes: Appointment['consultationNotes']) => void;
+  onUpdateSchedule: (
+    id: string,
+    date: string,
+    time: string,
+    note?: string,
+  ) => void;
+  onUpdateMeetingLink: (
+    id: string,
+    platform: "google_meet" | "zoom" | "teams",
+    link: string,
+  ) => void;
+  onSaveClinicalNotes: (
+    id: string,
+    notes: Appointment["consultationNotes"],
+  ) => void;
 }
 
 export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
@@ -52,29 +68,35 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 
   // Local state for actions
   const [selectedDoctorId, setSelectedDoctorId] = useState(
-    appointment.assignedDoctorId || ''
+    appointment.assignedDoctorId || "",
   );
   const [rescheduleDate, setRescheduleDate] = useState(
-    appointment.confirmedDate || appointment.requestedDate
+    appointment.confirmedDate || appointment.requestedDate,
   );
   const [rescheduleTime, setRescheduleTime] = useState(
-    appointment.confirmedTime || appointment.requestedTime
+    appointment.confirmedTime || appointment.requestedTime,
   );
-  const [actionNote, setActionNote] = useState('');
+  const [actionNote, setActionNote] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeMeetingPlatform, setActiveMeetingPlatform] = useState<
-    'google_meet' | 'zoom' | 'teams'
-  >(appointment.meetingPlatform || 'google_meet');
+    "google_meet" | "zoom" | "teams"
+  >(appointment.meetingPlatform || "google_meet");
 
   // Clinical workspace notes state
   const [clinicalNotes, setClinicalNotes] = useState({
-    chiefComplaint: appointment.consultationNotes?.chiefComplaint || appointment.patientMessage || '',
-    findings: appointment.consultationNotes?.findings || '',
-    diagnosis: appointment.consultationNotes?.diagnosis || '',
-    recommendedTreatment: appointment.consultationNotes?.recommendedTreatment || '',
-    additionalInstructions: appointment.consultationNotes?.additionalInstructions || '',
-    followUpRequirements: appointment.consultationNotes?.followUpRequirements || '',
-    internalNotes: appointment.consultationNotes?.internalNotes || '',
+    chiefComplaint:
+      appointment.consultationNotes?.chiefComplaint ||
+      appointment.patientMessage ||
+      "",
+    findings: appointment.consultationNotes?.findings || "",
+    diagnosis: appointment.consultationNotes?.diagnosis || "",
+    recommendedTreatment:
+      appointment.consultationNotes?.recommendedTreatment || "",
+    additionalInstructions:
+      appointment.consultationNotes?.additionalInstructions || "",
+    followUpRequirements:
+      appointment.consultationNotes?.followUpRequirements || "",
+    internalNotes: appointment.consultationNotes?.internalNotes || "",
   });
 
   const handleCopyLink = () => {
@@ -86,11 +108,14 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   };
 
   const handleGenerateMeeting = () => {
-    const randomCode = Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 6);
-    let generatedUrl = '';
-    if (activeMeetingPlatform === 'google_meet') {
+    const randomCode =
+      Math.random().toString(36).substring(2, 6) +
+      "-" +
+      Math.random().toString(36).substring(2, 6);
+    let generatedUrl = "";
+    if (activeMeetingPlatform === "google_meet") {
       generatedUrl = `https://meet.google.com/cdr-${randomCode}`;
-    } else if (activeMeetingPlatform === 'zoom') {
+    } else if (activeMeetingPlatform === "zoom") {
       generatedUrl = `https://zoom.us/j/9${Math.floor(100000000 + Math.random() * 900000000)}`;
     } else {
       generatedUrl = `https://teams.microsoft.com/l/meetup-join/cda-${randomCode}`;
@@ -99,7 +124,11 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   };
 
   const handleApproveCurrent = () => {
-    onUpdateStatus(appointment.id, 'approved', 'Approved requested date and time.');
+    onUpdateStatus(
+      appointment.id,
+      "approved",
+      "Approved requested date and time.",
+    );
   };
 
   const handleProposeSchedule = () => {
@@ -107,9 +136,10 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
       appointment.id,
       rescheduleDate,
       rescheduleTime,
-      actionNote || `Suggested alternative time slot: ${rescheduleDate} at ${rescheduleTime}`
+      actionNote ||
+        `Suggested alternative time slot: ${rescheduleDate} at ${rescheduleTime}`,
     );
-    setActionNote('');
+    setActionNote("");
   };
 
   const handleAssign = (docId: string) => {
@@ -135,7 +165,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 variant={appointment.status}
                 className="capitalize text-[10px] sm:text-xs font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 shadow-xs"
               >
-                {appointment.status.replace('_', ' ')}
+                {appointment.status.replace("_", " ")}
               </Badge>
             </div>
             <div className="text-[11px] sm:text-xs text-white/80 flex items-center gap-1.5">
@@ -150,17 +180,31 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
             {appointment.patient.name}
           </DialogTitle>
           <DialogDescription className="text-emerald-100 text-xs sm:text-sm mt-0.5 sm:mt-1">
-            {appointment.treatment} • {appointment.consultationType === 'video' ? 'Online Video Consultation' : 'In-Clinic Appointment'}
+            {appointment.treatment} •{" "}
+            {appointment.consultationType === "video"
+              ? "Online Video Consultation"
+              : "In-Clinic Appointment"}
           </DialogDescription>
         </div>
 
         {/* Modal Body with Tabs */}
-        <Tabs defaultValue="details" className="flex-1 overflow-y-auto px-3.5 sm:px-6 py-4">
+        <Tabs
+          defaultValue="details"
+          className="flex-1 overflow-y-auto px-3.5 sm:px-6 py-4"
+        >
           <TabsList className="grid grid-cols-2 sm:grid-cols-4 h-auto w-full bg-line-soft p-1 gap-1">
-            <TabsTrigger value="details" className="py-2 text-xs">Case Details</TabsTrigger>
-            <TabsTrigger value="scheduling" className="py-2 text-xs">Schedule & Doctor</TabsTrigger>
-            <TabsTrigger value="workspace" className="py-2 text-xs">Clinical Notes</TabsTrigger>
-            <TabsTrigger value="history" className="py-2 text-xs">Timeline ({appointment.timeline.length})</TabsTrigger>
+            <TabsTrigger value="details" className="py-2 text-xs">
+              Case Details
+            </TabsTrigger>
+            <TabsTrigger value="scheduling" className="py-2 text-xs">
+              Schedule & Doctor
+            </TabsTrigger>
+            <TabsTrigger value="workspace" className="py-2 text-xs">
+              Clinical Notes
+            </TabsTrigger>
+            <TabsTrigger value="history" className="py-2 text-xs">
+              Timeline ({appointment.timeline.length})
+            </TabsTrigger>
           </TabsList>
 
           {/* TAB 1: Case Details */}
@@ -170,14 +214,22 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
               <div className="flex items-center gap-3">
                 <Avatar className="w-11 h-11 border border-line">
                   <AvatarFallback className="bg-teal-50 text-teal-deep font-bold text-sm">
-                    {appointment.patient.name.split(' ').map((n) => n[0]).join('')}
+                    {appointment.patient.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
                   <div className="text-xs text-ink-soft">Patient Name</div>
-                  <div className="font-semibold text-sm text-ink truncate">{appointment.patient.name}</div>
+                  <div className="font-semibold text-sm text-ink truncate">
+                    {appointment.patient.name}
+                  </div>
                   {appointment.patient.age && (
-                    <div className="text-[11px] text-ink-soft">{appointment.patient.age} yrs • {appointment.patient.gender}</div>
+                    <div className="text-[11px] text-ink-soft">
+                      {appointment.patient.age} yrs •{" "}
+                      {appointment.patient.gender}
+                    </div>
                   )}
                 </div>
               </div>
@@ -192,7 +244,9 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 >
                   {appointment.patient.email}
                 </a>
-                <div className="text-[11px] text-ink-soft">Prefers: {appointment.patient.preferredContact}</div>
+                <div className="text-[11px] text-ink-soft">
+                  Prefers: {appointment.patient.preferredContact}
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -206,7 +260,9 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   {appointment.patient.phone}
                 </a>
                 {appointment.patient.location && (
-                  <div className="text-[11px] text-ink-soft">{appointment.patient.location}</div>
+                  <div className="text-[11px] text-ink-soft">
+                    {appointment.patient.location}
+                  </div>
                 )}
               </div>
             </div>
@@ -217,10 +273,13 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">
                   Patient Case Description / Symptoms
                 </span>
-                <span className="text-xs text-mint-deep font-medium">Primary Requirement</span>
+                <span className="text-xs text-mint-deep font-medium">
+                  Primary Requirement
+                </span>
               </div>
               <p className="text-sm text-ink leading-relaxed bg-[#F8FAF9] p-3 rounded-lg border border-line-soft">
-                {appointment.patientMessage || 'No specific notes provided by patient upon booking.'}
+                {appointment.patientMessage ||
+                  "No specific notes provided by patient upon booking."}
               </p>
             </div>
 
@@ -245,11 +304,19 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                       <div className="flex items-center gap-2.5 min-w-0">
                         <FileSpreadsheet className="w-6 h-6 text-teal-deep shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold text-ink truncate">{doc.name}</p>
-                          <p className="text-[10px] text-ink-soft">{doc.type} • {doc.size}</p>
+                          <p className="text-xs font-semibold text-ink truncate">
+                            {doc.name}
+                          </p>
+                          <p className="text-[10px] text-ink-soft">
+                            {doc.type} • {doc.size}
+                          </p>
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-mint-deep px-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-mint-deep px-2"
+                      >
                         Preview
                       </Button>
                     </div>
@@ -263,7 +330,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
             </div>
 
             {/* Video Meeting Card */}
-            {appointment.consultationType === 'video' && (
+            {appointment.consultationType === "video" && (
               <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -294,8 +361,12 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                       onClick={handleCopyLink}
                       className="gap-1.5 h-9"
                     >
-                      {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      {copiedLink ? 'Copied' : 'Copy'}
+                      {copiedLink ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                      {copiedLink ? "Copied" : "Copy"}
                     </Button>
                     <a
                       href={appointment.meetingLink}
@@ -329,13 +400,19 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
             <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-semibold text-ink">Assigned Dental Specialist</h4>
+                  <h4 className="text-sm font-semibold text-ink">
+                    Assigned Dental Specialist
+                  </h4>
                   <p className="text-xs text-ink-soft">
-                    Assign a doctor matching the required treatment specialization.
+                    Assign a doctor matching the required treatment
+                    specialization.
                   </p>
                 </div>
                 {appointment.assignedDoctor && (
-                  <Badge variant="outline" className="text-xs text-teal-deep border-teal-200 bg-teal-50">
+                  <Badge
+                    variant="outline"
+                    className="text-xs text-teal-deep border-teal-200 bg-teal-50"
+                  >
                     Currently Assigned
                   </Badge>
                 )}
@@ -350,8 +427,8 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                       onClick={() => handleAssign(doc.id)}
                       className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 ${
                         isSelected
-                          ? 'border-teal-deep bg-[#EDF6F2] ring-2 ring-teal-deep/15'
-                          : 'border-line bg-white hover:border-mint-deep/40 hover:bg-[#FAFDFC]'
+                          ? "border-teal-deep bg-[#EDF6F2] ring-2 ring-teal-deep/15"
+                          : "border-line bg-white hover:border-mint-deep/40 hover:bg-[#FAFDFC]"
                       }`}
                     >
                       <Avatar className="w-10 h-10 border border-line shrink-0">
@@ -359,16 +436,20 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                         <AvatarFallback>{doc.name.slice(0, 2)}</AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-ink truncate">{doc.name}</div>
-                        <div className="text-[11px] text-ink-soft truncate">{doc.specialization}</div>
+                        <div className="text-xs font-bold text-ink truncate">
+                          {doc.name}
+                        </div>
+                        <div className="text-[11px] text-ink-soft truncate">
+                          {doc.specialization}
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
                           <span
                             className={`w-2 h-2 rounded-full ${
-                              doc.status === 'available'
-                                ? 'bg-emerald-500'
-                                : doc.status === 'busy'
-                                ? 'bg-amber-500'
-                                : 'bg-zinc-400'
+                              doc.status === "available"
+                                ? "bg-emerald-500"
+                                : doc.status === "busy"
+                                  ? "bg-amber-500"
+                                  : "bg-zinc-400"
                             }`}
                           />
                           <span className="text-[10px] text-ink-soft capitalize">
@@ -376,7 +457,9 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                           </span>
                         </div>
                       </div>
-                      {isSelected && <UserCheck className="w-5 h-5 text-teal-deep shrink-0" />}
+                      {isSelected && (
+                        <UserCheck className="w-5 h-5 text-teal-deep shrink-0" />
+                      )}
                     </div>
                   );
                 })}
@@ -385,14 +468,19 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 
             {/* Date & Time Confirmation or Reschedule */}
             <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3">
-              <h4 className="text-sm font-semibold text-ink">Schedule & Time Slots</h4>
+              <h4 className="text-sm font-semibold text-ink">
+                Schedule & Time Slots
+              </h4>
               <p className="text-xs text-ink-soft">
-                Accept requested time or suggest an alternative slot to the patient.
+                Accept requested time or suggest an alternative slot to the
+                patient.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-ink">Appointment Date</label>
+                  <label className="text-xs font-semibold text-ink">
+                    Appointment Date
+                  </label>
                   <Input
                     type="date"
                     value={rescheduleDate}
@@ -401,7 +489,9 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-ink">Appointment Time</label>
+                  <label className="text-xs font-semibold text-ink">
+                    Appointment Time
+                  </label>
                   <Input
                     type="text"
                     value={rescheduleTime}
@@ -434,7 +524,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   <RotateCcw className="w-3.5 h-3.5" />
                   Propose This New Time & Notify Patient
                 </Button>
-                {appointment.status !== 'approved' && (
+                {appointment.status !== "approved" && (
                   <Button
                     size="sm"
                     onClick={handleApproveCurrent}
@@ -449,19 +539,21 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 
             {/* Video Provider Preference */}
             <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3">
-              <h4 className="text-sm font-semibold text-ink">Video Consultation Provider</h4>
+              <h4 className="text-sm font-semibold text-ink">
+                Video Consultation Provider
+              </h4>
               <div className="flex items-center gap-3">
-                {(['google_meet', 'zoom', 'teams'] as const).map((platform) => (
+                {(["google_meet", "zoom", "teams"] as const).map((platform) => (
                   <button
                     key={platform}
                     onClick={() => setActiveMeetingPlatform(platform)}
                     className={`px-3 py-1.5 rounded-lg border text-xs font-semibold capitalize transition-all cursor-pointer ${
                       activeMeetingPlatform === platform
-                        ? 'border-teal-deep bg-teal-deep text-white shadow-xs'
-                        : 'border-line bg-white text-ink-soft hover:border-mint-deep'
+                        ? "border-teal-deep bg-teal-deep text-white shadow-xs"
+                        : "border-line bg-white text-ink-soft hover:border-mint-deep"
                     }`}
                   >
-                    {platform.replace('_', ' ')}
+                    {platform.replace("_", " ")}
                   </button>
                 ))}
                 <Button
@@ -481,9 +573,12 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
             <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-semibold text-ink">Doctor Consultation Workspace</h4>
+                  <h4 className="text-sm font-semibold text-ink">
+                    Doctor Consultation Workspace
+                  </h4>
                   <p className="text-xs text-ink-soft">
-                    Clinical findings, diagnosis, and post-consultation recommendations.
+                    Clinical findings, diagnosis, and post-consultation
+                    recommendations.
                   </p>
                 </div>
                 <Button
@@ -498,12 +593,17 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-ink">Chief Complaint</label>
+                  <label className="text-xs font-semibold text-ink">
+                    Chief Complaint
+                  </label>
                   <textarea
                     rows={2}
                     value={clinicalNotes.chiefComplaint}
                     onChange={(e) =>
-                      setClinicalNotes({ ...clinicalNotes, chiefComplaint: e.target.value })
+                      setClinicalNotes({
+                        ...clinicalNotes,
+                        chiefComplaint: e.target.value,
+                      })
                     }
                     className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
                     placeholder="Patient primary symptom or reason for consultation..."
@@ -512,24 +612,34 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-ink">Consultation Findings</label>
+                    <label className="text-xs font-semibold text-ink">
+                      Consultation Findings
+                    </label>
                     <textarea
                       rows={3}
                       value={clinicalNotes.findings}
                       onChange={(e) =>
-                        setClinicalNotes({ ...clinicalNotes, findings: e.target.value })
+                        setClinicalNotes({
+                          ...clinicalNotes,
+                          findings: e.target.value,
+                        })
                       }
                       className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
                       placeholder="Visible clinical observations or scan evaluations..."
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-ink">Diagnosis / Assessment</label>
+                    <label className="text-xs font-semibold text-ink">
+                      Diagnosis / Assessment
+                    </label>
                     <textarea
                       rows={3}
                       value={clinicalNotes.diagnosis}
                       onChange={(e) =>
-                        setClinicalNotes({ ...clinicalNotes, diagnosis: e.target.value })
+                        setClinicalNotes({
+                          ...clinicalNotes,
+                          diagnosis: e.target.value,
+                        })
                       }
                       className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
                       placeholder="Doctor diagnosis or assessment summary..."
@@ -538,12 +648,17 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-ink">Recommended Treatment Plan</label>
+                  <label className="text-xs font-semibold text-ink">
+                    Recommended Treatment Plan
+                  </label>
                   <textarea
                     rows={2}
                     value={clinicalNotes.recommendedTreatment}
                     onChange={(e) =>
-                      setClinicalNotes({ ...clinicalNotes, recommendedTreatment: e.target.value })
+                      setClinicalNotes({
+                        ...clinicalNotes,
+                        recommendedTreatment: e.target.value,
+                      })
                     }
                     className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
                     placeholder="Next steps, procedure recommendations, or scheduled clinic visit..."
@@ -552,24 +667,34 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-ink">Additional Instructions</label>
+                    <label className="text-xs font-semibold text-ink">
+                      Additional Instructions
+                    </label>
                     <textarea
                       rows={2}
                       value={clinicalNotes.additionalInstructions}
                       onChange={(e) =>
-                        setClinicalNotes({ ...clinicalNotes, additionalInstructions: e.target.value })
+                        setClinicalNotes({
+                          ...clinicalNotes,
+                          additionalInstructions: e.target.value,
+                        })
                       }
                       className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
                       placeholder="Medications, hygiene instructions, or diet guidelines..."
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-ink">Follow-up Requirements</label>
+                    <label className="text-xs font-semibold text-ink">
+                      Follow-up Requirements
+                    </label>
                     <textarea
                       rows={2}
                       value={clinicalNotes.followUpRequirements}
                       onChange={(e) =>
-                        setClinicalNotes({ ...clinicalNotes, followUpRequirements: e.target.value })
+                        setClinicalNotes({
+                          ...clinicalNotes,
+                          followUpRequirements: e.target.value,
+                        })
                       }
                       className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
                       placeholder="Follow-up timeframe or required in-person tests..."
@@ -583,15 +708,21 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
           {/* TAB 4: Timeline Audit Trail */}
           <TabsContent value="history" className="space-y-3 pt-2">
             <div className="p-4 rounded-xl border border-line bg-white shadow-xs">
-              <h4 className="text-sm font-semibold text-ink mb-3">Audit Trail & Status History</h4>
+              <h4 className="text-sm font-semibold text-ink mb-3">
+                Audit Trail & Status History
+              </h4>
               <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-line">
                 {appointment.timeline.map((log) => (
                   <div key={log.id} className="relative">
                     <span className="absolute -left-[19px] top-1 w-3 h-3 rounded-full bg-teal-deep ring-4 ring-emerald-50" />
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-ink">{log.action}</span>
-                        <span className="text-[11px] text-ink-soft">{log.timestamp}</span>
+                        <span className="text-xs font-semibold text-ink">
+                          {log.action}
+                        </span>
+                        <span className="text-[11px] text-ink-soft">
+                          {log.timestamp}
+                        </span>
                       </div>
                       <span className="text-[11px] text-teal-deep font-medium block">
                         By {log.actor}
@@ -613,33 +744,52 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
         <DialogFooter className="px-6 py-4 bg-white border-t border-line flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             {/* Direct Status Actions based on current status */}
-            {appointment.status !== 'completed' && (
+            {appointment.status !== "completed" && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onUpdateStatus(appointment.id, 'completed', 'Marked completed by admin.')}
+                onClick={() =>
+                  onUpdateStatus(
+                    appointment.id,
+                    "completed",
+                    "Marked completed by admin.",
+                  )
+                }
                 className="text-xs text-teal-deep border-teal-200 hover:bg-teal-50"
               >
                 Mark Completed
               </Button>
             )}
 
-            {appointment.status !== 'no_show' && appointment.status !== 'completed' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onUpdateStatus(appointment.id, 'no_show', 'Patient was absent.')}
-                className="text-xs text-zinc-700 hover:bg-zinc-100"
-              >
-                Mark No-Show
-              </Button>
-            )}
+            {appointment.status !== "no_show" &&
+              appointment.status !== "completed" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    onUpdateStatus(
+                      appointment.id,
+                      "no_show",
+                      "Patient was absent.",
+                    )
+                  }
+                  className="text-xs text-zinc-700 hover:bg-zinc-100"
+                >
+                  Mark No-Show
+                </Button>
+              )}
 
-            {appointment.status !== 'cancelled' && (
+            {appointment.status !== "cancelled" && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onUpdateStatus(appointment.id, 'cancelled', 'Cancelled by clinic administration.')}
+                onClick={() =>
+                  onUpdateStatus(
+                    appointment.id,
+                    "cancelled",
+                    "Cancelled by clinic administration.",
+                  )
+                }
                 className="text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
               >
                 Cancel Appointment
@@ -647,7 +797,12 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
             )}
           </div>
 
-          <Button variant="default" size="sm" onClick={onClose} className="bg-teal-deep text-white">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onClose}
+            className="bg-teal-deep text-white"
+          >
             Done
           </Button>
         </DialogFooter>

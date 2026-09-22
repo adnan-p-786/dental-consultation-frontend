@@ -191,17 +191,6 @@ function Register() {
             }}
           />
 
-          {/* <div className="relative z-10 flex items-center gap-2.5 font-sans font-semibold text-[15px]">
-          <svg viewBox="0 0 24 24" fill="none" className="w-[22px] h-[22px]">
-            <path
-              d="M12 3C8.5 3 6 5.2 6 8.6c0 2.6.7 4.3 1.3 6.6.5 1.9.9 4.4 2 5.5.5.5 1.1.3 1.4-.4.5-1.2.6-3.4 1.3-3.4s.8 2.2 1.3 3.4c.3.7.9.9 1.4.4 1.1-1.1 1.5-3.6 2-5.5.6-2.3 1.3-4 1.3-6.6C18 5.2 15.5 3 12 3z"
-              stroke="#EFF6F2"
-              strokeWidth="1.3"
-            />
-          </svg>
-          Cedarview Dental
-        </div> */}
-
           <div className="relative z-10 max-w-105">
             <h1 className="font-display font-medium text-[34px] md:text-[40px] leading-[1.12] tracking-[-0.01em] text-white mb-4">
               One account for booking, records, and your care team.
@@ -494,15 +483,6 @@ function Register() {
                   <span>Create account</span>
                 )}
               </button>
-
-              {/* <div className="text-[12.5px] text-ink-soft bg-line-soft rounded-lg px-3.5 py-2.5 leading-relaxed">
-              Are you a doctor or clinic staff member? Staff accounts are
-              created by your administrator —{" "}
-              <Link to="/contact-admin" className="text-mint-deep font-medium">
-                contact your clinic admin
-              </Link>
-              .
-            </div> */}
             </form>
           </div>
         </div>
