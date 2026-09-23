@@ -58,7 +58,9 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        display: ["var(--font-fraunces)", "serif"],
+        display: ["var(--font-baskerville)", "var(--font-fraunces)", "serif"],
+        baskerville: ["var(--font-baskerville)", "serif"],
+        serif: ["var(--font-baskerville)", "serif"],
         sans: ["var(--font-inter)", "sans-serif"],
       },
       keyframes: {

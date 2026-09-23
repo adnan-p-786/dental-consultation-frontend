@@ -1,9 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400..700;1,400..700&display=swap');
 @import "tailwindcss";
 
 @config "../tailwind.config.ts";
 
 :root {
-  --font-fraunces: "Fraunces", Georgia, serif;
+  --font-baskerville: "Libre Baskerville", Georgia, serif;
+  --font-fraunces: "Libre Baskerville", Georgia, serif;
   --font-inter: "Inter", system-ui, -apple-system, sans-serif;
 
   --background: 154 20% 98%;

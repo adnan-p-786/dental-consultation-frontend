@@ -374,7 +374,7 @@ function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 rounded-lg bg-teal-deep hover:bg-mint-deep active:scale-[0.99] transition-all text-paper text-[14.5px] font-semibold py-3.5 px-4.5 flex items-center justify-center gap-2 enabled:cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-2 rounded-lg bg-teal-deep hover:bg-mint-deep active:scale-[0.99] transition-all text-paper text-[14.5px] font-semibold py-3.5 px-4.5 flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

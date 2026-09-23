@@ -45,7 +45,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (savedToken && savedUserStr) {
         const parsedUser: AuthUser = JSON.parse(savedUserStr);
         // Normalize role to lowercase
-        parsedUser.role = (parsedUser.role?.toLowerCase() || "patient") as UserRole;
+        parsedUser.role = (parsedUser.role?.toLowerCase() ||
+          "patient") as UserRole;
         setToken(savedToken);
         setUser(parsedUser);
       }

@@ -401,10 +401,6 @@ export const PatientPortal: React.FC = () => {
         {/* Welcome Banner & Quick Stats */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-line shadow-xs relative overflow-hidden">
           <div className="max-w-2xl relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EDF6F2] text-teal-deep text-xs font-semibold mb-3">
-              <Sparkles className="w-3.5 h-3.5 text-mint-deep" />
-              Patient Care Dashboard
-            </div>
             <h1 className="font-display text-2xl sm:text-3xl font-medium text-ink mb-2">
               Welcome back, {user?.firstName || "Patient"}!
             </h1>
@@ -452,7 +448,7 @@ export const PatientPortal: React.FC = () => {
 
         {/* SECTION 1: PROMINENT MEETING ACCESS BANNER (If video appointment approved) */}
         {activeMeetingAppointment && (
-          <div className="rounded-3xl border-2 border-emerald-500/30 bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-white p-6 sm:p-7 shadow-xs">
+          <div className="rounded-3xl border-2 border-emerald-500/30 bg-linear-to-r from-emerald-50/80 via-teal-50/50 to-white p-6 sm:p-7 shadow-xs">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
@@ -645,7 +641,7 @@ export const PatientPortal: React.FC = () => {
                 </p>
               </div>
               <Link
-                to="/contact"
+                to="/appointment"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-deep hover:bg-mint-deep text-white text-xs font-semibold transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />

@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -30,6 +29,7 @@ import {
   Image as ImageIcon,
   X,
   Pencil,
+  Trash2,
 } from 'lucide-react';
 import type { Doctor } from '../types';
 
@@ -38,6 +38,7 @@ interface AddDoctorModalProps {
   onClose: () => void;
   onAddDoctor: (doctor: Doctor) => void;
   onUpdateDoctor?: (doctor: Doctor) => void;
+  onDeleteDoctor?: (doctorId: string) => void;
   doctorToEdit?: Doctor | null;
 }
 
@@ -65,6 +66,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
   onClose,
   onAddDoctor,
   onUpdateDoctor,
+  onDeleteDoctor,
   doctorToEdit,
 }) => {
   const isEditMode = Boolean(doctorToEdit);
@@ -85,6 +87,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
   // UI status state
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const resetForm = () => {
@@ -132,7 +135,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
   }, [isOpen, doctorToEdit]);
 
   const handleModalClose = () => {
-    if (isSubmitting) return;
+    if (isSubmitting || isDeleting) return;
     resetForm();
     onClose();
   };
@@ -171,6 +174,40 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     setPhotoPreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!doctorToEdit) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to remove ${doctorToEdit.name} from the clinic roster? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setErrorMessage(null);
+
+    try {
+      if (!isNaN(Number(doctorToEdit.id))) {
+        await axios.delete(`/api/doctor/delete-doctor/${doctorToEdit.id}`);
+      }
+      if (onDeleteDoctor) {
+        onDeleteDoctor(doctorToEdit.id);
+      }
+      handleModalClose();
+    } catch (err: any) {
+      console.error('Error deleting doctor:', err);
+      if (err.response?.status === 404 && onDeleteDoctor) {
+        onDeleteDoctor(doctorToEdit.id);
+        handleModalClose();
+        return;
+      }
+      setErrorMessage(
+        err.response?.data?.message || 'Failed to delete doctor. Please try again.'
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -305,14 +342,9 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
               )}
             </div>
             <DialogTitle className="text-xl font-bold text-ink">
-              {isEditMode ? 'Edit Doctor / Specialist' : 'Add New Doctor / Specialist'}
+              {isEditMode ? 'Edit Doctor' : 'Add Doctor'}
             </DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-ink-soft">
-            {isEditMode
-              ? 'Update dental provider details, clinical specialty, shift schedule, or profile photo.'
-              : 'Register a dental provider into the clinic database. Upload photo directly from your files.'}
-          </DialogDescription>
         </DialogHeader>
 
         {/* Error Alert Banner */}
@@ -532,10 +564,31 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           </div>
 
           <DialogFooter className="pt-3 border-t border-line flex flex-col sm:flex-row gap-2">
+            {isEditMode && doctorToEdit && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={isSubmitting || isDeleting}
+                onClick={handleDelete}
+                className="text-xs h-9 text-rose-600 hover:text-rose-700 hover:bg-rose-50 cursor-pointer gap-1.5 sm:mr-auto"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" />
+                    <span>Removing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Doctor</span>
+                  </>
+                )}
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isDeleting}
               onClick={handleModalClose}
               className="text-xs h-9 cursor-pointer"
             >
@@ -543,7 +596,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isDeleting}
               className="bg-teal-deep text-white hover:bg-teal-mid text-xs h-9 shadow-xs cursor-pointer gap-1.5 disabled:opacity-60"
             >
               {isSubmitting ? (

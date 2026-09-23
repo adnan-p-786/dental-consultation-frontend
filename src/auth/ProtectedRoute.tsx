@@ -21,7 +21,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return (
       <div className="min-h-screen bg-[#F8FAF9] flex flex-col items-center justify-center gap-3">
         <div className="w-12 h-12 rounded-2xl bg-teal-deep text-white flex items-center justify-center shadow-md">
-          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-[#EFF6F2]">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            className="w-7 h-7 text-[#EFF6F2]"
+          >
             <path
               d="M12 3C8.5 3 6 5.2 6 8.6c0 2.6.7 4.3 1.3 6.6.5 1.9.9 4.4 2 5.5.5.5 1.1.3 1.4-.4.5-1.2.6-3.4 1.3-3.4s.8 2.2 1.3 3.4c.3.7.9.9 1.4.4 1.1-1.1 1.5-3.6 2-5.5.6-2.3 1.3-4 1.3-6.6C18 5.2 15.5 3 12 3z"
               stroke="currentColor"
@@ -48,7 +52,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // If user role is not allowed on this route, redirect to their role-specific home
-  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+  if (
+    allowedRoles &&
+    allowedRoles.length > 0 &&
+    !allowedRoles.includes(user.role)
+  ) {
     if (user.role === "admin") {
       return <Navigate to="/admin/dashboard" replace />;
     }

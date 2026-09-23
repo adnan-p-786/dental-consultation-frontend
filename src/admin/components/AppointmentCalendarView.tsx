@@ -118,7 +118,7 @@ export const AppointmentCalendarView: React.FC<
       {/* Month View Grid */}
       {calendarMode === "month" && (
         <div className="bg-white rounded-2xl border border-line shadow-xs overflow-x-auto">
-          <div className="min-w-[650px]">
+          <div className="min-w-162.5">
             {/* Weekday headers */}
             <div className="grid grid-cols-7 border-b border-line bg-[#F9FCFA]">
               {daysOfWeek.map((day) => (
@@ -132,17 +132,17 @@ export const AppointmentCalendarView: React.FC<
             </div>
 
             {/* Days cells */}
-            <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-line border-b border-line">
+            <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-line">
               {/* Blank leading slots for Tuesday start (Sun, Mon = 2 slots) */}
-              <div className="min-h-[105px] p-2 bg-[#FAFBFB]/50" />
-              <div className="min-h-[105px] p-2 bg-[#FAFBFB]/50" />
+              <div className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
+              <div className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
 
               {daysArray.map(({ dayNum, dateString, dayAppointments }) => {
                 const isToday = dateString === "2026-09-17";
                 return (
                   <div
                     key={dateString}
-                    className={`min-h-[105px] p-2 transition-colors hover:bg-line-soft/30 flex flex-col justify-between ${
+                    className={`min-h-26.25 p-2 transition-colors hover:bg-line-soft/30 flex flex-col justify-between ${
                       isToday ? "bg-teal-50/30" : "bg-white"
                     }`}
                   >
@@ -200,9 +200,9 @@ export const AppointmentCalendarView: React.FC<
               })}
 
               {/* Trailing slots for 35 grid total (30 + 2 = 32, so 3 trailing) */}
-              <div className="min-h-[105px] p-2 bg-[#FAFBFB]/50" />
-              <div className="min-h-[105px] p-2 bg-[#FAFBFB]/50" />
-              <div className="min-h-[105px] p-2 bg-[#FAFBFB]/50" />
+              <div className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
+              <div className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
+              <div className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
             </div>
           </div>
         </div>

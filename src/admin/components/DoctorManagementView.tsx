@@ -294,6 +294,7 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
           }}
           onAddDoctor={onAddDoctor || (() => {})}
           onUpdateDoctor={onUpdateDoctor}
+          onDeleteDoctor={onDeleteDoctor}
           doctorToEdit={editingDoctor}
         />
       )}

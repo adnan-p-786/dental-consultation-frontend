@@ -155,7 +155,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl w-[95vw] sm:w-full max-h-[92vh] sm:max-h-[90vh] p-0 overflow-hidden flex flex-col bg-[#FCFDFD]">
         {/* Header Ribbon */}
-        <div className="bg-gradient-to-r from-teal-deep to-teal-mid text-white p-4 sm:p-6 pb-4 sm:pb-5">
+        <div className="bg-linear-to-r from-teal-deep to-teal-mid text-white p-4 sm:p-6 pb-4 sm:pb-5">
           <div className="flex flex-wrap items-center justify-between gap-2.5 mb-2">
             <div className="flex items-center gap-2">
               <span className="font-mono text-[11px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md bg-white/15 text-emerald-200 border border-white/20">
@@ -711,10 +711,10 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
               <h4 className="text-sm font-semibold text-ink mb-3">
                 Audit Trail & Status History
               </h4>
-              <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-line">
+              <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-line">
                 {appointment.timeline.map((log) => (
                   <div key={log.id} className="relative">
-                    <span className="absolute -left-[19px] top-1 w-3 h-3 rounded-full bg-teal-deep ring-4 ring-emerald-50" />
+                    <span className="absolute -left-4.75 top-1 w-3 h-3 rounded-full bg-teal-deep ring-4 ring-emerald-50" />
                     <div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-ink">

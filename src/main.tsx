@@ -10,7 +10,7 @@ import Contact from "./pages/Contact.tsx";
 import About from "./pages/About.tsx";
 import DashboardDoctor from "./doctor/pages/Dashboard.tsx";
 import DashboardAdmin from "./admin/pages/Dashboard.tsx";
-import PatientPortal from "./patient/pages/PatientPortal.tsx";
+import PatientPortal from "./pages/PatientPortal.tsx";
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import { ProtectedRoute } from "./auth/ProtectedRoute.tsx";
 import { ToastContainer } from "react-toastify";

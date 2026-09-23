@@ -41,7 +41,7 @@ function Header() {
       <div className="bg-teal-deep text-[#DCEAE4] text-[12px] py-1.5 px-4 sm:px-6 lg:px-8 border-b border-teal-mid/40">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-mint flex-shrink-0" />
+            <Sparkles className="w-3.5 h-3.5 text-mint shrink-0" />
             <span className="truncate">
               Accepting new patients for online video & in-clinic consultations
             </span>
