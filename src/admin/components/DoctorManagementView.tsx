@@ -255,18 +255,20 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
                 >
                   Toggle Availability
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setEditingDoctor(doc);
-                    setIsAddModalOpen(true);
-                  }}
-                  className="text-xs h-8 text-teal-deep hover:text-teal-700 hover:bg-teal-50 p-2 cursor-pointer"
-                  title="Edit Doctor"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </Button>
+                {onUpdateDoctor && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setEditingDoctor(doc);
+                      setIsAddModalOpen(true);
+                    }}
+                    className="text-xs h-8 text-teal-deep hover:text-teal-700 hover:bg-teal-50 p-2 cursor-pointer"
+                    title="Edit Doctor"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                )}
                 {onDeleteDoctor && (
                   <Button
                     variant="ghost"

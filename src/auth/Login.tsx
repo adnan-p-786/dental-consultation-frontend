@@ -27,6 +27,7 @@ const roles = [
   { id: "Patient", label: "Patient", icon: User, desc: "Personal care" },
   { id: "Doctor", label: "Doctor", icon: Stethoscope, desc: "Care provider" },
   { id: "Admin", label: "Admin", icon: ShieldCheck, desc: "Admin" },
+  { id: "Superadmin", label: "Super Admin", icon: ShieldCheck, desc: "Superadmin" },
 ];
 
 function Login() {
@@ -35,9 +36,9 @@ function Login() {
   const redirectPath = searchParams.get("redirect");
   const { login, isAuthenticated, user } = useAuth();
 
-  const [userType, setUserType] = useState<"Patient" | "Doctor" | "Admin">(
-    "Patient",
-  );
+  const [userType, setUserType] = useState<
+    "Patient" | "Doctor" | "Admin" | "Superadmin"
+  >("Patient");
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -54,7 +55,7 @@ function Login() {
     if (isAuthenticated && user) {
       if (redirectPath) {
         navigate(redirectPath, { replace: true });
-      } else if (user.role === "admin") {
+      } else if (user.role === "superadmin" || (user.role as string) === "admin") {
         navigate("/admin/dashboard", { replace: true });
       } else if (user.role === "doctor") {
         navigate("/doctor/dashboard", { replace: true });
@@ -73,7 +74,9 @@ function Login() {
     if (error) setError(null);
   };
 
-  const handleRoleSelect = (roleId: "Patient" | "Doctor" | "Admin") => {
+  const handleRoleSelect = (
+    roleId: "Patient" | "Doctor" | "Admin" | "Superadmin",
+  ) => {
     setUserType(roleId);
     if (error) setError(null);
   };
@@ -120,7 +123,7 @@ function Login() {
       setTimeout(() => {
         if (redirectPath) {
           navigate(redirectPath);
-        } else if (resolvedRole === "admin") {
+        } else if (resolvedRole === "superadmin" || resolvedRole === "admin") {
           navigate("/admin/dashboard");
         } else if (resolvedRole === "doctor") {
           navigate("/doctor/dashboard");
@@ -312,7 +315,11 @@ function Login() {
                         disabled={loading}
                         onClick={() =>
                           handleRoleSelect(
-                            role.id as "Patient" | "Doctor" | "Admin",
+                            role.id as
+                              | "Patient"
+                              | "Doctor"
+                              | "Admin"
+                              | "Superadmin",
                           )
                         }
                         className={`group relative flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border transition-all duration-150 cursor-pointer text-center ${

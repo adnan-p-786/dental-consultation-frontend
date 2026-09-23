@@ -31,7 +31,7 @@ const router = createBrowserRouter([
     path: "/appointment",
     element: (
       <ProtectedRoute
-        allowedRoles={["patient", "admin", "doctor"]}
+        allowedRoles={["patient", "admin", "superadmin", "doctor"]}
         redirectTo="/auth/register"
       >
         <Appointment />
@@ -42,7 +42,7 @@ const router = createBrowserRouter([
     path: "/appointments",
     element: (
       <ProtectedRoute
-        allowedRoles={["patient", "admin", "doctor"]}
+        allowedRoles={["patient", "admin", "superadmin", "doctor"]}
         redirectTo="/auth/register"
       >
         <Appointment />
@@ -60,7 +60,7 @@ const router = createBrowserRouter([
   {
     path: "/admin/dashboard",
     element: (
-      <ProtectedRoute allowedRoles={["admin"]}>
+      <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
         <DashboardAdmin />
       </ProtectedRoute>
     ),
@@ -68,7 +68,7 @@ const router = createBrowserRouter([
   {
     path: "/patient/portal",
     element: (
-      <ProtectedRoute allowedRoles={["patient", "admin"]}>
+      <ProtectedRoute allowedRoles={["patient", "admin", "superadmin"]}>
         <PatientPortal />
       </ProtectedRoute>
     ),
@@ -76,7 +76,7 @@ const router = createBrowserRouter([
   {
     path: "/patient/dashboard",
     element: (
-      <ProtectedRoute allowedRoles={["patient", "admin"]}>
+      <ProtectedRoute allowedRoles={["patient", "admin", "superadmin"]}>
         <PatientPortal />
       </ProtectedRoute>
     ),

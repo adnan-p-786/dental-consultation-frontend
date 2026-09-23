@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-export type UserRole = "patient" | "doctor" | "admin";
+export type UserRole = "patient" | "doctor" | "superadmin" | "admin";
 
 export interface AuthUser {
   id: number;
@@ -19,6 +19,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   role: UserRole | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   isDoctor: boolean;
   isPatient: boolean;
   login: (token: string, user: AuthUser) => void;
@@ -79,7 +80,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const role = user?.role || null;
   const isAuthenticated = Boolean(token && user);
-  const isAdmin = role === "admin";
+  const isSuperAdmin = role === "superadmin";
+  const isAdmin = role === "admin" || role === "superadmin";
   const isDoctor = role === "doctor";
   const isPatient = role === "patient";
 
@@ -92,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         isAuthenticated,
         role,
         isAdmin,
+        isSuperAdmin,
         isDoctor,
         isPatient,
         login,

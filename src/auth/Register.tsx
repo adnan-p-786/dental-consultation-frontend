@@ -37,7 +37,7 @@ function Register() {
     if (isAuthenticated && user) {
       if (redirectPath) {
         navigate(redirectPath, { replace: true });
-      } else if (user.role === "admin") {
+      } else if (user.role === "superadmin" || (user.role as string) === "admin") {
         navigate("/admin/dashboard", { replace: true });
       } else if (user.role === "doctor") {
         navigate("/doctor/dashboard", { replace: true });
@@ -153,7 +153,7 @@ function Register() {
           navigate(redirectPath);
         } else if (userType.toLowerCase() === "doctor") {
           navigate("/doctor/dashboard");
-        } else if (userType.toLowerCase() === "admin") {
+        } else if (userType.toLowerCase() === "superadmin" || userType.toLowerCase() === "admin") {
           navigate("/admin/dashboard");
         } else {
           navigate("/");

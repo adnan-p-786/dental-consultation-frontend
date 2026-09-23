@@ -26,7 +26,8 @@ function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const pathname = location.pathname;
-  const { user, isAuthenticated, logout, isAdmin, isDoctor } = useAuth();
+  const { user, isAuthenticated, logout, isAdmin, isSuperAdmin, isDoctor } = useAuth();
+  const isSuper = isSuperAdmin || user?.role === "superadmin";
   const isPatient = isAuthenticated && !isAdmin && !isDoctor;
 
   const isLinkActive = (href: string) => {
@@ -128,7 +129,7 @@ function Header() {
                     className="flex items-center gap-1.5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] transition-all text-paper text-[13.5px] font-semibold py-2 px-3.5 shadow-xs"
                   >
                     <ShieldCheck className="w-4 h-4 text-mint" />
-                    <span>Admin Dashboard</span>
+                    <span>{isSuper ? "Super Admin Dashboard" : "Admin Dashboard"}</span>
                   </Link>
                 )}
                 {isDoctor && (
@@ -267,7 +268,7 @@ function Header() {
                     className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-teal-deep text-white text-[14px] font-semibold"
                   >
                     <ShieldCheck className="w-4 h-4 text-mint" />
-                    <span>Admin Dashboard</span>
+                    <span>{isSuper ? "Super Admin Dashboard" : "Admin Dashboard"}</span>
                   </Link>
                 )}
                 {isDoctor && (

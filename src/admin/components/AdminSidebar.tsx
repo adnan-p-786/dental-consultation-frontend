@@ -44,21 +44,29 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   mobileOpen = false,
   onCloseMobile,
 }) => {
-  const { user, logout } = useAuth();
-  const adminName = user ? `${user.firstName} ${user.lastName}` : "Admin";
+  const { user, logout, isSuperAdmin } = useAuth();
+  const isSuper = isSuperAdmin || user?.role === "superadmin";
+  const adminName = user
+    ? `${user.firstName} ${user.lastName}`
+    : isSuper
+      ? "Super Admin"
+      : "Admin";
   const adminInitials = user
     ? `${user.firstName[0] || ""}${user.lastName[0] || ""}`.toUpperCase() ||
-      "AD"
-    : "SA";
-  const adminRoleLabel = user?.role === "admin" ? "Administrator" : "Staff";
+      (isSuper ? "SA" : "AD")
+    : isSuper
+      ? "SA"
+      : "AD";
+  const adminRoleLabel = isSuper ? "Super Admin" : "Clinic Admin";
 
-  const navItems = [
+  const allNavItems = [
     {
       id: "overview" as AdminTab,
       label: "Dashboard Overview",
       shortLabel: "Overview",
       icon: LayoutDashboard,
       badge: null,
+      superOnly: false,
     },
     {
       id: "appointments" as AdminTab,
@@ -66,6 +74,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       shortLabel: "Appointments",
       icon: CalendarCheck2,
       badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
+      superOnly: false,
     },
     {
       id: "doctors" as AdminTab,
@@ -73,6 +82,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       shortLabel: "Doctors",
       icon: Stethoscope,
       badge: null,
+      superOnly: false,
     },
     {
       id: "reports" as AdminTab,
@@ -80,6 +90,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       shortLabel: "Analytics",
       icon: BarChart3,
       badge: null,
+      superOnly: true,
     },
     {
       id: "settings" as AdminTab,
@@ -87,8 +98,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       shortLabel: "Settings",
       icon: Settings,
       badge: null,
+      superOnly: true,
     },
   ];
+
+  const navItems = allNavItems.filter((item) => !item.superOnly || isSuper);
 
   return (
     <>
@@ -135,7 +149,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-ink-soft">Dental Portal</span>
                     <span className="text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-800 px-1.5 py-0.2 rounded border border-teal-200">
-                      Admin
+                      {isSuper ? "Super Admin" : "Admin"}
                     </span>
                   </div>
                 </div>

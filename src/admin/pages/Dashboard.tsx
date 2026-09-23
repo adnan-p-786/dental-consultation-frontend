@@ -44,6 +44,7 @@ import type {
   TreatmentType,
 } from "../types";
 import { appointmentService } from "@/lib/appointmentService";
+import { useAuth } from "@/auth/AuthContext";
 
 function Dashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
@@ -159,7 +160,19 @@ function Dashboard() {
 
     fetchRegisteredDoctors();
   }, []);
+  const { user, isSuperAdmin } = useAuth();
+  const isSuper = isSuperAdmin || user?.role === "superadmin";
+  const currentActor = isSuper ? "Super Admin" : "Clinic Admin";
+
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+
+  // Prevent regular admin from getting stuck on restricted tabs
+  useEffect(() => {
+    if (!isSuper && (activeTab === "settings" || activeTab === "reports")) {
+      setActiveTab("overview");
+    }
+  }, [isSuper, activeTab]);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -300,7 +313,7 @@ function Dashboard() {
                   minute: "2-digit",
                 }),
                 action: `Status changed to ${newStatus.replace("_", " ")}`,
-                actor: "Super Admin",
+                actor: currentActor,
                 details: note,
               },
               ...apt.timeline,
@@ -342,7 +355,7 @@ function Dashboard() {
                   minute: "2-digit",
                 }),
                 action: `Assigned to ${doctorObj?.name}`,
-                actor: "Super Admin",
+                actor: currentActor,
               },
               ...apt.timeline,
             ],
@@ -382,7 +395,7 @@ function Dashboard() {
                   minute: "2-digit",
                 }),
                 action: `Proposed New Slot: ${date} at ${time}`,
-                actor: "Super Admin",
+                actor: currentActor,
                 details: note,
               },
               ...apt.timeline,
@@ -421,7 +434,7 @@ function Dashboard() {
                   minute: "2-digit",
                 }),
                 action: `Video Meeting Link Generated (${platform.replace("_", " ")})`,
-                actor: "Super Admin",
+                actor: currentActor,
                 details: link,
               },
               ...apt.timeline,
@@ -458,7 +471,7 @@ function Dashboard() {
                   minute: "2-digit",
                 }),
                 action: "Clinical Consultation Notes Saved",
-                actor: "Super Admin",
+                actor: currentActor,
               },
               ...apt.timeline,
             ],
@@ -498,7 +511,7 @@ function Dashboard() {
             minute: "2-digit",
           }),
           action: "Direct Appointment Created",
-          actor: "Super Admin (Direct Booking)",
+          actor: `${currentActor} (Direct Booking)`,
         },
       ],
       createdAt: new Date().toISOString(),
@@ -1203,9 +1216,9 @@ function Dashboard() {
             <DoctorManagementView
               doctors={doctors}
               onToggleStatus={handleToggleDoctorStatus}
-              onAddDoctor={handleAddDoctor}
-              onUpdateDoctor={handleUpdateDoctor}
-              onDeleteDoctor={handleDeleteDoctor}
+              onAddDoctor={isSuper ? handleAddDoctor : undefined}
+              onUpdateDoctor={isSuper ? handleUpdateDoctor : undefined}
+              onDeleteDoctor={isSuper ? handleDeleteDoctor : undefined}
             />
           )}
 
