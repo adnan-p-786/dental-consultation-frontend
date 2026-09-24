@@ -62,6 +62,16 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             <Menu className="h-5 w-5" />
           </button>
         )}
+        <div className="relative w-full max-w-sm hidden sm:block">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft" />
+          <Input
+            type="text"
+            placeholder="Search appointments, patients..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-9 h-9 text-xs rounded-xl bg-paper border-line"
+          />
+        </div>
       </div>
 
       {/* Right controls */}
@@ -147,13 +157,13 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         </DropdownMenu>
 
         {/* Quick New Appointment Button */}
-        <Button
+        {/* <Button
           onClick={onNewAppointmentClick}
           className="gap-2 rounded-xl bg-teal-deep text-white hover:bg-teal-mid shadow-xs font-semibold"
         >
           <PlusCircle className="w-4 h-4" />
           <span className="hidden sm:inline">New Appointment</span>
-        </Button>
+        </Button> */}
       </div>
     </header>
   );

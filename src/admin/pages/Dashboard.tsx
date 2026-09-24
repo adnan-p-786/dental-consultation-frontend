@@ -173,8 +173,34 @@ function Dashboard() {
     }
   }, [isSuper, activeTab]);
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth >= 768 && window.innerWidth < 1120;
+    }
+    return false;
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Responsive sidebar auto-collapse on tablet / medium viewports
+  useEffect(() => {
+    let lastWidth = window.innerWidth;
+    const handleResize = () => {
+      const currentWidth = window.innerWidth;
+      // Auto-collapse when crossing under 1120px from wide screens
+      if (lastWidth >= 1120 && currentWidth < 1120 && currentWidth >= 768) {
+        setSidebarCollapsed(true);
+      } else if (lastWidth < 1120 && currentWidth >= 1120) {
+        setSidebarCollapsed(false);
+      }
+      if (currentWidth >= 768) {
+        setMobileMenuOpen(false);
+      }
+      lastWidth = currentWidth;
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -639,7 +665,7 @@ function Dashboard() {
                     onClick={() => setIsNewModalOpen(true)}
                     className="text-xs font-semibold bg-teal-deep text-white hover:bg-teal-mid h-9 shadow-xs flex-1 sm:flex-none"
                   >
-                    + Log New Request
+                    + Add New Appointment
                   </Button>
                 </div>
               </div>

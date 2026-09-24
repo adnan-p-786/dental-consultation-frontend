@@ -19,6 +19,7 @@ import {
   RefreshCw,
   ListChecks,
   PlayCircle,
+  Sparkles,
 } from "lucide-react";
 
 /**
@@ -176,47 +177,50 @@ export default function Home() {
           }}
         />
 
-        <div className="relative max-w-7xl mx-auto">
-          <div className="max-w-2xl">
-            <h1 className="font-display font-medium text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.12] mb-6">
-              See a dentist online, or book a visit — your choice
-            </h1>
-            <p className="text-base sm:text-lg text-[#D2E4DC] leading-relaxed mb-10">
-              Send an appointment request in a couple of minutes. The clinic
-              reviews it, confirms a time with you by email, and includes a
-              meeting link if you've chosen an online consultation.
-            </p>
+        <div className="relative max-w-5xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-mint text-xs font-semibold uppercase tracking-wider mb-6">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>In-Clinic Visits & Online Video Consultations</span>
+          </div>
 
-            <div className="flex flex-wrap gap-4 mb-14">
-              <Link
-                to="/appointment"
-                className="px-6 py-3.5 rounded-xl bg-mint text-[#0C2420] text-sm font-semibold hover:bg-[#5EC29F] transition-colors flex items-center gap-2"
-              >
-                <span>Request an appointment</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                to="/services"
-                className="px-6 py-3.5 rounded-xl border border-white/25 text-white text-sm font-medium hover:bg-white/10 transition-colors"
-              >
-                Browse treatments
-              </Link>
-            </div>
+          <h1 className="font-display font-medium text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.14] max-w-4xl mx-auto mb-6">
+            See a dentist online, or book a visit — your choice
+          </h1>
+          <p className="text-base sm:text-lg text-[#D2E4DC] max-w-2xl mx-auto leading-relaxed mb-10">
+            Send an appointment request in a couple of minutes. The clinic
+            reviews it, confirms a time with you by email, and includes a
+            meeting link if you've chosen an online consultation.
+          </p>
 
-            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-x-8 text-sm text-[#D2E4DC]">
-              <span className="flex items-center gap-2">
-                <Video className="w-4 h-4 text-mint shrink-0" />
-                Online video consultations
-              </span>
-              <span className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-mint shrink-0" />
-                In-clinic appointments
-              </span>
-              <span className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-mint shrink-0" />
-                Email reminders before your consultation
-              </span>
-            </div>
+          <div className="flex flex-wrap justify-center items-center gap-4 mb-12">
+            <Link
+              to="/appointment"
+              className="px-6 py-3.5 rounded-xl bg-mint text-[#0C2420] text-sm font-semibold hover:bg-[#5EC29F] transition-colors flex items-center gap-2 shadow-xs"
+            >
+              <span>Request an appointment</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/services"
+              className="px-6 py-3.5 rounded-xl border border-white/25 text-white text-sm font-medium hover:bg-white/10 transition-colors"
+            >
+              Browse treatments
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-x-8 text-sm text-[#D2E4DC]">
+            <span className="flex items-center gap-2">
+              <Video className="w-4 h-4 text-mint shrink-0" />
+              Online video consultations
+            </span>
+            <span className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-mint shrink-0" />
+              In-clinic appointments
+            </span>
+            <span className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-mint shrink-0" />
+              Email reminders before your consultation
+            </span>
           </div>
         </div>
       </section>
@@ -224,7 +228,7 @@ export default function Home() {
       <main className="grow">
         {/* How it works — mirrors the SOW status flow (§3) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-          <div className="max-w-2xl mb-12">
+          <div className="max-w-2xl mx-auto text-center mb-12">
             <h2 className="font-display text-3xl font-medium text-ink mb-3">
               How an appointment request works
             </h2>
@@ -261,7 +265,7 @@ export default function Home() {
             })}
           </ol>
 
-          <div className="mt-6 flex items-start gap-3 rounded-2xl border border-line bg-white p-5 max-w-3xl">
+          <div className="mt-8 flex items-start gap-3 rounded-2xl border border-line bg-white p-5 max-w-3xl mx-auto">
             <RefreshCw className="w-4 h-4 text-mint-deep shrink-0 mt-0.5" />
             <p className="text-sm text-ink-soft leading-relaxed">
               Plans change. If the clinic reschedules or cancels, you're
@@ -274,8 +278,8 @@ export default function Home() {
 
         {/* What to include in a request (SOW §2 Appointment Booking) */}
         <section className="bg-white border-y border-line">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-14">
-            <div className="lg:col-span-2">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+            <div className="max-w-2xl mx-auto text-center mb-12">
               <h2 className="font-display text-3xl font-medium text-ink mb-3">
                 What to include in your request
               </h2>
@@ -286,18 +290,18 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="lg:col-span-3">
+            <div className="max-w-4xl mx-auto">
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {requestFields.map((field) => (
                   <li
                     key={field}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-line text-sm text-ink"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-line text-sm text-ink bg-[#F8FAF9]/50"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-mint-deep shrink-0" />
                     {field}
                   </li>
                 ))}
-                <li className="sm:col-span-2 flex items-start gap-3 px-4 py-3 rounded-xl border border-dashed border-mint-deep/60 text-sm text-ink">
+                <li className="sm:col-span-2 flex items-start gap-3 px-4 py-3 rounded-xl border border-dashed border-mint-deep/60 text-sm text-ink bg-mint/5">
                   <Paperclip className="w-4 h-4 text-mint-deep shrink-0 mt-0.5" />
                   <span>
                     Photos or documents{" "}
@@ -314,19 +318,17 @@ export default function Home() {
 
         {/* Treatment preview (SOW §2 Treatment / Case Selection) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
-            <div className="max-w-xl">
-              <h2 className="font-display text-3xl font-medium text-ink mb-3">
-                What can you book us for?
-              </h2>
-              <p className="text-sm text-ink-soft leading-relaxed">
-                Pick a treatment area below, or choose "Other" on the request
-                form if your case doesn't fit neatly into one category.
-              </p>
-            </div>
+          <div className="max-w-2xl mx-auto text-center mb-12">
+            <h2 className="font-display text-3xl font-medium text-ink mb-3">
+              What can you book us for?
+            </h2>
+            <p className="text-sm text-ink-soft leading-relaxed mb-4">
+              Pick a treatment area below, or choose "Other" on the request
+              form if your case doesn't fit neatly into one category.
+            </p>
             <Link
               to="/services"
-              className="text-sm font-semibold text-teal-deep hover:text-mint-deep inline-flex items-center gap-1.5 shrink-0"
+              className="text-sm font-semibold text-teal-deep hover:text-mint-deep inline-flex items-center gap-1.5"
             >
               <span>See every treatment</span>
               <ArrowRight className="w-4 h-4" />
@@ -361,7 +363,7 @@ export default function Home() {
         {/* Online vs in-clinic */}
         <section className="bg-white border-y border-line">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-            <div className="max-w-2xl mb-12">
+            <div className="max-w-2xl mx-auto text-center mb-12">
               <h2 className="font-display text-3xl font-medium text-ink mb-3">
                 Choose the format that suits you
               </h2>
@@ -420,7 +422,7 @@ export default function Home() {
 
         {/* Patient account (SOW §1, §5, §8) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-          <div className="max-w-2xl mb-12">
+          <div className="max-w-2xl mx-auto text-center mb-12">
             <h2 className="font-display text-3xl font-medium text-ink mb-3">
               Everything in your patient account
             </h2>
@@ -456,14 +458,16 @@ export default function Home() {
         {/* Trust / security (SOW §13) */}
         <section className="bg-teal-deep text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-mint text-xs font-semibold mb-4">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              How we handle your information
+            <div className="max-w-3xl mx-auto text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-mint text-xs font-semibold uppercase tracking-wider mb-4">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>How we handle your information</span>
+              </div>
+              <h2 className="font-display text-3xl sm:text-4xl font-medium text-white leading-snug">
+                Your records are protected and only seen by people involved in
+                your care
+              </h2>
             </div>
-            <h2 className="font-display text-3xl font-medium mb-12 max-w-2xl">
-              Your records are protected and only seen by people involved in
-              your care
-            </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {trustPoints.map((point) => {
@@ -489,21 +493,19 @@ export default function Home() {
 
         {/* Closing CTA */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-          <div className="bg-white rounded-3xl border border-line p-8 sm:p-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
-            <div className="max-w-xl">
-              <h2 className="font-display text-2xl sm:text-3xl font-medium text-ink mb-3">
-                Ready to send a request?
-              </h2>
-              <p className="text-sm text-ink-soft leading-relaxed">
-                It takes a couple of minutes, and you'll get a reference
-                number as soon as you submit it. The clinic reviews your
-                request and confirms your slot from there.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3 shrink-0">
+          <div className="bg-white rounded-3xl border border-line p-8 sm:p-12 text-center max-w-4xl mx-auto shadow-2xs">
+            <h2 className="font-display text-2xl sm:text-3xl font-medium text-ink mb-3">
+              Ready to send a request?
+            </h2>
+            <p className="text-sm sm:text-base text-ink-soft leading-relaxed max-w-xl mx-auto mb-8">
+              It takes a couple of minutes, and you'll get a reference
+              number as soon as you submit it. The clinic reviews your
+              request and confirms your slot from there.
+            </p>
+            <div className="flex flex-wrap justify-center items-center gap-3">
               <Link
                 to="/appointment"
-                className="px-6 py-3 rounded-xl bg-teal-deep hover:bg-mint-deep text-white text-sm font-semibold transition-colors flex items-center gap-2"
+                className="px-6 py-3 rounded-xl bg-teal-deep hover:bg-mint-deep text-white text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs"
               >
                 <span>Request an appointment</span>
                 <ArrowRight className="w-4 h-4" />

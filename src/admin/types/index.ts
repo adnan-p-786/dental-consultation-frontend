@@ -44,6 +44,7 @@ export interface Doctor {
   avatar: string;
   specialization: string;
   email: string;
+  password: string;
   phone: string;
   workingHours: string;
   status: 'available' | 'busy' | 'on_leave';

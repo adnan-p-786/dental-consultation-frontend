@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { AddDoctorModal } from "./AddDoctorModal";
+import { DeleteDoctorModal } from "./DeleteDoctorModal";
 import type { Doctor } from "../types";
 
 interface DoctorManagementViewProps {
@@ -35,6 +36,7 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
+  const [doctorToDelete, setDoctorToDelete] = useState<Doctor | null>(null);
 
   const specialties = [
     "all",
@@ -157,18 +159,18 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
             <div className="p-5 space-y-4">
               {/* Doctor Head */}
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   <Avatar className="w-14 h-14 border-2 border-line-soft shrink-0">
                     <AvatarImage src={doc.avatar} />
                     <AvatarFallback className="bg-teal-50 text-teal-deep font-bold">
                       {doc.name.replace("Dr. ", "").slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="min-w-0">
-                    <h4 className="font-semibold text-sm text-ink truncate">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-semibold text-sm text-ink truncate" title={doc.name}>
                       {doc.name}
                     </h4>
-                    <p className="text-xs text-mint-deep font-medium truncate">
+                    <p className="text-xs text-mint-deep font-medium truncate" title={doc.specialization}>
                       {doc.specialization}
                     </p>
                     {doc.rating && (
@@ -193,7 +195,7 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
                         ? "requested"
                         : "no_show"
                   }
-                  className="text-[10px] capitalize font-bold"
+                  className="text-[10px] capitalize font-bold shrink-0 whitespace-nowrap ml-auto"
                 >
                   {doc.status.replace("_", " ")}
                 </Badge>
@@ -201,12 +203,12 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
 
               {/* Working Hours & Room */}
               <div className="space-y-1.5 p-3 rounded-xl bg-[#F9FCFA] border border-line text-xs">
-                <div className="flex items-center justify-between text-ink-soft">
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-mint-deep" />
+                <div className="flex items-start justify-between gap-2 text-ink-soft">
+                  <span className="flex items-center gap-1.5 shrink-0">
+                    <Clock className="w-3.5 h-3.5 text-mint-deep shrink-0 mt-0.5" />
                     Hours:
                   </span>
-                  <span className="font-medium text-ink">
+                  <span className="font-medium text-ink text-right">
                     {doc.workingHours}
                   </span>
                 </div>
@@ -273,7 +275,7 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onDeleteDoctor(doc.id)}
+                    onClick={() => setDoctorToDelete(doc)}
                     className="text-xs h-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-2 cursor-pointer"
                     title="Remove Doctor"
                   >
@@ -298,6 +300,16 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
           onUpdateDoctor={onUpdateDoctor}
           onDeleteDoctor={onDeleteDoctor}
           doctorToEdit={editingDoctor}
+        />
+      )}
+
+      {/* Delete Doctor Confirmation Modal */}
+      {onDeleteDoctor && (
+        <DeleteDoctorModal
+          isOpen={Boolean(doctorToDelete)}
+          onClose={() => setDoctorToDelete(null)}
+          onConfirm={(doctorId) => onDeleteDoctor(doctorId)}
+          doctor={doctorToDelete}
         />
       )}
     </div>

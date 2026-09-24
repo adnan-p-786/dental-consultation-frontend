@@ -31,6 +31,7 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
+import { DeleteDoctorModal } from './DeleteDoctorModal';
 import type { Doctor } from '../types';
 
 interface AddDoctorModalProps {
@@ -74,6 +75,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
   // Schema-aligned form state
   const [doctorName, setDoctorName] = useState('');
   const [doctorEmail, setDoctorEmail] = useState('');
+  const [doctorPassword, setDoctorPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [specialization, setSpecialization] = useState(SPECIALTY_OPTIONS[0]);
   const [customSpecialty, setCustomSpecialty] = useState('');
@@ -88,6 +90,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
   // UI status state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const resetForm = () => {
@@ -177,29 +180,24 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     }
   };
 
-  const handleDelete = async () => {
-    if (!doctorToEdit) return;
-
-    const confirmed = window.confirm(
-      `Are you sure you want to remove ${doctorToEdit.name} from the clinic roster? This action cannot be undone.`
-    );
-    if (!confirmed) return;
-
+  const handleDeleteConfirm = async (doctorId: string) => {
     setIsDeleting(true);
     setErrorMessage(null);
 
     try {
-      if (!isNaN(Number(doctorToEdit.id))) {
-        await axios.delete(`/api/doctor/delete-doctor/${doctorToEdit.id}`);
+      if (!isNaN(Number(doctorId))) {
+        await axios.delete(`/api/doctor/delete-doctor/${doctorId}`);
       }
       if (onDeleteDoctor) {
-        onDeleteDoctor(doctorToEdit.id);
+        onDeleteDoctor(doctorId);
       }
+      setIsDeleteConfirmOpen(false);
       handleModalClose();
     } catch (err: any) {
       console.error('Error deleting doctor:', err);
       if (err.response?.status === 404 && onDeleteDoctor) {
-        onDeleteDoctor(doctorToEdit.id);
+        onDeleteDoctor(doctorId);
+        setIsDeleteConfirmOpen(false);
         handleModalClose();
         return;
       }
@@ -239,6 +237,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     formData.append('doctorName', formattedName);
     formData.append('doctorEmail', trimmedEmail);
     formData.append('phoneNumber', trimmedPhone);
+    formData.append('doctorPassword', doctorPassword);
     formData.append('specialization', finalSpecialty);
     formData.append('workingHours', trimmedWorkingHours);
     formData.append('status', status);
@@ -270,6 +269,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           name: savedDoctor?.doctorName || formattedName,
           specialization: savedDoctor?.specialization || finalSpecialty,
           email: savedDoctor?.doctorEmail || trimmedEmail,
+          password: savedDoctor?.doctorPassword || doctorPassword,
           phone: savedDoctor?.phoneNumber || trimmedPhone,
           workingHours: savedDoctor?.workingHours || trimmedWorkingHours,
           status: (savedDoctor?.status as 'available' | 'busy' | 'on_leave') || status,
@@ -301,6 +301,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
             name: savedDoctor?.doctorName || formattedName,
             specialization: savedDoctor?.specialization || finalSpecialty,
             email: savedDoctor?.doctorEmail || trimmedEmail,
+            password: savedDoctor?.doctorPassword || doctorPassword,
             phone: savedDoctor?.phoneNumber || trimmedPhone,
             workingHours: savedDoctor?.workingHours || trimmedWorkingHours,
             status: (savedDoctor?.status as 'available' | 'busy' | 'on_leave') || status,
@@ -446,6 +447,22 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
             <div className="space-y-1">
               <label className="text-xs font-semibold text-ink flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-mint-deep" />
+                Password *
+              </label>
+              <Input
+                required
+                disabled={isSubmitting}
+                type="password"
+                placeholder="e.g. PASSWORD"
+                value={doctorPassword}
+                onChange={(e) => setDoctorPassword(e.target.value)}
+                className="text-xs h-9"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-ink flex items-center gap-1.5">
                 <Phone className="w-3.5 h-3.5 text-mint-deep" />
                 Phone Number *
               </label>
@@ -569,20 +586,11 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                 type="button"
                 variant="ghost"
                 disabled={isSubmitting || isDeleting}
-                onClick={handleDelete}
+                onClick={() => setIsDeleteConfirmOpen(true)}
                 className="text-xs h-9 text-rose-600 hover:text-rose-700 hover:bg-rose-50 cursor-pointer gap-1.5 sm:mr-auto"
               >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" />
-                    <span>Removing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete Doctor</span>
-                  </>
-                )}
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Doctor</span>
               </Button>
             )}
             <Button
@@ -619,6 +627,16 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {/* Confirmation Modal when deleting from edit view */}
+      {isEditMode && doctorToEdit && (
+        <DeleteDoctorModal
+          isOpen={isDeleteConfirmOpen}
+          onClose={() => setIsDeleteConfirmOpen(false)}
+          onConfirm={(doctorId) => handleDeleteConfirm(doctorId)}
+          doctor={doctorToEdit}
+        />
+      )}
     </Dialog>
   );
 };

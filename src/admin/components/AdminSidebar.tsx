@@ -121,7 +121,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           "md:relative md:h-screen md:sticky md:top-0 md:translate-x-0",
           collapsed ? "md:w-20" : "md:w-72",
           // Mobile drawer positioning
-          "fixed inset-y-0 left-0 h-full w-72",
+          "fixed inset-y-0 left-0 h-full w-72 max-w-[85vw]",
           mobileOpen
             ? "translate-x-0 shadow-2xl"
             : "-translate-x-full md:translate-x-0",
@@ -129,8 +129,20 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       >
         {/* Brand Header */}
         <div>
-          <div className="flex items-center justify-between px-5 py-5 border-b border-line">
-            <div className="flex items-center gap-3 overflow-hidden">
+          <div
+            className={cn(
+              "border-b border-line transition-all duration-200",
+              collapsed && !mobileOpen
+                ? "flex flex-col items-center py-4 px-2 gap-2"
+                : "flex items-center justify-between px-5 py-5",
+            )}
+          >
+            <div
+              className={cn(
+                "flex items-center gap-3 min-w-0",
+                collapsed && !mobileOpen ? "justify-center" : "overflow-hidden",
+              )}
+            >
               <div className="w-10 h-10 rounded-xl bg-teal-deep text-white flex items-center justify-center shrink-0 shadow-xs">
                 <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
                   <path
@@ -159,7 +171,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             {/* Desktop collapse toggle */}
             <button
               onClick={onToggleCollapse}
-              className="hidden md:flex p-1.5 rounded-lg text-ink-soft hover:text-teal-deep hover:bg-line-soft transition-colors cursor-pointer"
+              className={cn(
+                "hidden md:flex rounded-lg text-ink-soft hover:text-teal-deep hover:bg-line-soft transition-colors cursor-pointer",
+                collapsed && !mobileOpen
+                  ? "w-8 h-8 items-center justify-center p-0"
+                  : "p-1.5",
+              )}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {collapsed ? (
@@ -180,7 +197,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </div>
 
           {/* Navigation List */}
-          <nav className="p-3 space-y-1.5">
+          <nav
+            className={cn(
+              "space-y-1.5 transition-all duration-200",
+              collapsed && !mobileOpen ? "p-2" : "p-3",
+            )}
+          >
             {(!collapsed || mobileOpen) && (
               <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-ink-soft/70">
                 Management Portal
@@ -190,6 +212,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              const isItemCollapsed = collapsed && !mobileOpen;
+
               return (
                 <button
                   key={item.id}
@@ -198,40 +222,54 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     if (onCloseMobile) onCloseMobile();
                   }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 text-left cursor-pointer group relative",
+                    "flex items-center rounded-xl transition-all duration-150 text-left cursor-pointer group relative",
+                    isItemCollapsed
+                      ? "w-11 h-11 mx-auto justify-center p-0"
+                      : "w-full gap-3 px-3.5 py-2.5 text-sm font-medium",
                     isActive
                       ? "bg-teal-deep text-white shadow-xs font-semibold"
                       : "text-ink-soft hover:bg-line-soft hover:text-teal-deep",
                   )}
-                  title={collapsed && !mobileOpen ? item.label : undefined}
+                  title={isItemCollapsed ? item.label : undefined}
                 >
-                  <Icon
-                    className={cn(
-                      "w-5 h-5 shrink-0 transition-transform group-hover:scale-105",
-                      isActive
-                        ? "text-emerald-300"
-                        : "text-ink-soft group-hover:text-teal-deep",
+                  <div className="relative flex items-center justify-center shrink-0">
+                    <Icon
+                      className={cn(
+                        "w-5 h-5 transition-transform group-hover:scale-105 shrink-0",
+                        isActive
+                          ? "text-emerald-300"
+                          : "text-ink-soft group-hover:text-teal-deep",
+                      )}
+                    />
+                    {isItemCollapsed && item.badge !== null && (
+                      <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-bold px-1 ring-2 ring-white shadow-xs">
+                        {item.badge}
+                      </span>
                     )}
-                  />
+                  </div>
 
-                  {(!collapsed || mobileOpen) && (
-                    <span className="truncate flex-1 font-medium">
-                      {item.label}
-                    </span>
+                  {!isItemCollapsed && (
+                    <>
+                      <span className="truncate flex-1 font-medium">
+                        {item.label}
+                      </span>
+
+                      {item.badge !== null && (
+                        <Badge
+                          variant={isActive ? "secondary" : "requested"}
+                          className="ml-auto text-[11px] px-2 py-0.5 shrink-0 font-bold"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </>
                   )}
 
-                  {item.badge !== null && (
-                    <Badge
-                      variant={isActive ? "secondary" : "requested"}
-                      className={cn(
-                        "ml-auto text-[11px] px-2 py-0.5 shrink-0 font-bold",
-                        collapsed &&
-                          !mobileOpen &&
-                          "absolute top-1 right-1 px-1.5 py-0 text-[10px]",
-                      )}
-                    >
-                      {item.badge}
-                    </Badge>
+                  {/* Desktop hover tooltip when collapsed */}
+                  {isItemCollapsed && (
+                    <span className="pointer-events-none absolute left-full ml-3 hidden group-hover:flex items-center px-2.5 py-1 rounded-lg bg-teal-deep text-white text-xs font-medium whitespace-nowrap shadow-md z-50 animate-in fade-in-0 zoom-in-95">
+                      {item.label}
+                    </span>
                   )}
                 </button>
               );
@@ -240,8 +278,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </div>
 
         {/* Footer Profile & Links */}
-        <div className="p-3 border-t border-line space-y-3">
-          {!collapsed && (
+        <div
+          className={cn(
+            "border-t border-line space-y-2.5 transition-all duration-200",
+            collapsed && !mobileOpen ? "p-2 flex flex-col items-center" : "p-3",
+          )}
+        >
+          {/* External patient site link */}
+          {!collapsed || mobileOpen ? (
             <Link
               to="/"
               target="_blank"
@@ -255,22 +299,41 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 Open tab
               </span>
             </Link>
+          ) : (
+            <Link
+              to="/"
+              target="_blank"
+              className="w-10 h-10 flex items-center justify-center rounded-xl text-ink-soft hover:text-teal-deep hover:bg-line-soft transition-colors relative group"
+              title="Open Patient Booking Site"
+            >
+              <ExternalLink className="w-4 h-4 text-mint-deep" />
+              <span className="pointer-events-none absolute left-full ml-3 hidden group-hover:flex items-center px-2.5 py-1 rounded-lg bg-teal-deep text-white text-xs font-medium whitespace-nowrap shadow-md z-50">
+                Patient Booking Site
+              </span>
+            </Link>
           )}
 
           {/* Current Admin User */}
           <div
             className={cn(
-              "flex items-center gap-3 p-2 rounded-xl bg-paper border border-line",
-              collapsed && "justify-center p-2",
+              "flex items-center rounded-xl bg-paper border border-line",
+              collapsed && !mobileOpen
+                ? "w-10 h-10 justify-center p-0"
+                : "gap-3 p-2 w-full",
             )}
+            title={
+              collapsed && !mobileOpen
+                ? `${adminName} (${adminRoleLabel})`
+                : undefined
+            }
           >
-            <Avatar className="w-9 h-9 border border-teal-deep/20">
-              <AvatarFallback className="bg-teal-deep text-white text-xs font-bold">
+            <Avatar className="w-8 h-8 border border-teal-deep/20 shrink-0">
+              <AvatarFallback className="bg-teal-deep text-white text-[11px] font-bold">
                 {adminInitials}
               </AvatarFallback>
             </Avatar>
 
-            {!collapsed && (
+            {(!collapsed || mobileOpen) && (
               <div className="flex flex-col truncate flex-1 min-w-0">
                 <div className="flex items-center gap-1">
                   <span className="text-xs font-semibold text-ink truncate">
@@ -289,13 +352,15 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <button
             onClick={() => logout()}
             className={cn(
-              "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer",
-              collapsed && "justify-center px-2",
+              "flex items-center text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer rounded-xl",
+              collapsed && !mobileOpen
+                ? "w-10 h-10 justify-center p-0"
+                : "gap-2 w-full px-3 py-2",
             )}
             title="Sign Out"
           >
             <LogOut className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>Sign Out</span>}
+            {(!collapsed || mobileOpen) && <span>Sign Out</span>}
           </button>
         </div>
       </aside>
