@@ -33,10 +33,13 @@ export default function DoctorDashboard() {
   });
   const [activeTab, setActiveTab] = useState<ScheduleTab>("today");
   const [searchQuery, setSearchQuery] = useState("");
-  const [availability, setAvailability] = useState<"available" | "busy" | "offline">("available");
+  const [availability, setAvailability] = useState<
+    "available" | "busy" | "offline"
+  >("available");
 
   // Selected appointment for Consultation Workspace
-  const [activeWorkspaceApt, setActiveWorkspaceApt] = useState<Appointment | null>(null);
+  const [activeWorkspaceApt, setActiveWorkspaceApt] =
+    useState<Appointment | null>(null);
 
   // Consultation Workspace Form state (SOW Section 7 exact fields)
   const [workspaceNotes, setWorkspaceNotes] = useState<ConsultationNotes>({
@@ -75,8 +78,10 @@ export default function DoctorDashboard() {
     };
   }, []);
 
-  const doctorName = user ? `Dr. ${user.firstName} ${user.lastName}` : "Dr. Sarah Jenkins";
-  const doctorEmail = user?.email || "sarah.jenkins@cedarview.com";
+  const doctorName = user
+    ? `Dr. ${user.firstName} ${user.lastName}`
+    : "Dr. Sarah Jenkins";
+  const doctorEmail = user?.email || "sarah.jenkins@32 stories.com";
 
   // Filter appointments according to SOW Section 7 schedule views
   const filteredAppointments = useMemo(() => {
@@ -86,10 +91,12 @@ export default function DoctorDashboard() {
       // Tab filter
       const aptDate = apt.confirmedDate || apt.requestedDate || "";
       if (activeTab === "today") {
-        if (apt.status === "completed" || apt.status === "cancelled") return false;
+        if (apt.status === "completed" || apt.status === "cancelled")
+          return false;
         return aptDate === todayStr || !aptDate;
       } else if (activeTab === "upcoming") {
-        if (apt.status === "completed" || apt.status === "cancelled") return false;
+        if (apt.status === "completed" || apt.status === "cancelled")
+          return false;
         return aptDate >= todayStr || !aptDate;
       } else if (activeTab === "completed") {
         if (apt.status !== "completed") return false;
@@ -113,11 +120,14 @@ export default function DoctorDashboard() {
   const handleOpenWorkspace = (apt: Appointment) => {
     setActiveWorkspaceApt(apt);
     setWorkspaceNotes({
-      chiefComplaint: apt.consultationNotes?.chiefComplaint || apt.patientMessage || "",
+      chiefComplaint:
+        apt.consultationNotes?.chiefComplaint || apt.patientMessage || "",
       findings: apt.consultationNotes?.findings || "",
       diagnosis: apt.consultationNotes?.diagnosis || "",
-      recommendedTreatment: apt.consultationNotes?.recommendedTreatment || apt.treatment || "",
-      additionalInstructions: apt.consultationNotes?.additionalInstructions || "",
+      recommendedTreatment:
+        apt.consultationNotes?.recommendedTreatment || apt.treatment || "",
+      additionalInstructions:
+        apt.consultationNotes?.additionalInstructions || "",
       followUpRequirements: apt.consultationNotes?.followUpRequirements || "",
       internalNotes: apt.consultationNotes?.internalNotes || "",
     });
@@ -131,10 +141,12 @@ export default function DoctorDashboard() {
     appointmentService.completeConsultation(
       activeWorkspaceApt.id,
       workspaceNotes,
-      doctorName
+      doctorName,
     );
 
-    showToast(`Consultation for ${activeWorkspaceApt.patient.name} marked as Completed.`);
+    showToast(
+      `Consultation for ${activeWorkspaceApt.patient.name} marked as Completed.`,
+    );
     setActiveWorkspaceApt(null);
     loadDoctorAppointments();
   };
@@ -146,7 +158,7 @@ export default function DoctorDashboard() {
     appointmentService.saveConsultationNotes(
       activeWorkspaceApt.id,
       workspaceNotes,
-      doctorName
+      doctorName,
     );
 
     showToast("Consultation notes saved.");
@@ -159,13 +171,14 @@ export default function DoctorDashboard() {
     return appointments.filter(
       (a) =>
         a.id !== activeWorkspaceApt.id &&
-        a.patient.email.toLowerCase() === activeWorkspaceApt.patient.email.toLowerCase() &&
-        a.status === "completed"
+        a.patient.email.toLowerCase() ===
+          activeWorkspaceApt.patient.email.toLowerCase() &&
+        a.status === "completed",
     );
   }, [activeWorkspaceApt, appointments]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAF9] text-ink flex flex-col font-sans selection:bg-mint/30 selection:text-teal-deep">
+    <div className="min-h-screen bg-[#FAF7F6] text-ink flex flex-col font-sans selection:bg-[#5E3E3B]/20 selection:text-[#5E3E3B]">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-teal-deep text-white text-xs font-semibold py-3 px-4 rounded-xl shadow-lg border border-white/20 flex items-center gap-2 animate-fadeIn">
@@ -183,30 +196,34 @@ export default function DoctorDashboard() {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-display font-semibold text-lg text-teal-deep tracking-tight">
-                Cedarview Dental
+                32 stories Dental
               </span>
-              <span className="text-[10.5px] font-bold uppercase tracking-wider bg-[#EDF6F2] text-teal-deep px-2 py-0.5 rounded-full border border-teal-deep/15">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider bg-[#FAF2F0] text-teal-deep px-2 py-0.5 rounded-full border border-teal-deep/15">
                 Doctor Portal
               </span>
             </div>
-            <p className="text-xs text-ink-soft">Consultation Workspace & Patient Queue</p>
+            <p className="text-xs text-ink-soft">
+              Consultation Workspace & Patient Queue
+            </p>
           </div>
         </div>
 
         {/* Doctor profile & availability status (SOW Section 10) */}
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 bg-[#EDF6F2] px-3 py-1.5 rounded-xl border border-teal-deep/10 text-xs">
+          <div className="hidden sm:flex items-center gap-2 bg-[#FAF2F0] px-3 py-1.5 rounded-xl border border-teal-deep/10 text-xs">
             <span
               className={`w-2 h-2 rounded-full ${
                 availability === "available"
                   ? "bg-emerald-500 animate-pulse"
                   : availability === "busy"
-                  ? "bg-amber-500"
-                  : "bg-gray-400"
+                    ? "bg-amber-500"
+                    : "bg-gray-400"
               }`}
             />
             <span className="font-medium text-teal-deep capitalize">
-              {availability === "available" ? "Online & Available" : availability}
+              {availability === "available"
+                ? "Online & Available"
+                : availability}
             </span>
           </div>
 
@@ -219,7 +236,9 @@ export default function DoctorDashboard() {
               <span className="text-xs font-semibold text-ink leading-tight">
                 {doctorName}
               </span>
-              <span className="text-[11px] text-ink-soft leading-tight">{doctorEmail}</span>
+              <span className="text-[11px] text-ink-soft leading-tight">
+                {doctorEmail}
+              </span>
             </div>
             <button
               onClick={() => logout()}
@@ -240,7 +259,8 @@ export default function DoctorDashboard() {
           <div
             className="absolute inset-0 opacity-10 pointer-events-none"
             style={{
-              backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)",
+              backgroundImage:
+                "radial-gradient(circle, #ffffff 1px, transparent 1px)",
               backgroundSize: "20px 20px",
             }}
           />
@@ -253,8 +273,10 @@ export default function DoctorDashboard() {
               <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
                 Welcome, {doctorName}
               </h1>
-              <p className="text-sm text-[#C3D8D0] mt-1 max-w-xl">
-                Manage your scheduled appointments, conduct online video consultations, and record clinical findings as specified in the consultation workflow.
+              <p className="text-sm text-[#EBD8D5] mt-1 max-w-xl">
+                Manage your scheduled appointments, conduct online video
+                consultations, and record clinical findings as specified in the
+                consultation workflow.
               </p>
             </div>
 
@@ -302,7 +324,11 @@ export default function DoctorDashboard() {
               <Calendar className="w-4 h-4 text-teal-deep" />
             </div>
             <div className="text-2xl font-display font-bold text-teal-deep">
-              {appointments.filter((a) => a.status !== "completed" && a.status !== "cancelled").length}
+              {
+                appointments.filter(
+                  (a) => a.status !== "completed" && a.status !== "cancelled",
+                ).length
+              }
             </div>
             <span className="text-[11px] text-ink-soft mt-1 inline-block">
               Pending consultations
@@ -315,7 +341,12 @@ export default function DoctorDashboard() {
               <Video className="w-4 h-4 text-mint-deep" />
             </div>
             <div className="text-2xl font-display font-bold text-teal-deep">
-              {appointments.filter((a) => a.consultationType === "video" && a.status !== "completed").length}
+              {
+                appointments.filter(
+                  (a) =>
+                    a.consultationType === "video" && a.status !== "completed",
+                ).length
+              }
             </div>
             <span className="text-[11px] text-teal-deep font-medium mt-1 inline-block">
               Video enabled
@@ -343,7 +374,9 @@ export default function DoctorDashboard() {
             <div className="text-2xl font-display font-bold text-teal-deep">
               {appointments.length}
             </div>
-            <span className="text-[11px] text-ink-soft mt-1 inline-block">In doctor queue</span>
+            <span className="text-[11px] text-ink-soft mt-1 inline-block">
+              In doctor queue
+            </span>
           </div>
         </div>
 
@@ -356,7 +389,8 @@ export default function DoctorDashboard() {
                 Doctor Consultation Schedule
               </h2>
               <p className="text-xs text-ink-soft mt-0.5">
-                View today's and upcoming appointments, patient records, and consultation links
+                View today's and upcoming appointments, patient records, and
+                consultation links
               </p>
             </div>
 
@@ -422,14 +456,15 @@ export default function DoctorDashboard() {
           {/* Appointments List / Empty State */}
           {filteredAppointments.length === 0 ? (
             <div className="p-12 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-[#EDF6F2] text-teal-deep flex items-center justify-center mx-auto mb-3">
+              <div className="w-14 h-14 rounded-2xl bg-[#FAF2F0] text-teal-deep flex items-center justify-center mx-auto mb-3">
                 <Stethoscope className="w-7 h-7" />
               </div>
               <h3 className="font-display text-base font-semibold text-ink">
                 No consultations in this view
               </h3>
               <p className="text-xs text-ink-soft max-w-sm mx-auto mt-1 leading-relaxed">
-                When patient appointment requests are assigned to your schedule by clinic administrators, they will appear here automatically.
+                When patient appointment requests are assigned to your schedule
+                by clinic administrators, they will appear here automatically.
               </p>
             </div>
           ) : (
@@ -466,7 +501,11 @@ export default function DoctorDashboard() {
                           </span>
                           {apt.patient.age && (
                             <span className="text-xs text-ink-soft">
-                              ({apt.patient.age} yrs{apt.patient.gender ? `, ${apt.patient.gender}` : ""})
+                              ({apt.patient.age} yrs
+                              {apt.patient.gender
+                                ? `, ${apt.patient.gender}`
+                                : ""}
+                              )
                             </span>
                           )}
 
@@ -476,8 +515,8 @@ export default function DoctorDashboard() {
                               apt.status === "completed"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : apt.status === "approved"
-                                ? "bg-blue-50 text-blue-700 border-blue-200"
-                                : "bg-amber-50 text-amber-700 border-amber-200"
+                                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                                  : "bg-amber-50 text-amber-700 border-amber-200"
                             }`}
                           >
                             {apt.status.replace("_", " ")}
@@ -491,7 +530,9 @@ export default function DoctorDashboard() {
                                 : "bg-purple-50 text-purple-700 border-purple-200"
                             }`}
                           >
-                            {apt.consultationType === "video" ? "Online Video" : "In Clinic"}
+                            {apt.consultationType === "video"
+                              ? "Online Video"
+                              : "In Clinic"}
                           </span>
                         </div>
 
@@ -523,7 +564,9 @@ export default function DoctorDashboard() {
 
                         {apt.patientMessage && (
                           <p className="text-xs text-ink-soft/90 mt-1.5 bg-paper/60 p-2 rounded-lg border border-line/60">
-                            <span className="font-medium text-ink">Patient Note: </span>
+                            <span className="font-medium text-ink">
+                              Patient Note:{" "}
+                            </span>
                             {apt.patientMessage}
                           </p>
                         )}
@@ -544,10 +587,12 @@ export default function DoctorDashboard() {
                         {/* Access Online Consultation Link (SOW Section 5 & 7) */}
                         {apt.consultationType === "video" && (
                           <a
-                            href={apt.meetingLink || `https://meet.google.com/new`}
+                            href={
+                              apt.meetingLink || `https://meet.google.com/new`
+                            }
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                            className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
                           >
                             <Video className="w-3.5 h-3.5 text-mint" />
                             <span>Join Video Call</span>
@@ -558,10 +603,12 @@ export default function DoctorDashboard() {
                         {/* Open Consultation Workspace (SOW Section 7) */}
                         <button
                           onClick={() => handleOpenWorkspace(apt)}
-                          className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl border border-teal-deep/30 bg-[#EDF6F2] hover:bg-teal-deep hover:text-white text-teal-deep text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                          className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl border border-teal-deep/30 bg-[#FAF2F0] hover:bg-[#262525] hover:text-white text-teal-deep text-xs font-semibold transition-all cursor-pointer shadow-xs"
                         >
                           <FileText className="w-3.5 h-3.5" />
-                          <span>{isCompleted ? "View Workspace" : "Open Workspace"}</span>
+                          <span>
+                            {isCompleted ? "View Workspace" : "Open Workspace"}
+                          </span>
                         </button>
                       </div>
                     </div>
@@ -584,16 +631,18 @@ export default function DoctorDashboard() {
                   <span className="text-xs font-bold uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded text-mint">
                     Consultation Workspace
                   </span>
-                  <span className="text-xs font-mono text-[#C3D8D0]">
+                  <span className="text-xs font-mono text-[#EBD8D5]">
                     Ref: {activeWorkspaceApt.referenceNo}
                   </span>
                 </div>
                 <h2 className="font-display font-bold text-xl sm:text-2xl mt-1">
                   {activeWorkspaceApt.patient.name}
                 </h2>
-                <p className="text-xs text-[#C3D8D0] mt-0.5">
+                <p className="text-xs text-[#EBD8D5] mt-0.5">
                   Case Requirement: {activeWorkspaceApt.treatment} •{" "}
-                  {activeWorkspaceApt.consultationType === "video" ? "Online Video" : "In Clinic"}
+                  {activeWorkspaceApt.consultationType === "video"
+                    ? "Online Video"
+                    : "In Clinic"}
                 </p>
               </div>
 
@@ -607,26 +656,35 @@ export default function DoctorDashboard() {
             </div>
 
             {/* Modal Form Body - Features all 7 documented fields from SOW Section 7 */}
-            <form onSubmit={handleCompleteConsultation} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+            <form
+              onSubmit={handleCompleteConsultation}
+              className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6"
+            >
               {/* Meeting Link Quick Bar */}
               {activeWorkspaceApt.consultationType === "video" && (
-                <div className="p-4 rounded-2xl bg-[#EDF6F2] border border-teal-deep/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="p-4 rounded-2xl bg-[#FAF2F0] border border-teal-deep/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-teal-deep text-white flex items-center justify-center shrink-0">
                       <Video className="w-5 h-5 text-mint" />
                     </div>
                     <div>
-                      <span className="text-xs font-semibold text-teal-deep">Video Consultation Room</span>
+                      <span className="text-xs font-semibold text-teal-deep">
+                        Video Consultation Room
+                      </span>
                       <p className="text-xs text-ink-soft truncate max-w-md">
-                        {activeWorkspaceApt.meetingLink || "Standard encrypted clinic consultation link"}
+                        {activeWorkspaceApt.meetingLink ||
+                          "Standard encrypted clinic consultation link"}
                       </p>
                     </div>
                   </div>
                   <a
-                    href={activeWorkspaceApt.meetingLink || "https://meet.google.com/new"}
+                    href={
+                      activeWorkspaceApt.meetingLink ||
+                      "https://meet.google.com/new"
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-teal-deep text-white text-xs font-semibold hover:bg-mint-deep transition-all shrink-0"
+                    className="inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-[#5E3E3B] text-white text-xs font-semibold hover:bg-[#262525] transition-all shrink-0"
                   >
                     <span>Launch Meeting</span>
                     <ExternalLink className="w-3.5 h-3.5" />
@@ -647,7 +705,10 @@ export default function DoctorDashboard() {
                     required
                     value={workspaceNotes.chiefComplaint || ""}
                     onChange={(e) =>
-                      setWorkspaceNotes((prev) => ({ ...prev, chiefComplaint: e.target.value }))
+                      setWorkspaceNotes((prev) => ({
+                        ...prev,
+                        chiefComplaint: e.target.value,
+                      }))
                     }
                     placeholder="Patient's reported dental symptoms, pain location, onset, or treatment inquiry..."
                     className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep focus:outline-none transition-colors"
@@ -663,7 +724,10 @@ export default function DoctorDashboard() {
                     rows={3}
                     value={workspaceNotes.findings || ""}
                     onChange={(e) =>
-                      setWorkspaceNotes((prev) => ({ ...prev, findings: e.target.value }))
+                      setWorkspaceNotes((prev) => ({
+                        ...prev,
+                        findings: e.target.value,
+                      }))
                     }
                     placeholder="Clinical observations, tooth condition, soft tissue, occlusion, visual assessment..."
                     className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep focus:outline-none transition-colors"
@@ -679,7 +743,10 @@ export default function DoctorDashboard() {
                     rows={3}
                     value={workspaceNotes.diagnosis || ""}
                     onChange={(e) =>
-                      setWorkspaceNotes((prev) => ({ ...prev, diagnosis: e.target.value }))
+                      setWorkspaceNotes((prev) => ({
+                        ...prev,
+                        diagnosis: e.target.value,
+                      }))
                     }
                     placeholder="Clinical assessment (e.g. Class I Malocclusion, Pulpal Necrosis #19, Missing #14)..."
                     className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep focus:outline-none transition-colors"
@@ -775,7 +842,8 @@ export default function DoctorDashboard() {
 
                 {patientPreviousConsultations.length === 0 ? (
                   <p className="text-xs text-ink-soft italic">
-                    No prior consultations on record for this patient. This is their initial consultation record.
+                    No prior consultations on record for this patient. This is
+                    their initial consultation record.
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -794,13 +862,17 @@ export default function DoctorDashboard() {
                         </div>
                         {prevApt.consultationNotes?.diagnosis && (
                           <p className="text-ink-soft">
-                            <span className="font-semibold text-ink">Diagnosis: </span>
+                            <span className="font-semibold text-ink">
+                              Diagnosis:{" "}
+                            </span>
                             {prevApt.consultationNotes.diagnosis}
                           </p>
                         )}
                         {prevApt.consultationNotes?.recommendedTreatment && (
                           <p className="text-ink-soft">
-                            <span className="font-semibold text-ink">Treatment: </span>
+                            <span className="font-semibold text-ink">
+                              Treatment:{" "}
+                            </span>
                             {prevApt.consultationNotes.recommendedTreatment}
                           </p>
                         )}
@@ -815,7 +887,8 @@ export default function DoctorDashboard() {
                 <div className="flex items-center gap-2 text-xs text-ink-soft">
                   <AlertCircle className="w-4 h-4 text-teal-deep" />
                   <span>
-                    Marking as completed locks the clinical consultation sheet and adds an audit record.
+                    Marking as completed locks the clinical consultation sheet
+                    and adds an audit record.
                   </span>
                 </div>
 
@@ -830,7 +903,7 @@ export default function DoctorDashboard() {
 
                   <button
                     type="submit"
-                    className="py-2.5 px-5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                    className="py-2.5 px-5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-2 cursor-pointer"
                   >
                     <Check className="w-4 h-4 text-mint" />
                     <span>Mark Consultation as Completed</span>

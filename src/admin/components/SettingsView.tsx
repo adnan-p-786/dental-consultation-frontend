@@ -31,7 +31,7 @@ export const SettingsView: React.FC = () => {
 
         <Button
           type="submit"
-          className="gap-2 bg-teal-deep text-white hover:bg-teal-mid text-xs h-9 shadow-xs"
+          className="gap-2 bg-[#5E3E3B] text-white hover:bg-[#262525] text-xs h-9 shadow-xs cursor-pointer"
         >
           {saved ? (
             <Check className="w-3.5 h-3.5 text-emerald-300" />
@@ -132,10 +132,10 @@ export const SettingsView: React.FC = () => {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-3.5 rounded-xl border border-line bg-[#FAFDFC] space-y-1.5">
+            <div className="p-3.5 rounded-xl border border-line bg-[#FAF7F6] space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-ink">Google Meet</span>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">
+                <span className="text-[10px] bg-[#FAF2F0] text-[#5E3E3B] font-bold px-1.5 py-0.5 rounded">
                   Connected
                 </span>
               </div>
@@ -144,7 +144,7 @@ export const SettingsView: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-3.5 rounded-xl border border-line bg-[#FAFDFC] space-y-1.5">
+            <div className="p-3.5 rounded-xl border border-line bg-[#FAF7F6] space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-ink">Zoom Video</span>
                 <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-1.5 py-0.5 rounded">
@@ -156,7 +156,7 @@ export const SettingsView: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-3.5 rounded-xl border border-line bg-[#FAFDFC] space-y-1.5">
+            <div className="p-3.5 rounded-xl border border-line bg-[#FAF7F6] space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-ink">
                   Microsoft Teams
@@ -182,7 +182,7 @@ export const SettingsView: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 space-y-3">
-          <div className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#FAFDFC]">
+          <div className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#FAF7F6]">
             <div>
               <span className="text-xs font-bold text-ink block">
                 Instant Request Acknowledgement
@@ -192,12 +192,12 @@ export const SettingsView: React.FC = () => {
                 immediately upon patient submission.
               </span>
             </div>
-            <span className="text-xs font-semibold text-emerald-700">
+            <span className="text-xs font-semibold text-[#5E3E3B]">
               Enabled
             </span>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#FAFDFC]">
+          <div className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#FAF7F6]">
             <div>
               <span className="text-xs font-bold text-ink block">
                 24-Hour Prior Consultation Reminder
@@ -207,12 +207,12 @@ export const SettingsView: React.FC = () => {
                 hours in advance.
               </span>
             </div>
-            <span className="text-xs font-semibold text-emerald-700">
+            <span className="text-xs font-semibold text-[#5E3E3B]">
               Enabled
             </span>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#FAFDFC]">
+          <div className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#FAF7F6]">
             <div>
               <span className="text-xs font-bold text-ink block">
                 1-Hour Prior Direct SMS / Email Ping
@@ -221,7 +221,7 @@ export const SettingsView: React.FC = () => {
                 Urgent reminder with one-click direct consultation room URL.
               </span>
             </div>
-            <span className="text-xs font-semibold text-emerald-700">
+            <span className="text-xs font-semibold text-[#5E3E3B]">
               Enabled
             </span>
           </div>

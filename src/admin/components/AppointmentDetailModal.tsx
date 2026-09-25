@@ -277,7 +277,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   Primary Requirement
                 </span>
               </div>
-              <p className="text-sm text-ink leading-relaxed bg-[#F8FAF9] p-3 rounded-lg border border-line-soft">
+              <p className="text-sm text-ink leading-relaxed bg-[#FAF7F6] p-3 rounded-lg border border-line-soft">
                 {appointment.patientMessage ||
                   "No specific notes provided by patient upon booking."}
               </p>
@@ -299,7 +299,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   {appointment.documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#F9FCFA] hover:border-mint-deep/50 transition-colors"
+                      className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#FAF7F6] hover:border-mint-deep/50 transition-colors"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <FileSpreadsheet className="w-6 h-6 text-teal-deep shrink-0" />
@@ -323,7 +323,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="py-4 text-center text-xs text-ink-soft bg-[#F9FCFA] rounded-lg border border-dashed border-line">
+                <div className="py-4 text-center text-xs text-ink-soft bg-[#FAF7F6] rounded-lg border border-dashed border-line">
                   No scan files or photos attached to this request.
                 </div>
               )}
@@ -372,7 +372,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                       href={appointment.meetingLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-teal-deep text-white hover:bg-teal-mid transition-colors shrink-0"
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-[#5E3E3B] text-white hover:bg-[#262525] transition-colors shrink-0"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       Join Consultation
@@ -383,7 +383,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                     <Button
                       size="sm"
                       onClick={handleGenerateMeeting}
-                      className="gap-1.5 bg-teal-deep text-white hover:bg-teal-mid text-xs h-9"
+                      className="gap-1.5 bg-[#5E3E3B] text-white hover:bg-[#262525] text-xs h-9 cursor-pointer"
                     >
                       <Video className="w-3.5 h-3.5" />
                       Generate Video Consultation Room
@@ -427,8 +427,8 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                       onClick={() => handleAssign(doc.id)}
                       className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 ${
                         isSelected
-                          ? "border-teal-deep bg-[#EDF6F2] ring-2 ring-teal-deep/15"
-                          : "border-line bg-white hover:border-mint-deep/40 hover:bg-[#FAFDFC]"
+                          ? "border-teal-deep bg-[#FAF2F0] ring-2 ring-teal-deep/15"
+                          : "border-line bg-white hover:border-mint-deep/40 hover:bg-[#FAF7F6]"
                       }`}
                     >
                       <Avatar className="w-10 h-10 border border-line shrink-0">
@@ -584,7 +584,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 <Button
                   size="sm"
                   onClick={handleSaveNotes}
-                  className="bg-teal-deep hover:bg-teal-mid text-white text-xs h-8 gap-1"
+                  className="bg-[#5E3E3B] hover:bg-[#262525] text-white text-xs h-8 gap-1 cursor-pointer"
                 >
                   <Check className="w-3.5 h-3.5" />
                   Save Notes
@@ -801,7 +801,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
             variant="default"
             size="sm"
             onClick={onClose}
-            className="bg-teal-deep text-white"
+            className="bg-[#5E3E3B] text-white hover:bg-[#262525] cursor-pointer"
           >
             Done
           </Button>

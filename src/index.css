@@ -8,41 +8,44 @@
   --font-fraunces: "Libre Baskerville", Georgia, serif;
   --font-inter: "Inter", system-ui, -apple-system, sans-serif;
 
-  --background: 154 20% 98%;
-  --foreground: 160 25% 12%;
+  --background: 15 20% 98%;
+  --foreground: 15 20% 12%;
 
   --card: 0 0% 100%;
-  --card-foreground: 160 25% 12%;
+  --card-foreground: 15 20% 12%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 160 25% 12%;
+  --popover-foreground: 15 20% 12%;
 
-  --primary: 170 56% 14%;
-  --primary-foreground: 140 30% 98%;
+  --primary: 5 23% 30%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 154 25% 93%;
-  --secondary-foreground: 170 56% 14%;
+  --secondary: 15 20% 94%;
+  --secondary-foreground: 5 23% 30%;
 
-  --muted: 150 15% 94%;
-  --muted-foreground: 160 12% 42%;
+  --muted: 15 15% 94%;
+  --muted-foreground: 15 10% 40%;
 
-  --accent: 158 37% 48%;
+  --accent: 5 35% 55%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 6 52% 47%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 147 16% 88%;
-  --input: 147 16% 88%;
-  --ring: 170 56% 14%;
+  --border: 15 15% 88%;
+  --input: 15 15% 88%;
+  --ring: 5 23% 30%;
 
   --radius: 0.75rem;
+
+  --btn-primary: #5E3E3B;
+  --btn-hover: #262525;
 }
 
 body {
   font-family: var(--font-inter);
-  color: #16241F;
-  background-color: #F8FAF9;
+  color: #261B1A;
+  background-color: #FAF7F6;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -50,7 +53,11 @@ body {
   .input {
     @apply w-full text-[14.5px] px-3.5 py-2.5 rounded-lg border border-line bg-white text-ink
       outline-none transition-colors duration-150
-      placeholder:text-[#A8B5AE]
-      focus:border-mint-deep focus:ring-4 focus:ring-mint-deep/15;
+      placeholder:text-[#9A8987]
+      focus:border-[#5E3E3B] focus:ring-4 focus:ring-[#5E3E3B]/15;
+  }
+
+  .btn-primary {
+    @apply bg-[#5E3E3B] text-white hover:bg-[#262525] transition-colors duration-150;
   }
 }

@@ -83,7 +83,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ appointments }) => {
     link.setAttribute("href", encodedUri);
     link.setAttribute(
       "download",
-      `Cedarview_Appointments_Report_${new Date().toISOString().split("T")[0]}.csv`,
+      `32 stories_Appointments_Report_${new Date().toISOString().split("T")[0]}.csv`,
     );
     document.body.appendChild(link);
     link.click();
@@ -106,7 +106,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ appointments }) => {
 
         <Button
           onClick={handleExportCSV}
-          className="gap-2 bg-teal-deep text-white hover:bg-teal-mid text-xs h-9 shadow-xs"
+          className="gap-2 bg-[#5E3E3B] text-white hover:bg-[#262525] text-xs h-9 shadow-xs cursor-pointer"
         >
           <Download className="w-3.5 h-3.5" />
           Export Report (CSV)

@@ -19,12 +19,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAF9] flex flex-col items-center justify-center gap-3">
+      <div className="min-h-screen bg-[#FAF7F6] flex flex-col items-center justify-center gap-3">
         <div className="w-12 h-12 rounded-2xl bg-teal-deep text-white flex items-center justify-center shadow-md">
           <svg
             viewBox="0 0 24 24"
             fill="none"
-            className="w-7 h-7 text-[#EFF6F2]"
+            className="w-7 h-7 text-[#FAF7F6]"
           >
             <path
               d="M12 3C8.5 3 6 5.2 6 8.6c0 2.6.7 4.3 1.3 6.6.5 1.9.9 4.4 2 5.5.5.5 1.1.3 1.4-.4.5-1.2.6-3.4 1.3-3.4s.8 2.2 1.3 3.4c.3.7.9.9 1.4.4 1.1-1.1 1.5-3.6 2-5.5.6-2.3 1.3-4 1.3-6.6C18 5.2 15.5 3 12 3z"
@@ -43,9 +43,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (!isAuthenticated || !user) {
     // Redirect unauthenticated user to registration or login with redirect param
+    const targetUrl = `${location.pathname}${location.search || ""}`;
     return (
       <Navigate
-        to={`${redirectTo}?redirect=${encodeURIComponent(location.pathname)}`}
+        to={`${redirectTo}?redirect=${encodeURIComponent(targetUrl)}`}
         replace
       />
     );

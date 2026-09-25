@@ -156,7 +156,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               {(!collapsed || mobileOpen) && (
                 <div className="flex flex-col truncate">
                   <span className="font-semibold text-base text-ink tracking-tight">
-                    Cedarview
+                    32 stories
                   </span>
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-ink-soft">Dental Portal</span>
@@ -227,8 +227,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       ? "w-11 h-11 mx-auto justify-center p-0"
                       : "w-full gap-3 px-3.5 py-2.5 text-sm font-medium",
                     isActive
-                      ? "bg-teal-deep text-white shadow-xs font-semibold"
-                      : "text-ink-soft hover:bg-line-soft hover:text-teal-deep",
+                      ? "bg-[#5E3E3B] text-white shadow-xs font-semibold"
+                      : "text-ink-soft hover:bg-line-soft hover:text-[#5E3E3B]",
                   )}
                   title={isItemCollapsed ? item.label : undefined}
                 >

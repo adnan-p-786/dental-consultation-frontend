@@ -120,7 +120,7 @@ export const AppointmentCalendarView: React.FC<
         <div className="bg-white rounded-2xl border border-line shadow-xs overflow-x-auto">
           <div className="min-w-162.5">
             {/* Weekday headers */}
-            <div className="grid grid-cols-7 border-b border-line bg-[#F9FCFA]">
+            <div className="grid grid-cols-7 border-b border-line bg-[#FAF7F6]">
               {daysOfWeek.map((day) => (
                 <div
                   key={day}
@@ -246,7 +246,7 @@ export const AppointmentCalendarView: React.FC<
                   <div
                     key={apt.id}
                     onClick={() => onSelectAppointment(apt)}
-                    className="p-3.5 rounded-xl border border-line bg-[#FAFDFC] hover:border-mint-deep/60 transition-all cursor-pointer space-y-2 shadow-2xs"
+                    className="p-3.5 rounded-xl border border-line bg-[#FAF7F6] hover:border-mint-deep/60 transition-all cursor-pointer space-y-2 shadow-2xs"
                   >
                     <div className="flex items-center justify-between">
                       <Badge variant={apt.status} className="text-[10px]">

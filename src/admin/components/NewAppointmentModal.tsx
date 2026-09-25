@@ -240,7 +240,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             <Button type="button" variant="outline" size="sm" onClick={onClose} className="text-xs">
               Cancel
             </Button>
-            <Button type="submit" size="sm" className="bg-teal-deep text-white hover:bg-teal-mid text-xs">
+            <Button type="submit" size="sm" className="bg-[#5E3E3B] text-white hover:bg-[#262525] text-xs cursor-pointer">
               Create Appointment
             </Button>
           </DialogFooter>

@@ -89,7 +89,7 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
                 setEditingDoctor(null);
                 setIsAddModalOpen(true);
               }}
-              className="bg-teal-deep text-white hover:bg-teal-mid text-xs h-9 px-3.5 shadow-xs gap-1.5 cursor-pointer font-medium"
+              className="bg-[#5E3E3B] text-white hover:bg-[#262525] text-xs h-9 px-3.5 shadow-xs gap-1.5 cursor-pointer font-medium"
             >
               <Plus className="w-4 h-4" />
               Add Doctor
@@ -110,7 +110,7 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
               onClick={() => setSelectedSpecialty(spec)}
               className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all cursor-pointer ${
                 selectedSpecialty === spec
-                  ? "bg-teal-deep text-white shadow-xs"
+                  ? "bg-[#5E3E3B] text-white shadow-xs"
                   : "bg-white text-ink-soft border border-line hover:border-mint-deep"
               }`}
             >
@@ -143,7 +143,7 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
                   setEditingDoctor(null);
                   setIsAddModalOpen(true);
                 }}
-                className="bg-teal-deep text-white hover:bg-teal-mid text-xs h-9 shadow-xs gap-1.5 mx-auto cursor-pointer"
+                className="bg-[#5E3E3B] text-white hover:bg-[#262525] text-xs h-9 shadow-xs gap-1.5 mx-auto cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 Add First Doctor
@@ -202,7 +202,7 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
               </div>
 
               {/* Working Hours & Room */}
-              <div className="space-y-1.5 p-3 rounded-xl bg-[#F9FCFA] border border-line text-xs">
+              <div className="space-y-1.5 p-3 rounded-xl bg-[#FAF7F6] border border-line text-xs">
                 <div className="flex items-start justify-between gap-2 text-ink-soft">
                   <span className="flex items-center gap-1.5 shrink-0">
                     <Clock className="w-3.5 h-3.5 text-mint-deep shrink-0 mt-0.5" />

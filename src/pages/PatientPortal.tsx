@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   Calendar,
   Clock,
   Video,
   Building2,
   FileText,
-  User,
   Plus,
   ArrowRight,
   CheckCircle2,
@@ -15,27 +14,17 @@ import {
   Copy,
   Check,
   Search,
-  ChevronRight,
-  Download,
   Printer,
-  History,
-  ShieldCheck,
   Stethoscope,
   XCircle,
   RefreshCw,
-  LogOut,
-  Mail,
-  Phone,
-  Sparkles,
   PlayCircle,
-  Info,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { appointmentService } from "@/lib/appointmentService";
 import type {
   Appointment,
   AppointmentStatus,
-  ConsultationNotes,
 } from "@/admin/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,23 +36,21 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Footer from "@/components/Footer";
-import Header from "@/components/Header";
 
-const SOW_STEPS: { status: AppointmentStatus; label: string; step: number }[] = [
-  { status: "pending", label: "Requested", step: 1 },
-  { status: "under_review", label: "Under Review", step: 2 },
-  { status: "proposed", label: "Proposed", step: 3 },
-  { status: "approved", label: "Approved", step: 4 },
-  { status: "completed", label: "Completed", step: 5 },
-];
+const SOW_STEPS: { status: AppointmentStatus; label: string; step: number }[] =
+  [
+    { status: "pending", label: "Requested", step: 1 },
+    { status: "under_review", label: "Under Review", step: 2 },
+    { status: "proposed", label: "Proposed", step: 3 },
+    { status: "approved", label: "Approved", step: 4 },
+    { status: "completed", label: "Completed", step: 5 },
+  ];
 
 export const PatientPortal: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -97,7 +84,7 @@ export const PatientPortal: React.FC = () => {
       let backendApts: Appointment[] = [];
       try {
         const res = await axios.get(
-          `/api/appointment/get-appointments?email=${encodeURIComponent(user.email)}`
+          `/api/appointment/get-appointments?email=${encodeURIComponent(user.email)}`,
         );
         if (res.data?.success && Array.isArray(res.data.data)) {
           backendApts = res.data.data.map((b: any) => ({
@@ -120,7 +107,9 @@ export const PatientPortal: React.FC = () => {
             timeline: [
               {
                 id: `tl_${b.id}`,
-                timestamp: new Date(b.createdAt || Date.now()).toLocaleDateString(),
+                timestamp: new Date(
+                  b.createdAt || Date.now(),
+                ).toLocaleDateString(),
                 action: "Appointment Request Submitted",
                 actor: b.patientName,
               },
@@ -144,7 +133,8 @@ export const PatientPortal: React.FC = () => {
           map.set(apt.id, {
             ...existing,
             ...apt,
-            consultationNotes: apt.consultationNotes || existing.consultationNotes,
+            consultationNotes:
+              apt.consultationNotes || existing.consultationNotes,
             meetingLink: apt.meetingLink || existing.meetingLink,
           });
         } else {
@@ -209,18 +199,20 @@ export const PatientPortal: React.FC = () => {
     return appointments.find(
       (a) =>
         (a.status === "approved" || a.status === "proposed") &&
-        (a.meetingLink || a.consultationType === "video")
+        (a.meetingLink || a.consultationType === "video"),
     );
   }, [appointments]);
 
   const stats = useMemo(() => {
     const total = appointments.length;
     const active = appointments.filter(
-      (a) => !["completed", "cancelled", "no_show"].includes(a.status)
+      (a) => !["completed", "cancelled", "no_show"].includes(a.status),
     ).length;
-    const completed = appointments.filter((a) => a.status === "completed").length;
+    const completed = appointments.filter(
+      (a) => a.status === "completed",
+    ).length;
     const online = appointments.filter(
-      (a) => a.consultationType === "video" || a.meetingLink
+      (a) => a.consultationType === "video" || a.meetingLink,
     ).length;
     return { total, active, completed, online };
   }, [appointments]);
@@ -242,7 +234,9 @@ export const PatientPortal: React.FC = () => {
       // Sync with backend if numeric ID
       if (!isNaN(Number(appointmentToCancel.id))) {
         await axios
-          .patch(`/api/appointment/cancel-appointment/${appointmentToCancel.id}`)
+          .patch(
+            `/api/appointment/cancel-appointment/${appointmentToCancel.id}`,
+          )
           .catch((e) => console.warn("Backend cancel error:", e));
       }
 
@@ -250,7 +244,7 @@ export const PatientPortal: React.FC = () => {
       appointmentService.updateAppointment(
         appointmentToCancel.id,
         { status: "cancelled" },
-        `${user?.firstName} ${user?.lastName} (Patient)`
+        `${user?.firstName} ${user?.lastName} (Patient)`,
       );
 
       toast.info("Appointment has been cancelled.");
@@ -344,14 +338,18 @@ export const PatientPortal: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAF9] flex flex-col font-sans text-ink">
+    <div className="min-h-screen bg-[#FAF7F6] flex flex-col font-sans text-ink">
       {/* Main Navbar */}
       <header className="bg-white/95 backdrop-blur-md border-b border-line sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3 group">
             <div className="w-9 h-9 rounded-xl bg-teal-deep flex items-center justify-center text-paper shadow-xs group-hover:bg-mint-deep transition-colors">
-              <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-[#EFF6F2]">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="w-5 h-5 text-[#FAF7F6]"
+              >
                 <path
                   d="M12 3C8.5 3 6 5.2 6 8.6c0 2.6.7 4.3 1.3 6.6.5 1.9.9 4.4 2 5.5.5.5 1.1.3 1.4-.4.5-1.2.6-3.4 1.3-3.4s.8 2.2 1.3 3.4c.3.7.9.9 1.4.4 1.1-1.1 1.5-3.6 2-5.5.6-2.3 1.3-4 1.3-6.6C18 5.2 15.5 3 12 3z"
                   stroke="currentColor"
@@ -361,7 +359,7 @@ export const PatientPortal: React.FC = () => {
             </div>
             <div className="flex flex-col">
               <span className="font-display font-medium text-lg leading-tight text-teal-deep">
-                Cedarview Dental
+                32 stories Dental
               </span>
               <span className="text-[10px] font-semibold text-mint-deep tracking-wider uppercase">
                 Patient Portal
@@ -371,7 +369,7 @@ export const PatientPortal: React.FC = () => {
 
           {/* User Profile & Actions */}
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-[#EDF6F2] border border-line">
+            <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-[#FAF2F0] border border-line">
               <div className="w-7 h-7 rounded-lg bg-teal-deep text-white flex items-center justify-center text-xs font-semibold">
                 {user?.firstName?.charAt(0) || "P"}
               </div>
@@ -387,7 +385,7 @@ export const PatientPortal: React.FC = () => {
 
             <Link
               to="/appointment"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-deep hover:bg-mint-deep text-white text-xs font-semibold transition-all shadow-xs"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] text-white text-xs font-semibold transition-all shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Book Appointment</span>
@@ -402,24 +400,24 @@ export const PatientPortal: React.FC = () => {
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-line shadow-xs relative overflow-hidden">
           <div className="max-w-2xl relative z-10">
             <h1 className="font-display text-2xl sm:text-3xl font-medium text-ink mb-2">
-              Welcome back, {user?.firstName || "Patient"}!
+              Welcome {user?.firstName || "Patient"}!
             </h1>
             <p className="text-sm text-ink-soft leading-relaxed">
               Track the live review status of your dental appointment requests,
-              access online video consultation rooms, and inspect doctor findings
-              and clinical notes in one place.
+              access online video consultation rooms, and inspect doctor
+              findings and clinical notes in one place.
             </p>
           </div>
 
           {/* Quick Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mt-6 pt-6 border-t border-line">
-            <div className="p-3.5 rounded-2xl bg-[#F8FAF9] border border-line/70">
+            <div className="p-3.5 rounded-2xl bg-[#FAF7F6] border border-line/70">
               <span className="text-xs text-ink-soft block mb-1">
                 Total Requests
               </span>
               <span className="text-xl font-bold text-ink">{stats.total}</span>
             </div>
-            <div className="p-3.5 rounded-2xl bg-[#F8FAF9] border border-line/70">
+            <div className="p-3.5 rounded-2xl bg-[#FAF7F6] border border-line/70">
               <span className="text-xs text-ink-soft block mb-1">
                 Active & Upcoming
               </span>
@@ -427,7 +425,7 @@ export const PatientPortal: React.FC = () => {
                 {stats.active}
               </span>
             </div>
-            <div className="p-3.5 rounded-2xl bg-[#F8FAF9] border border-line/70">
+            <div className="p-3.5 rounded-2xl bg-[#FAF7F6] border border-line/70">
               <span className="text-xs text-ink-soft block mb-1">
                 Video Consultations
               </span>
@@ -435,11 +433,11 @@ export const PatientPortal: React.FC = () => {
                 {stats.online}
               </span>
             </div>
-            <div className="p-3.5 rounded-2xl bg-[#F8FAF9] border border-line/70">
+            <div className="p-3.5 rounded-2xl bg-[#FAF7F6] border border-line/70">
               <span className="text-xs text-ink-soft block mb-1">
                 Completed Visits
               </span>
-              <span className="text-xl font-bold text-emerald-600">
+              <span className="text-xl font-bold text-[#5E3E3B]">
                 {stats.completed}
               </span>
             </div>
@@ -448,18 +446,18 @@ export const PatientPortal: React.FC = () => {
 
         {/* SECTION 1: PROMINENT MEETING ACCESS BANNER (If video appointment approved) */}
         {activeMeetingAppointment && (
-          <div className="rounded-3xl border-2 border-emerald-500/30 bg-linear-to-r from-emerald-50/80 via-teal-50/50 to-white p-6 sm:p-7 shadow-xs">
+          <div className="rounded-3xl border-2 border-[#5E3E3B]/20 bg-linear-to-r from-[#FAF3F2] via-[#F4E6E4]/50 to-white p-6 sm:p-7 shadow-xs">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                <div className="w-12 h-12 rounded-2xl bg-[#5E3E3B] text-white flex items-center justify-center shrink-0 shadow-md">
                   <Video className="w-6 h-6 animate-pulse" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge className="bg-emerald-600 text-white font-semibold text-[11px]">
+                    <Badge className="bg-[#5E3E3B] text-white font-semibold text-[11px]">
                       Ready to Join
                     </Badge>
-                    <span className="text-xs font-semibold text-emerald-800">
+                    <span className="text-xs font-semibold text-[#5E3E3B]">
                       Ref: {activeMeetingAppointment.referenceNo}
                     </span>
                   </div>
@@ -467,19 +465,24 @@ export const PatientPortal: React.FC = () => {
                     Online Video Consultation
                   </h2>
                   <p className="text-xs sm:text-sm text-ink-soft mt-0.5">
-                    <strong>Treatment:</strong> {activeMeetingAppointment.treatment} &bull;{" "}
+                    <strong>Treatment:</strong>{" "}
+                    {activeMeetingAppointment.treatment} &bull;{" "}
                     <strong>Scheduled:</strong>{" "}
                     {activeMeetingAppointment.confirmedDate ||
                       activeMeetingAppointment.requestedDate}{" "}
-                    ({activeMeetingAppointment.confirmedTime ||
-                      activeMeetingAppointment.requestedTime})
+                    (
+                    {activeMeetingAppointment.confirmedTime ||
+                      activeMeetingAppointment.requestedTime}
+                    )
                   </p>
                   {activeMeetingAppointment.assignedDoctor && (
                     <div className="flex items-center gap-2 mt-2 text-xs text-teal-deep font-medium">
                       <Stethoscope className="w-3.5 h-3.5 text-mint-deep" />
                       <span>
-                        Dentist: {activeMeetingAppointment.assignedDoctor.name} (
-                        {activeMeetingAppointment.assignedDoctor.specialization})
+                        Dentist: {activeMeetingAppointment.assignedDoctor.name}{" "}
+                        (
+                        {activeMeetingAppointment.assignedDoctor.specialization}
+                        )
                       </span>
                     </div>
                   )}
@@ -494,7 +497,7 @@ export const PatientPortal: React.FC = () => {
                       href={activeMeetingAppointment.meetingLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all"
+                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] text-white text-xs sm:text-sm font-semibold shadow-sm transition-all"
                     >
                       <PlayCircle className="w-4 h-4" />
                       <span>Join Consultation</span>
@@ -505,16 +508,16 @@ export const PatientPortal: React.FC = () => {
                       size="sm"
                       onClick={() =>
                         handleCopyMeetingLink(
-                          activeMeetingAppointment.meetingLink || ""
+                          activeMeetingAppointment.meetingLink || "",
                         )
                       }
-                      className="h-11 px-3 text-xs border-emerald-200 hover:bg-emerald-50 text-emerald-800"
+                      className="h-11 px-3 text-xs border-[#E8CDC9] hover:bg-[#FAF3F2] text-[#5E3E3B]"
                       title="Copy meeting link"
                     >
                       {copiedLink ? (
-                        <Check className="w-4 h-4 text-emerald-600" />
+                        <Check className="w-4 h-4 text-[#5E3E3B]" />
                       ) : (
-                        <Copy className="w-4 h-4 text-emerald-700" />
+                        <Copy className="w-4 h-4 text-[#5E3E3B]" />
                       )}
                     </Button>
                   </>
@@ -564,7 +567,7 @@ export const PatientPortal: React.FC = () => {
                 onClick={() => setActiveFilter("all")}
                 className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                   activeFilter === "all"
-                    ? "bg-teal-deep text-white shadow-xs font-semibold"
+                    ? "bg-[#5E3E3B] text-white shadow-xs font-semibold"
                     : "text-ink-soft hover:text-ink"
                 }`}
               >
@@ -574,7 +577,7 @@ export const PatientPortal: React.FC = () => {
                 onClick={() => setActiveFilter("active")}
                 className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                   activeFilter === "active"
-                    ? "bg-teal-deep text-white shadow-xs font-semibold"
+                    ? "bg-[#5E3E3B] text-white shadow-xs font-semibold"
                     : "text-ink-soft hover:text-ink"
                 }`}
               >
@@ -584,7 +587,7 @@ export const PatientPortal: React.FC = () => {
                 onClick={() => setActiveFilter("completed")}
                 className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                   activeFilter === "completed"
-                    ? "bg-teal-deep text-white shadow-xs font-semibold"
+                    ? "bg-[#5E3E3B] text-white shadow-xs font-semibold"
                     : "text-ink-soft hover:text-ink"
                 }`}
               >
@@ -594,7 +597,7 @@ export const PatientPortal: React.FC = () => {
                 onClick={() => setActiveFilter("cancelled")}
                 className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                   activeFilter === "cancelled"
-                    ? "bg-teal-deep text-white shadow-xs font-semibold"
+                    ? "bg-[#5E3E3B] text-white shadow-xs font-semibold"
                     : "text-ink-soft hover:text-ink"
                 }`}
               >
@@ -625,7 +628,7 @@ export const PatientPortal: React.FC = () => {
             </div>
           ) : filteredAppointments.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 border border-line text-center max-w-lg mx-auto space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-[#EDF6F2] text-teal-deep flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-[#FAF2F0] text-teal-deep flex items-center justify-center mx-auto">
                 <Calendar className="w-6 h-6" />
               </div>
               <div>
@@ -636,13 +639,13 @@ export const PatientPortal: React.FC = () => {
                   {searchQuery
                     ? "No appointments match your search criteria. Try a different search term."
                     : activeFilter === "active"
-                    ? "You have no active appointment requests pending right now."
-                    : "You haven't requested any dental consultations yet."}
+                      ? "You have no active appointment requests pending right now."
+                      : "You haven't requested any dental consultations yet."}
                 </p>
               </div>
               <Link
                 to="/appointment"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-deep hover:bg-mint-deep text-white text-xs font-semibold transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] text-white text-xs font-semibold transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Request an Appointment</span>
@@ -663,7 +666,7 @@ export const PatientPortal: React.FC = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-line/70">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-mono text-xs font-bold text-teal-deep bg-[#EDF6F2] px-2.5 py-0.5 rounded-md">
+                          <span className="font-mono text-xs font-bold text-teal-deep bg-[#FAF2F0] px-2.5 py-0.5 rounded-md">
                             {apt.referenceNo}
                           </span>
                           <span className="text-xs text-ink-soft flex items-center gap-1">
@@ -722,19 +725,23 @@ export const PatientPortal: React.FC = () => {
                                     isCurrent
                                       ? "bg-teal-deep text-white ring-4 ring-teal-50 shadow-xs"
                                       : isPast
-                                      ? "bg-mint-deep text-white"
-                                      : "bg-slate-200 text-slate-500"
+                                        ? "bg-mint-deep text-white"
+                                        : "bg-slate-200 text-slate-500"
                                   }`}
                                 >
-                                  {isPast ? <Check className="w-3 h-3" /> : s.step}
+                                  {isPast ? (
+                                    <Check className="w-3 h-3" />
+                                  ) : (
+                                    s.step
+                                  )}
                                 </div>
                                 <span
                                   className={`text-[10px] mt-1 font-medium hidden sm:block ${
                                     isCurrent
                                       ? "text-teal-deep font-bold"
                                       : isPast
-                                      ? "text-ink"
-                                      : "text-slate-400"
+                                        ? "text-ink"
+                                        : "text-slate-400"
                                   }`}
                                 >
                                   {s.label}
@@ -748,7 +755,7 @@ export const PatientPortal: React.FC = () => {
 
                     {/* Details Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs pt-1">
-                      <div className="p-3 rounded-xl bg-[#F8FAF9] border border-line/60">
+                      <div className="p-3 rounded-xl bg-[#FAF7F6] border border-line/60">
                         <span className="text-ink-soft block text-[11px] mb-0.5">
                           Requested Slot
                         </span>
@@ -760,7 +767,7 @@ export const PatientPortal: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-[#F8FAF9] border border-line/60">
+                      <div className="p-3 rounded-xl bg-[#FAF7F6] border border-line/60">
                         <span className="text-ink-soft block text-[11px] mb-0.5">
                           Assigned Dentist
                         </span>
@@ -775,14 +782,14 @@ export const PatientPortal: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-[#F8FAF9] border border-line/60">
+                      <div className="p-3 rounded-xl bg-[#FAF7F6] border border-line/60">
                         <span className="text-ink-soft block text-[11px] mb-0.5">
                           Meeting / Visit Access
                         </span>
                         <div className="font-semibold text-ink truncate">
                           {apt.status === "approved" && apt.meetingLink ? (
-                            <span className="text-emerald-700 flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span className="text-[#5E3E3B] flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#5E3E3B] shrink-0" />
                               Video Link Ready
                             </span>
                           ) : apt.status === "completed" ? (
@@ -791,9 +798,13 @@ export const PatientPortal: React.FC = () => {
                               Clinical Notes Saved
                             </span>
                           ) : isCancelled ? (
-                            <span className="text-rose-600">Request Inactive</span>
+                            <span className="text-rose-600">
+                              Request Inactive
+                            </span>
                           ) : (
-                            <span className="text-amber-700">Under Clinic Review</span>
+                            <span className="text-amber-700">
+                              Under Clinic Review
+                            </span>
                           )}
                         </div>
                       </div>
@@ -807,7 +818,7 @@ export const PatientPortal: React.FC = () => {
                             href={apt.meetingLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors shadow-2xs"
+                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] text-white text-xs font-semibold transition-colors shadow-2xs"
                           >
                             <PlayCircle className="w-3.5 h-3.5" />
                             <span>Join Video Call</span>
@@ -835,11 +846,13 @@ export const PatientPortal: React.FC = () => {
                           <ArrowRight className="w-3 h-3 ml-1" />
                         </Button>
 
+                        {
+                          !["completed", "cancelled", "no_show"].includes(
+                            apt.status,
+                          )
+                        }
                         {!["completed", "cancelled", "no_show"].includes(
-                          apt.status
-                        )}
-                        {!["completed", "cancelled", "no_show"].includes(
-                          apt.status
+                          apt.status,
                         ) && (
                           <Button
                             variant="ghost"
@@ -870,7 +883,7 @@ export const PatientPortal: React.FC = () => {
             <div className="space-y-6">
               <DialogHeader>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-mono text-xs font-bold text-teal-deep bg-[#EDF6F2] px-2.5 py-1 rounded-md">
+                  <span className="font-mono text-xs font-bold text-teal-deep bg-[#FAF2F0] px-2.5 py-1 rounded-md">
                     {selectedAppointment.referenceNo}
                   </span>
                   {renderStatusBadge(selectedAppointment.status)}
@@ -888,26 +901,26 @@ export const PatientPortal: React.FC = () => {
 
               {/* Online Video Meeting Section */}
               {selectedAppointment.meetingLink && (
-                <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-3">
+                <div className="p-4 rounded-2xl bg-[#FAF3F2] border border-[#E8CDC9] space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
-                      <Video className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#5E3E3B] flex items-center gap-1.5">
+                      <Video className="w-4 h-4 text-[#5E3E3B]" />
                       Consultation Meeting Access
                     </span>
-                    <Badge className="bg-emerald-600 text-white text-[10px]">
+                    <Badge className="bg-[#5E3E3B] text-white text-[10px]">
                       {selectedAppointment.meetingPlatform || "Google Meet"}
                     </Badge>
                   </div>
-                  <p className="text-xs text-emerald-900 leading-relaxed">
-                    Your dentist has confirmed this slot. Click below to join the
-                    secure video consultation room.
+                  <p className="text-xs text-ink leading-relaxed">
+                    Your dentist has confirmed this slot. Click below to join
+                    the secure video consultation room.
                   </p>
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <a
                       href={selectedAppointment.meetingLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] text-white text-xs font-semibold shadow-xs transition-colors"
                     >
                       <PlayCircle className="w-4 h-4" />
                       <span>Join Call Room</span>
@@ -917,9 +930,11 @@ export const PatientPortal: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        handleCopyMeetingLink(selectedAppointment.meetingLink || "")
+                        handleCopyMeetingLink(
+                          selectedAppointment.meetingLink || "",
+                        )
                       }
-                      className="text-xs h-8 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
+                      className="text-xs h-8 border-[#E8CDC9] text-[#5E3E3B] hover:bg-[#F4E6E4]"
                     >
                       {copiedLink ? "Link Copied" : "Copy Link"}
                     </Button>
@@ -929,7 +944,7 @@ export const PatientPortal: React.FC = () => {
 
               {/* Schedule & Dentist Details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="p-3.5 rounded-xl bg-[#F8FAF9] border border-line">
+                <div className="p-3.5 rounded-xl bg-[#FAF7F6] border border-line">
                   <span className="text-ink-soft block font-medium mb-1">
                     Appointment Schedule
                   </span>
@@ -942,7 +957,7 @@ export const PatientPortal: React.FC = () => {
                       selectedAppointment.requestedTime}
                   </p>
                 </div>
-                <div className="p-3.5 rounded-xl bg-[#F8FAF9] border border-line">
+                <div className="p-3.5 rounded-xl bg-[#FAF7F6] border border-line">
                   <span className="text-ink-soft block font-medium mb-1">
                     Care Provider
                   </span>
@@ -959,7 +974,7 @@ export const PatientPortal: React.FC = () => {
 
               {/* Patient Message / Complaint */}
               {selectedAppointment.patientMessage && (
-                <div className="p-3.5 rounded-xl bg-[#F8FAF9] border border-line text-xs">
+                <div className="p-3.5 rounded-xl bg-[#FAF7F6] border border-line text-xs">
                   <span className="text-ink-soft block font-semibold mb-1">
                     Patient Symptoms & Inquiry Notes
                   </span>
@@ -981,7 +996,7 @@ export const PatientPortal: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => window.print()}
-                      className="text-xs h-7 px-2 text-teal-deep hover:bg-[#EDF6F2]"
+                      className="text-xs h-7 px-2 text-teal-deep hover:bg-[#FAF2F0]"
                       title="Print consultation record"
                     >
                       <Printer className="w-3.5 h-3.5 mr-1" />
@@ -1023,35 +1038,47 @@ export const PatientPortal: React.FC = () => {
                       </div>
                     )}
 
-                    {selectedAppointment.consultationNotes.recommendedTreatment && (
+                    {selectedAppointment.consultationNotes
+                      .recommendedTreatment && (
                       <div>
                         <span className="font-semibold text-ink-soft block">
                           4. Recommended Treatment Plan:
                         </span>
                         <p className="text-ink mt-0.5">
-                          {selectedAppointment.consultationNotes.recommendedTreatment}
+                          {
+                            selectedAppointment.consultationNotes
+                              .recommendedTreatment
+                          }
                         </p>
                       </div>
                     )}
 
-                    {selectedAppointment.consultationNotes.additionalInstructions && (
+                    {selectedAppointment.consultationNotes
+                      .additionalInstructions && (
                       <div>
                         <span className="font-semibold text-ink-soft block">
                           5. Care & Oral Hygiene Instructions:
                         </span>
                         <p className="text-ink mt-0.5">
-                          {selectedAppointment.consultationNotes.additionalInstructions}
+                          {
+                            selectedAppointment.consultationNotes
+                              .additionalInstructions
+                          }
                         </p>
                       </div>
                     )}
 
-                    {selectedAppointment.consultationNotes.followUpRequirements && (
+                    {selectedAppointment.consultationNotes
+                      .followUpRequirements && (
                       <div>
                         <span className="font-semibold text-ink-soft block">
                           6. Follow-up Timeline:
                         </span>
                         <p className="text-ink mt-0.5">
-                          {selectedAppointment.consultationNotes.followUpRequirements}
+                          {
+                            selectedAppointment.consultationNotes
+                              .followUpRequirements
+                          }
                         </p>
                       </div>
                     )}
@@ -1113,7 +1140,7 @@ export const PatientPortal: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-      <Footer/>
+      <Footer />
     </div>
   );
 };

@@ -79,12 +79,19 @@ export default function Appointment() {
     supportingFile: null as File | null,
   });
 
-  // Guard: If not registered or logged in, redirect to register first
+  // Support pre-selecting treatment category from URL query parameter
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || !user)) {
-      navigate("/auth/register?redirect=/appointment", { replace: true });
+    const params = new URLSearchParams(window.location.search);
+    const treatmentParam = params.get("treatment");
+    if (treatmentParam) {
+      const match = documentTreatmentCategories.find(
+        (t) =>
+          t.toLowerCase() === treatmentParam.toLowerCase() ||
+          t.toLowerCase().includes(treatmentParam.toLowerCase().replace(/_/g, " "))
+      );
+      if (match) setSelectedTreatment(match);
     }
-  }, [isAuthenticated, isLoading, user, navigate]);
+  }, []);
 
   // Automatically pre-fill logged-in patient's information
   useEffect(() => {
@@ -287,11 +294,11 @@ export default function Appointment() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#F8FAF9] flex flex-col items-center justify-center gap-3">
+      <div className="min-h-screen bg-[#FAF7F6] flex flex-col items-center justify-center gap-3">
         <div className="w-12 h-12 rounded-2xl bg-teal-deep text-white flex items-center justify-center shadow-md">
-          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-[#EFF6F2]">
+          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-[#FAF7F6]">
             <path
               d="M12 3C8.5 3 6 5.2 6 8.6c0 2.6.7 4.3 1.3 6.6.5 1.9.9 4.4 2 5.5.5.5 1.1.3 1.4-.4.5-1.2.6-3.4 1.3-3.4s.8 2.2 1.3 3.4c.3.7.9.9 1.4.4 1.1-1.1 1.5-3.6 2-5.5.6-2.3 1.3-4 1.3-6.6C18 5.2 15.5 3 12 3z"
               stroke="currentColor"
@@ -308,11 +315,11 @@ export default function Appointment() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAF9] text-ink flex flex-col selection:bg-mint/30 selection:text-teal-deep">
+    <div className="min-h-screen bg-[#FAF7F6] text-ink flex flex-col selection:bg-[#5E3E3B]/20 selection:text-[#5E3E3B]">
       <Header />
 
       {/* Hero Header */}
-      <section className="relative overflow-hidden bg-teal-deep text-[#EFF6F2] pt-14 pb-20 px-4 sm:px-6 lg:px-8 border-b border-teal-mid/30">
+      <section className="relative overflow-hidden bg-teal-deep text-[#FAF7F6] pt-14 pb-20 px-4 sm:px-6 lg:px-8 border-b border-white/10">
         <div
           className="absolute inset-0 opacity-80 pointer-events-none"
           style={{
@@ -344,7 +351,7 @@ export default function Appointment() {
             </span>
           </h1>
 
-          <p className="text-base sm:text-lg text-[#C7DDD4] leading-relaxed max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-[#EBD8D5] leading-relaxed max-w-2xl mx-auto">
             Submit your details and case requirements to request
             an appointment. Your request will be reviewed and
             scheduled by the clinic.
@@ -387,14 +394,14 @@ export default function Appointment() {
                 </p>
 
                 {createdRefNo && (
-                  <div className="mb-5 inline-flex items-center gap-2 bg-[#EDF6F2] border border-teal-deep/20 px-4 py-2 rounded-xl text-xs font-mono font-bold text-teal-deep shadow-xs">
+                  <div className="mb-5 inline-flex items-center gap-2 bg-[#FAF2F0] border border-teal-deep/20 px-4 py-2 rounded-xl text-xs font-mono font-bold text-teal-deep shadow-xs">
                     <span>Reference ID:</span>
                     <span className="text-sm tracking-wide">{createdRefNo}</span>
                   </div>
                 )}
 
                 {/* On-Screen Appointment Summary Card */}
-                <div className="bg-[#FAFDFC] border border-line rounded-2xl p-5 sm:p-6 max-w-md mx-auto mb-6 text-left shadow-xs space-y-3">
+                <div className="bg-[#FAF7F6] border border-line rounded-2xl p-5 sm:p-6 max-w-md mx-auto mb-6 text-left shadow-xs space-y-3">
                   <div className="flex items-center justify-between pb-3 border-b border-line">
                     <span className="text-xs font-semibold text-ink-soft uppercase tracking-wider">
                       Appointment Status
@@ -475,14 +482,16 @@ export default function Appointment() {
                     <span>{appointmentStatus === "cancelled" ? "Book New Appointment" : "Book Another"}</span>
                   </Button>
 
-                  <Button
-                    type="button"
-                    onClick={() => navigate("/patient/portal")}
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-teal-deep hover:bg-mint-deep text-white font-semibold text-xs h-11 transition-colors shadow-xs cursor-pointer"
-                  >
-                    <Calendar className="w-4 h-4 mr-1.5 text-mint" />
-                    <span>View in My Appointments</span>
-                  </Button>
+                  {isAuthenticated && (
+                    <Button
+                      type="button"
+                      onClick={() => navigate("/patient/portal")}
+                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] text-white font-semibold text-xs h-11 transition-colors shadow-xs cursor-pointer"
+                    >
+                      <Calendar className="w-4 h-4 mr-1.5 text-mint" />
+                      <span>View in Patient Portal</span>
+                    </Button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -646,7 +655,7 @@ export default function Appointment() {
                           }
                           className={`py-2.5 px-3 rounded-xl border text-xs font-medium transition-all text-center cursor-pointer ${
                             contactMethod === method
-                              ? "bg-teal-deep text-white border-teal-deep shadow-2xs font-semibold"
+                              ? "bg-[#5E3E3B] text-white border-[#5E3E3B] shadow-2xs font-semibold"
                               : "bg-paper text-ink border-line hover:border-mint/50"
                           }`}
                         >
@@ -787,7 +796,7 @@ export default function Appointment() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`w-full py-4 rounded-xl bg-teal-deep hover:bg-mint-deep text-white font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`w-full py-4 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] text-white font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 cursor-pointer ${
                       loading
                         ? "opacity-70 cursor-not-allowed"
                         : "active:scale-[0.99]"
@@ -839,7 +848,7 @@ export default function Appointment() {
 
           <div className="py-2 space-y-3">
             {/* Details Card */}
-            <div className="bg-[#FAFDFC] border border-line rounded-xl p-4 space-y-2.5 text-xs">
+            <div className="bg-[#FAF7F6] border border-line rounded-xl p-4 space-y-2.5 text-xs">
               <div className="flex justify-between items-center pb-2 border-b border-line/60">
                 <span className="text-ink-soft">Patient Name:</span>
                 <span className="font-semibold text-ink">{formData.patientName}</span>
@@ -905,7 +914,7 @@ export default function Appointment() {
               type="button"
               disabled={loading}
               onClick={handleConfirmSubmit}
-              className="bg-teal-deep hover:bg-mint-deep text-white text-xs h-10 px-6 gap-2 cursor-pointer shadow-xs font-semibold"
+              className="bg-[#5E3E3B] hover:bg-[#262525] text-white text-xs h-10 px-6 gap-2 cursor-pointer shadow-xs font-semibold"
             >
               {loading ? (
                 <>

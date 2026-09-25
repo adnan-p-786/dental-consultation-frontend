@@ -438,7 +438,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                 required
                 disabled={isSubmitting}
                 type="email"
-                placeholder="e.g. s.jenkins@cedarviewdental.com"
+                placeholder="e.g. s.jenkins@32 storiesdental.com"
                 value={doctorEmail}
                 onChange={(e) => setDoctorEmail(e.target.value)}
                 className="text-xs h-9"
@@ -605,7 +605,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
             <Button
               type="submit"
               disabled={isSubmitting || isDeleting}
-              className="bg-teal-deep text-white hover:bg-teal-mid text-xs h-9 shadow-xs cursor-pointer gap-1.5 disabled:opacity-60"
+              className="bg-[#5E3E3B] text-white hover:bg-[#262525] text-xs h-9 shadow-xs cursor-pointer gap-1.5 disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>

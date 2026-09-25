@@ -27,7 +27,12 @@ const roles = [
   { id: "Patient", label: "Patient", icon: User, desc: "Personal care" },
   { id: "Doctor", label: "Doctor", icon: Stethoscope, desc: "Care provider" },
   { id: "Admin", label: "Admin", icon: ShieldCheck, desc: "Admin" },
-  { id: "Superadmin", label: "Super Admin", icon: ShieldCheck, desc: "Superadmin" },
+  {
+    id: "Superadmin",
+    label: "Super Admin",
+    icon: ShieldCheck,
+    desc: "Superadmin",
+  },
 ];
 
 function Login() {
@@ -55,7 +60,10 @@ function Login() {
     if (isAuthenticated && user) {
       if (redirectPath) {
         navigate(redirectPath, { replace: true });
-      } else if (user.role === "superadmin" || (user.role as string) === "admin") {
+      } else if (
+        user.role === "superadmin" ||
+        (user.role as string) === "admin"
+      ) {
         navigate("/admin/dashboard", { replace: true });
       } else if (user.role === "doctor") {
         navigate("/doctor/dashboard", { replace: true });
@@ -148,7 +156,7 @@ function Login() {
       <Header />
       <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
         {/* Left: brand panel */}
-        <div className="relative overflow-hidden bg-teal-deep text-[#EFF6F2] px-8 py-12 md:px-14 md:py-14 flex flex-col justify-between min-h-65">
+        <div className="relative overflow-hidden bg-teal-deep text-[#FAF7F6] px-8 py-12 md:px-14 md:py-14 flex flex-col justify-between min-h-65">
           {/* dot texture */}
           <div
             className="absolute inset-0 opacity-90"
@@ -163,22 +171,11 @@ function Login() {
             }}
           />
 
-          {/* <div className="relative z-10 flex items-center gap-2.5 font-sans font-semibold text-[15px]">
-          <svg viewBox="0 0 24 24" fill="none" className="w-[22px] h-[22px]">
-            <path
-              d="M12 3C8.5 3 6 5.2 6 8.6c0 2.6.7 4.3 1.3 6.6.5 1.9.9 4.4 2 5.5.5.5 1.1.3 1.4-.4.5-1.2.6-3.4 1.3-3.4s.8 2.2 1.3 3.4c.3.7.9.9 1.4.4 1.1-1.1 1.5-3.6 2-5.5.6-2.3 1.3-4 1.3-6.6C18 5.2 15.5 3 12 3z"
-              stroke="#EFF6F2"
-              strokeWidth="1.3"
-            />
-          </svg>
-          Cedarview Dental
-        </div> */}
-
           <div className="relative z-10 max-w-105">
             <h1 className="font-display font-medium text-[34px] md:text-[40px] leading-[1.12] tracking-[-0.01em] text-white mb-4">
               One account for booking, records, and your care team.
             </h1>
-            <p className="text-[15.5px] leading-relaxed text-[#C3D8D0] mb-7">
+            <p className="text-[15.5px] leading-relaxed text-[#EBD8D5] mb-7">
               Set up your patient account to request appointments, join video
               consultations, and keep a running history of your visits — all in
               one place.
@@ -188,7 +185,7 @@ function Login() {
               {benefits.map((b) => (
                 <li
                   key={b}
-                  className="flex items-start gap-3 text-[14.5px] text-[#DCEAE4]"
+                  className="flex items-start gap-3 text-[14.5px] text-[#EBD8D5]"
                 >
                   <Check className="w-4 h-4 mt-0.5 shrink-0 text-mint" />
                   {b}
@@ -197,7 +194,7 @@ function Login() {
             </ul>
           </div>
 
-          <p className="relative z-10 text-[13px] text-[#85A69B]">
+          <p className="relative z-10 text-[13px] text-[#B3A09D]">
             Your information is encrypted and only shared with your care team.
           </p>
 
@@ -208,7 +205,7 @@ function Login() {
           >
             <path
               d="M100 20c-30 0-52 18-52 46 0 21 6 35 11 54 4 15 7 36 17 45 4 4 9 2 11-3 4-10 5-28 11-28s7 18 11 28c2 5 7 7 11 3 10-9 13-30 17-45 5-19 11-33 11-54 0-28-22-46-52-46z"
-              stroke="#EFF6F2"
+              stroke="#FAF7F6"
               strokeWidth="1.5"
             />
           </svg>
@@ -235,6 +232,8 @@ function Login() {
                 </Link>
               </p>
             </div>
+
+            
 
             {/* Error banner */}
             {error && (
@@ -324,15 +323,15 @@ function Login() {
                         }
                         className={`group relative flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border transition-all duration-150 cursor-pointer text-center ${
                           isSelected
-                            ? "border-teal-deep bg-[#EDF6F2] text-teal-deep font-semibold shadow-xs ring-2 ring-teal-deep/15"
-                            : "border-line bg-white text-ink-soft hover:border-mint-deep/40 hover:bg-[#F9FCFA] hover:text-ink"
+                            ? "border-teal-deep bg-[#FAF2F0] text-teal-deep font-semibold shadow-xs ring-2 ring-teal-deep/15"
+                            : "border-line bg-white text-ink-soft hover:border-mint-deep/40 hover:bg-[#FAF7F6] hover:text-ink"
                         }`}
                       >
                         <div
                           className={`w-7 h-7 rounded-lg flex items-center justify-center mb-1.5 transition-colors ${
                             isSelected
                               ? "bg-teal-deep text-white shadow-xs"
-                              : "bg-line-soft text-ink-soft group-hover:text-teal-deep group-hover:bg-[#E2ECE7]"
+                              : "bg-line-soft text-ink-soft group-hover:text-teal-deep group-hover:bg-[#F2E4E1]"
                           }`}
                         >
                           <Icon className="w-3.5 h-3.5" />
@@ -369,19 +368,12 @@ function Login() {
                   />
                   <span>Remember me</span>
                 </label>
-
-                <Link
-                  to="/contact"
-                  className="text-mint-deep font-medium hover:underline"
-                >
-                  Need help?
-                </Link>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 rounded-lg bg-teal-deep hover:bg-mint-deep active:scale-[0.99] transition-all text-paper text-[14.5px] font-semibold py-3.5 px-4.5 flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-2 rounded-lg bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.99] transition-all text-paper text-[14.5px] font-semibold py-3.5 px-4.5 flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

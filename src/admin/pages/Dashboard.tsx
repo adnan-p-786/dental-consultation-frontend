@@ -597,7 +597,7 @@ function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAF9] text-ink font-sans antialiased">
+    <div className="flex min-h-screen bg-[#FAF7F6] text-ink font-sans antialiased">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-teal-deep text-white px-4 py-3 shadow-lg animate-in slide-in-from-bottom-3 duration-200 border border-emerald-500/30">
@@ -663,7 +663,7 @@ function Dashboard() {
                   <Button
                     size="sm"
                     onClick={() => setIsNewModalOpen(true)}
-                    className="text-xs font-semibold bg-teal-deep text-white hover:bg-teal-mid h-9 shadow-xs flex-1 sm:flex-none"
+                    className="text-xs font-semibold bg-[#5E3E3B] text-white hover:bg-[#262525] h-9 shadow-xs flex-1 sm:flex-none cursor-pointer"
                   >
                     + Add New Appointment
                   </Button>
@@ -902,7 +902,7 @@ function Dashboard() {
                           <div
                             key={apt.id}
                             onClick={() => handleOpenDetail(apt)}
-                            className="p-3 rounded-lg border border-line/70 bg-[#FAFDFC] hover:border-mint-deep cursor-pointer transition-all space-y-1.5"
+                            className="p-3 rounded-lg border border-line/70 bg-[#FAF7F6] hover:border-mint-deep cursor-pointer transition-all space-y-1.5"
                           >
                             <div className="flex items-center justify-between">
                               <span className="font-mono text-xs font-bold text-teal-deep">
@@ -960,8 +960,8 @@ function Dashboard() {
                         onClick={() => setSelectedStatusFilter(st.id)}
                         className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                           selectedStatusFilter === st.id
-                            ? "bg-teal-deep text-white shadow-xs"
-                            : "bg-[#F4F8F6] text-ink-soft hover:text-ink hover:bg-line"
+                            ? "bg-[#5E3E3B] text-white shadow-xs"
+                            : "bg-[#FAF7F6] text-ink-soft hover:text-ink hover:bg-line"
                         }`}
                       >
                         {st.label}
@@ -1044,7 +1044,7 @@ function Dashboard() {
                       {filteredAppointments.map((apt) => (
                         <TableRow
                           key={apt.id}
-                          className="cursor-pointer hover:bg-[#F8FAF9]"
+                          className="cursor-pointer hover:bg-[#FAF7F6]"
                           onClick={() => handleOpenDetail(apt)}
                         >
                           {/* Patient / Ref */}

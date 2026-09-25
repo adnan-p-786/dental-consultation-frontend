@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  ShieldCheck,
   User,
 } from "lucide-react";
 import Header from "../components/Header";
@@ -176,7 +177,7 @@ function Register() {
       <Header />
       <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
         {/* Left: brand panel */}
-        <div className="relative overflow-hidden bg-teal-deep text-[#EFF6F2] px-8 py-12 md:px-14 md:py-14 flex flex-col justify-between min-h-65">
+        <div className="relative overflow-hidden bg-teal-deep text-[#FAF7F6] px-8 py-12 md:px-14 md:py-14 flex flex-col justify-between min-h-65">
           {/* dot texture */}
           <div
             className="absolute inset-0 opacity-90"
@@ -195,7 +196,7 @@ function Register() {
             <h1 className="font-display font-medium text-[34px] md:text-[40px] leading-[1.12] tracking-[-0.01em] text-white mb-4">
               One account for booking, records, and your care team.
             </h1>
-            <p className="text-[15.5px] leading-relaxed text-[#C3D8D0] mb-7">
+            <p className="text-[15.5px] leading-relaxed text-[#EBD8D5] mb-7">
               Set up your patient account to request appointments, join video
               consultations, and keep a running history of your visits — all in
               one place.
@@ -205,7 +206,7 @@ function Register() {
               {benefits.map((b) => (
                 <li
                   key={b}
-                  className="flex items-start gap-3 text-[14.5px] text-[#DCEAE4]"
+                  className="flex items-start gap-3 text-[14.5px] text-[#EBD8D5]"
                 >
                   <Check className="w-4 h-4 mt-0.5 shrink-0 text-mint" />
                   {b}
@@ -214,7 +215,7 @@ function Register() {
             </ul>
           </div>
 
-          <p className="relative z-10 text-[13px] text-[#85A69B]">
+          <p className="relative z-10 text-[13px] text-[#B3A09D]">
             Your information is encrypted and only shared with your care team.
           </p>
 
@@ -225,7 +226,7 @@ function Register() {
           >
             <path
               d="M100 20c-30 0-52 18-52 46 0 21 6 35 11 54 4 15 7 36 17 45 4 4 9 2 11-3 4-10 5-28 11-28s7 18 11 28c2 5 7 7 11 3 10-9 13-30 17-45 5-19 11-33 11-54 0-28-22-46-52-46z"
-              stroke="#EFF6F2"
+              stroke="#FAF7F6"
               strokeWidth="1.5"
             />
           </svg>
@@ -252,6 +253,13 @@ function Register() {
                 </Link>
               </p>
             </div>
+
+            {redirectPath?.includes("appointment") && (
+              <div className="mb-4 flex items-center gap-2.5 p-3 rounded-xl bg-[#FAF2F0] border border-line text-teal-deep text-[13px] font-medium">
+                <ShieldCheck className="w-4 h-4 text-mint-deep shrink-0" />
+                <span>Create an account to book your online consultation slot.</span>
+              </div>
+            )}
 
             {/* Error banner */}
             {error && (
@@ -297,7 +305,8 @@ function Register() {
                 </Field>
               </div>
 
-              <Field label="Email address" htmlFor="email">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
+                <Field label="Email" htmlFor="email">
                 <input
                   id="email"
                   type="email"
@@ -322,6 +331,7 @@ function Register() {
                   className="input disabled:opacity-60"
                 />
               </Field>
+              </div>
 
               <Field label="I am registering as" htmlFor="userType">
                 <div
@@ -342,15 +352,15 @@ function Register() {
                         onClick={() => setUserType(role.id)}
                         className={`group relative flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border transition-all duration-150 cursor-pointer text-center ${
                           isSelected
-                            ? "border-teal-deep bg-[#EDF6F2] text-teal-deep font-semibold shadow-xs ring-2 ring-teal-deep/15"
-                            : "border-line bg-white text-ink-soft hover:border-mint-deep/40 hover:bg-[#F9FCFA] hover:text-ink"
+                            ? "border-teal-deep bg-[#FAF2F0] text-teal-deep font-semibold shadow-xs ring-2 ring-teal-deep/15"
+                            : "border-line bg-white text-ink-soft hover:border-mint-deep/40 hover:bg-[#FAF7F6] hover:text-ink"
                         }`}
                       >
                         <div
                           className={`w-7 h-7 rounded-lg flex items-center justify-center mb-1.5 transition-colors ${
                             isSelected
                               ? "bg-teal-deep text-white shadow-xs"
-                              : "bg-line-soft text-ink-soft group-hover:text-teal-deep group-hover:bg-[#E2ECE7]"
+                              : "bg-line-soft text-ink-soft group-hover:text-teal-deep group-hover:bg-[#F2E4E1]"
                           }`}
                         >
                           <Icon className="w-3.5 h-3.5" />
@@ -379,7 +389,8 @@ function Register() {
                 />
               </Field>
 
-              <Field label="Password" htmlFor="password">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
+                <Field label="Password" htmlFor="password">
                 <div className="relative">
                   <input
                     id="password"
@@ -436,6 +447,7 @@ function Register() {
                   </button>
                 </div>
               </Field>
+              </div>
 
               <div className="flex items-start gap-2.5 mt-0.5">
                 <input
@@ -472,7 +484,7 @@ function Register() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-1.5 rounded-lg bg-teal-deep hover:bg-mint-deep active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed transition-all text-paper text-[14.5px] font-semibold py-3.5 px-4.5 flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                className="mt-1.5 rounded-lg bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed transition-all text-paper text-[14.5px] font-semibold py-3.5 px-4.5 flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
                 {loading ? (
                   <>

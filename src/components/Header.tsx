@@ -15,40 +15,44 @@ import {
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 
-const navLinks = [
-  { name: "Home", href: "/" },
-  { name: "Services", href: "/services" },
-  { name: "About", href: "/about" },
-  { name: "Contact", href: "/contact" },
-];
-
 function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const pathname = location.pathname;
-  const { user, isAuthenticated, logout, isAdmin, isSuperAdmin, isDoctor } = useAuth();
+  const { user, isAuthenticated, logout, isAdmin, isSuperAdmin, isDoctor } =
+    useAuth();
   const isSuper = isSuperAdmin || user?.role === "superadmin";
   const isPatient = isAuthenticated && !isAdmin && !isDoctor;
+
+  const navLinks = [
+    { name: "Home", href: "/" },
+    {
+      name: "Book Video Slot",
+      href: isAuthenticated ? "/appointment" : "/auth/login?redirect=/appointment",
+    },
+    ...(isAuthenticated ? [{ name: "Patient Portal", href: "/patient/portal" }] : []),
+  ];
 
   const isLinkActive = (href: string) => {
     if (href === "/") {
       return pathname === "/";
     }
-    return pathname?.startsWith(href);
+    const cleanHref = href.split("?")[0];
+    return pathname === cleanHref || (cleanHref !== "/" && pathname?.startsWith(cleanHref));
   };
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* Top micro announcement & utility bar */}
-      <div className="bg-teal-deep text-[#DCEAE4] text-[12px] py-1.5 px-4 sm:px-6 lg:px-8 border-b border-teal-mid/40">
+      <div className="bg-teal-deep text-[#EBD8D5] text-[12px] py-1.5 px-4 sm:px-6 lg:px-8 border-b border-white/10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5 text-mint shrink-0" />
-            <span className="truncate">
-              Accepting new patients for online video & in-clinic consultations
-            </span>
+            <div className="truncate text-[12px]">
+             32<span className="text-[11px]">Stories</span>| Online Dental Consultation
+            </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-5 text-[11.5px] text-[#A8C4B8]">
+          <div className="hidden sm:flex items-center gap-5 text-[11.5px] text-[#D9C7C4]">
             <div className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-mint" />
               <span>Mon–Sat: 8:00 AM – 7:00 PM</span>
@@ -73,7 +77,7 @@ function Header() {
             to="/"
             className="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-mint-deep rounded-xl p-1"
           >
-            <div className="w-10 h-10 rounded-2xl bg-teal-deep flex items-center justify-center text-[#EFF6F2] shadow-xs group-hover:bg-mint-deep transition-colors duration-200">
+            <div className="w-10 h-10 rounded-2xl bg-teal-deep flex items-center justify-center text-[#FAF7F6] shadow-xs group-hover:bg-mint-deep transition-colors duration-200">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -87,11 +91,11 @@ function Header() {
               </svg>
             </div>
             <div className="flex flex-col">
-              <span className="font-display font-medium text-[19px] leading-tight text-teal-deep tracking-tight group-hover:text-mint-deep transition-colors">
-                Cedarview
-              </span>
+              <div className="font-display font-medium text-[22px] leading-tight text-teal-deep tracking-tight group-hover:text-mint-deep transition-colors">
+                32<span className="text-[19px]">Stories</span>
+              </div>
               <span className="text-[10.5px] font-semibold text-mint-deep tracking-wider uppercase leading-none mt-0.5">
-                Dental Clinic
+                Online Consultation
               </span>
             </div>
           </Link>
@@ -109,7 +113,7 @@ function Header() {
                   to={link.href}
                   className={`px-3.5 py-2 rounded-xl text-[14px] transition-all duration-150 ${
                     active
-                      ? "bg-[#EDF6F2] text-teal-deep font-semibold shadow-xs"
+                      ? "bg-[#FAF2F0] text-teal-deep font-semibold shadow-xs"
                       : "text-ink-soft hover:text-teal-deep hover:bg-line-soft/60 font-medium"
                   }`}
                 >
@@ -126,16 +130,18 @@ function Header() {
                 {isAdmin && (
                   <Link
                     to="/admin/dashboard"
-                    className="flex items-center gap-1.5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] transition-all text-paper text-[13.5px] font-semibold py-2 px-3.5 shadow-xs"
+                    className="flex items-center gap-1.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] transition-all text-paper text-[13.5px] font-semibold py-2 px-3.5 shadow-xs"
                   >
                     <ShieldCheck className="w-4 h-4 text-mint" />
-                    <span>{isSuper ? "Super Admin Dashboard" : "Admin Dashboard"}</span>
+                    <span>
+                      {isSuper ? "Super Admin Dashboard" : "Admin Dashboard"}
+                    </span>
                   </Link>
                 )}
                 {isDoctor && (
                   <Link
                     to="/doctor/dashboard"
-                    className="flex items-center gap-1.5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] transition-all text-paper text-[13.5px] font-semibold py-2 px-3.5 shadow-xs"
+                    className="flex items-center gap-1.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] transition-all text-paper text-[13.5px] font-semibold py-2 px-3.5 shadow-xs"
                   >
                     <Stethoscope className="w-4 h-4 text-mint" />
                     <span>Doctor Dashboard</span>
@@ -149,7 +155,7 @@ function Header() {
                     </span>
                     <Link
                       to="/patient/portal"
-                      className="flex items-center gap-1.5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] transition-all text-paper text-[13.5px] font-semibold py-2 px-3.5 shadow-xs"
+                      className="flex items-center gap-1.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] transition-all text-paper text-[13.5px] font-semibold py-2 px-3.5 shadow-xs"
                     >
                       <Calendar className="w-4 h-4 text-mint" />
                       <span>My Appointments</span>
@@ -168,18 +174,18 @@ function Header() {
             ) : (
               <>
                 <Link
-                  to="/auth/login"
+                  to="/auth/register"
                   className="text-[14px] font-medium text-ink hover:text-teal-deep px-3.5 py-2 rounded-xl hover:bg-line-soft/60 transition-colors"
                 >
-                  Log in
+                  Register
                 </Link>
 
                 <Link
-                  to="/auth/register"
-                  className="flex items-center gap-1.5 rounded-xl bg-teal-deep hover:bg-mint-deep active:scale-[0.98] transition-all duration-150 text-paper text-[13.5px] font-semibold py-2.5 px-4 shadow-xs"
+                  to={isAuthenticated ? "/appointment" : "/auth/login?redirect=/appointment"}
+                  className="flex items-center gap-1.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] transition-all duration-150 text-paper text-[13.5px] font-semibold py-2.5 px-4 shadow-xs"
                 >
                   <Calendar className="w-3.5 h-3.5 text-mint" />
-                  <span>Register</span>
+                  <span>Book Consultation</span>
                 </Link>
               </>
             )}
@@ -197,10 +203,10 @@ function Header() {
               </button>
             ) : (
               <Link
-                to="/auth/register"
-                className="text-[13px] font-semibold bg-teal-deep text-white px-3 py-1.5 rounded-lg"
+                to={isAuthenticated ? "/appointment" : "/auth/login?redirect=/appointment"}
+                className="text-[13px] font-semibold bg-[#5E3E3B] hover:bg-[#262525] text-white px-3 py-1.5 rounded-lg transition-colors"
               >
-                Register
+                Book
               </Link>
             )}
             <button
@@ -235,7 +241,7 @@ function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14.5px] transition-colors ${
                     active
-                      ? "bg-[#EDF6F2] text-teal-deep font-semibold"
+                      ? "bg-[#FAF2F0] text-teal-deep font-semibold"
                       : "text-ink-soft hover:text-ink hover:bg-line-soft/60 font-medium"
                   }`}
                 >
@@ -268,7 +274,9 @@ function Header() {
                     className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-teal-deep text-white text-[14px] font-semibold"
                   >
                     <ShieldCheck className="w-4 h-4 text-mint" />
-                    <span>{isSuper ? "Super Admin Dashboard" : "Admin Dashboard"}</span>
+                    <span>
+                      {isSuper ? "Super Admin Dashboard" : "Admin Dashboard"}
+                    </span>
                   </Link>
                 )}
                 {isDoctor && (
@@ -305,16 +313,16 @@ function Header() {
             ) : (
               <div className="grid grid-cols-2 gap-2 mt-1">
                 <Link
-                  to="/auth/login"
+                  to="/auth/login?redirect=/appointment"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center justify-center py-2.5 px-3 rounded-xl border border-line text-[14px] font-medium text-ink hover:bg-line-soft/50 text-center transition-colors"
                 >
                   Log in
                 </Link>
                 <Link
-                  to="/auth/register"
+                  to="/auth/register?redirect=/appointment"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-teal-deep text-white text-[14px] font-semibold text-center hover:bg-mint-deep transition-colors"
+                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#5E3E3B] text-white text-[14px] font-semibold text-center hover:bg-[#262525] transition-colors"
                 >
                   <Calendar className="w-3.5 h-3.5 text-mint" />
                   <span>Register</span>
