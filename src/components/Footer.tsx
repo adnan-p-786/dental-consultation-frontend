@@ -14,9 +14,31 @@ export default function Footer() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <footer className="bg-[#845754] text-white border-t border-white/10">
+    <footer className="relative bg-[#5E3E3B] text-white border-t border-dotted border-white/20 overflow-hidden">
+      {/* Dotted Theme Texture */}
+      <div
+        className="absolute inset-0 opacity-80 pointer-events-none"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, rgba(255,255,255,0.08) 1.5px, transparent 1.5px)",
+            backgroundSize: "24px 24px",
+            maskImage:
+              "linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)",
+          }}
+      />
+      {/* Subtle depth lighting overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-40"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 45%), radial-gradient(circle at 85% 85%, rgba(0, 0, 0, 0.3) 0%, transparent 50%)",
+        }}
+      />
+
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6">
           {/* Brand Col */}
           <div className="lg:col-span-2 flex flex-col justify-between">
@@ -37,7 +59,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <span className="font-display font-semibold text-lg sm:text-xl text-white block leading-tight">
-                    32 stories Dental
+                    32<span className="text-[17px]">Stories</span>
                   </span>
                   <span className="text-[10px] sm:text-[11px] font-semibold text-white tracking-wider uppercase">
                     Clinic & Telehealth Centre
@@ -224,7 +246,7 @@ export default function Footer() {
                   care@32 storiesdental.com
                 </a>
               </div>
-              <div className="pt-2 border-t border-white/10 mt-2">
+              <div className="pt-2 border-t border-dotted border-white/20 mt-2">
                 <div className="flex items-center gap-1.5 text-white font-medium mb-0.5">
                   <Clock className="w-3 h-3 text-mint" />
                   <span>Hours:</span>
@@ -239,7 +261,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-8 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white">
+        <div className="mt-8 pt-4 border-t border-dotted border-white/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white">
           <p>
             © {new Date().getFullYear()} 32 stories Dental Clinic Ltd. All
             rights reserved.

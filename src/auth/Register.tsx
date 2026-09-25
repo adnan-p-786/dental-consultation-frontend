@@ -9,7 +9,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  ShieldCheck,
   User,
 } from "lucide-react";
 import Header from "../components/Header";
@@ -253,13 +252,6 @@ function Register() {
                 </Link>
               </p>
             </div>
-
-            {redirectPath?.includes("appointment") && (
-              <div className="mb-4 flex items-center gap-2.5 p-3 rounded-xl bg-[#FAF2F0] border border-line text-teal-deep text-[13px] font-medium">
-                <ShieldCheck className="w-4 h-4 text-mint-deep shrink-0" />
-                <span>Create an account to book your online consultation slot.</span>
-              </div>
-            )}
 
             {/* Error banner */}
             {error && (

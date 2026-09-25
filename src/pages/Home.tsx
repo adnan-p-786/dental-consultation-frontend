@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "../auth/AuthContext";
+
 import {
   Video,
   Clock,
@@ -21,154 +22,174 @@ import {
   Sparkles,
   Smile,
   PlayCircle,
+  Mail,
+  RefreshCw,
 } from "lucide-react";
 
-/**
- * Common online consultation categories
- */
 const consultationCategories = [
   {
     code: "General Dental Consultation",
     title: "General Dental Consultation",
     icon: Stethoscope,
-    desc: "First-time evaluation, second opinions, or general oral health questions.",
-  },
-  {
-    code: "Root Canal Treatment",
-    title: "Toothache & Nerve Pain",
-    icon: Activity,
-    desc: "Severe ache, hot/cold sensitivity, swelling, or urgent pulp diagnosis.",
-  },
-  {
-    code: "Orthodontics",
-    title: "Clear Aligners & Orthodontics",
-    icon: Sparkle,
-    desc: "Invisalign candidacy, bite alignment, crooked teeth, and gap correction.",
-  },
-  {
-    code: "Cosmetic Dentistry",
-    title: "Cosmetic Smile Design",
-    icon: Smile,
-    desc: "Teeth whitening, composite bonding, veneers, and smile aesthetics.",
+    desc: "General dental concerns, oral health questions, evaluations, and consultation requests.",
   },
   {
     code: "Dental Implant",
-    title: "Dental Implants & Missing Teeth",
+    title: "Dental Implants",
     icon: HeartPulse,
-    desc: "Single or full arch tooth replacement, bone density questions, and bridges.",
+    desc: "Consultation for missing teeth, dental implants, and tooth replacement options.",
+  },
+  {
+    code: "Orthodontics",
+    title: "Orthodontics",
+    icon: Sparkle,
+    desc: "Consultation for tooth alignment, bite concerns, braces, and orthodontic treatment.",
+  },
+  {
+    code: "Cosmetic Dentistry",
+    title: "Cosmetic Dentistry",
+    icon: Smile,
+    desc: "Discuss cosmetic dental concerns and available options for improving your smile.",
+  },
+  {
+    code: "Root Canal Treatment",
+    title: "Root Canal Treatment",
+    icon: Activity,
+    desc: "Discuss tooth pain, sensitivity, and concerns that may require root canal treatment.",
   },
   {
     code: "Tooth Extraction",
-    title: "Wisdom Tooth & Extractions",
+    title: "Tooth Extraction",
     icon: FileText,
-    desc: "Impacted third molars, pain relief, and surgical extraction advice.",
+    desc: "Consultation for teeth that may require extraction or further dental evaluation.",
+  },
+  {
+    code: "Pediatric Dentistry",
+    title: "Pediatric Dentistry",
+    icon: Smile,
+    desc: "Dental consultation and appointment requests for children and pediatric dental needs.",
+  },
+  {
+    code: "Gum Treatment",
+    title: "Gum Treatment",
+    icon: HeartPulse,
+    desc: "Discuss gum-related concerns and treatment requirements with the dental team.",
+  },
+  {
+    code: "Dental Crowns & Bridges",
+    title: "Crowns & Bridges",
+    icon: Stethoscope,
+    desc: "Consultation for damaged, missing, or weakened teeth requiring restorative treatment.",
   },
 ];
 
-/**
- * 4-Step Online Consultation Workflow
- */
 const consultationSteps = [
   {
     number: "01",
     icon: Send,
-    title: "Sign In & Request Slot",
-    body: "Sign in or register to select your dental concern, symptoms, and preferred time window for specialist review.",
+    title: "Request an Appointment",
+    body: "Enter your details, select your treatment or case requirement, and choose your preferred appointment date and time.",
   },
   {
     number: "02",
     icon: Search,
-    title: "Doctor Review & Slot Confirmation",
-    body: "A licensed dentist reviews your request, assigns your slot, and generates a private Google Meet or Zoom video link.",
+    title: "Request Reviewed",
+    body: "The clinic team reviews your request, confirms the requested time, or proposes a different date or time when required.",
   },
   {
     number: "03",
-    icon: Video,
-    title: "1-on-1 Video Consultation",
-    body: "Click 'Join Call' at your scheduled time on your phone or laptop. Discuss symptoms directly with your specialist.",
+    icon: Calendar,
+    title: "Appointment Confirmed",
+    body: "Once approved, your confirmed appointment details, assigned doctor, consultation information, and meeting details are provided.",
   },
   {
     number: "04",
-    icon: FileText,
-    title: "Written Diagnosis & Notes",
-    body: "Receive clinical diagnosis, recommended treatment plans, and printable consultation notes saved in your portal.",
+    icon: Video,
+    title: "Online Consultation",
+    body: "Join your scheduled online consultation using the meeting link provided with your approved appointment.",
   },
 ];
 
-/**
- * Online Consultation Module Capabilities
- */
 const portalHighlights = [
   {
-    icon: PlayCircle,
-    title: "Instant Video Meeting Room",
-    body: "Direct 1-click meeting access via Google Meet or Zoom. No complex app downloads required.",
+    icon: Calendar,
+    title: "Appointment Management",
+    body: "Request appointments, receive approval, reschedule when required, and keep track of appointment status.",
   },
   {
-    icon: FileText,
-    title: "Digital Clinical Summary",
-    body: "Dentists record findings, diagnosis, and prescription notes directly to your personal consultation history.",
+    icon: Video,
+    title: "Online Consultation",
+    body: "Approved appointments can include an online consultation through a supported video platform.",
   },
   {
     icon: Paperclip,
-    title: "Upload Photos & Dental Scans",
-    body: "Attach high-resolution photos of your smile or dental X-rays so the dentist can review before the call.",
+    title: "Supporting Documents",
+    body: "Patients can optionally provide supporting documents or images when submitting an appointment request.",
   },
   {
-    icon: Clock,
-    title: "Automated Meeting Reminders",
-    body: "Receive email and SMS notifications 24h and 1h prior to your video call with joining instructions.",
+    icon: Mail,
+    title: "Email Notifications",
+    body: "Receive appointment confirmations, changes, cancellations, reminders, and consultation information by email.",
+  },
+  {
+    icon: FileText,
+    title: "Consultation Notes",
+    body: "Doctors can record consultation findings, diagnosis or assessment, recommendations, instructions, and follow-up requirements.",
   },
   {
     icon: UserCheck,
-    title: "Specialist Workspace",
-    body: "Dedicated portals for patients, attending doctors, and clinic admins to streamline every step.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Encrypted & Confidential",
-    body: "All consultations and uploaded clinical records are protected with bank-grade encryption and access controls.",
+    title: "Role-Based Access",
+    body: "Separate access is provided for patients, doctors, and administrators based on their role and permitted information.",
   },
 ];
 
 export default function Home() {
   const { isAuthenticated } = useAuth();
 
+  const appointmentLink = isAuthenticated
+    ? "/appointment"
+    : "/auth/login?redirect=/appointment";
+
   return (
     <div className="min-h-screen bg-[#FAF7F6] flex flex-col font-sans text-ink selection:bg-[#5E3E3B]/20 selection:text-[#5E3E3B]">
       <Header />
-
-      {/* Hero Section */}
       <section className="relative overflow-hidden bg-teal-deep text-paper pt-16 pb-24 md:pt-24 md:pb-32 px-4 sm:px-6 lg:px-8 border-b border-white/10">
         <div
-          className="absolute inset-0 opacity-15 pointer-events-none"
+          className="absolute inset-0 opacity-80 pointer-events-none"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 15% 20%, rgba(201, 138, 130, 0.35) 0%, transparent 45%), radial-gradient(circle at 85% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 50%)",
+              "radial-gradient(circle, rgba(255,255,255,0.08) 1.5px, transparent 1.5px)",
+            backgroundSize: "24px 24px",
+            maskImage:
+              "linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)",
           }}
         />
 
         <div className="relative max-w-5xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-mint text-xs font-semibold uppercase tracking-wider mb-6">
             <Sparkles className="w-3.5 h-3.5 text-mint" />
-            <span>Online Dental Consultation Module</span>
+            <span>Online Dental Appointment & Consultation</span>
           </div>
 
           <h1 className="font-display font-medium text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.14] max-w-4xl mx-auto mb-6">
-            Consult a dentist online from anywhere
+            Convenient dental appointments, from request to consultation
           </h1>
 
           <p className="text-base sm:text-lg text-[#EBD8D5] max-w-2xl mx-auto leading-relaxed mb-10">
-            Connect directly with licensed dentists via live video. Request your consultation in under 2 minutes, get instant slot confirmation, and join your secure video room with one click.
+            Request a dental appointment online, choose your treatment or case
+            requirement, select your preferred date and time, and receive your
+            appointment details through the clinic's online system.
           </p>
 
           <div className="flex flex-wrap justify-center items-center gap-4 mb-12">
             <Link
-              to={isAuthenticated ? "/appointment" : "/auth/login?redirect=/appointment"}
+              to={appointmentLink}
               className="px-7 py-3.5 rounded-4xl bg-[#5E3E3B] border border-white/25 text-white text-sm font-semibold hover:bg-[#262525] transition-all flex items-center gap-2 shadow-sm"
             >
-              <Video className="w-4 h-4 text-mint" />
-              <span>Book Video Consultation</span>
+              <Calendar className="w-4 h-4 text-mint" />
+              <span>Book an Appointment</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
@@ -177,8 +198,8 @@ export default function Home() {
                 to="/patient/portal"
                 className="px-7 py-3.5 rounded-4xl border border-white/25 text-white text-sm font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
               >
-                <Calendar className="w-4 h-4 text-mint" />
-                <span>Go to Patient Portal</span>
+                <UserCheck className="w-4 h-4 text-mint" />
+                <span>Patient Portal</span>
               </Link>
             ) : (
               <a
@@ -186,48 +207,56 @@ export default function Home() {
                 className="px-7 py-3.5 rounded-4xl border border-white/25 text-white text-sm font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
               >
                 <Clock className="w-4 h-4 text-mint" />
-                <span>How Consultation Works</span>
+                <span>How It Works</span>
               </a>
             )}
           </div>
 
-          {/* Micro trust pills */}
           <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-x-8 text-xs sm:text-sm text-[#EBD8D5]">
             <span className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-mint shrink-0" />
-              Verified Patient Consultations
+              Online appointment requests
             </span>
+
             <span className="flex items-center gap-2">
-              <Video className="w-4 h-4 text-mint shrink-0" />
-              Google Meet & Zoom video rooms
+              <Calendar className="w-4 h-4 text-mint shrink-0" />
+              Scheduling & appointment updates
             </span>
+
             <span className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-mint shrink-0" />
-              Digital diagnosis & treatment summary
+              <Mail className="w-4 h-4 text-mint shrink-0" />
+              Email appointment notifications
             </span>
           </div>
         </div>
       </section>
 
       <main className="grow">
-        {/* Fast Consultation Selector */}
+        {/* =========================================================
+            TREATMENTS
+        ========================================================= */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
           <div className="max-w-2xl mx-auto text-center mb-12">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF2F0] text-teal-deep text-xs font-semibold uppercase tracking-wider mb-2">
               <Stethoscope className="w-3.5 h-3.5 text-mint-deep" />
-              <span>Choose Your Concern</span>
+              <span>Dental Services</span>
             </div>
+
             <h2 className="font-display text-3xl font-medium text-ink mb-3">
-              What would you like to consult on?
+              What would you like to consult about?
             </h2>
+
             <p className="text-sm text-ink-soft leading-relaxed">
-              Select your consultation category below to pre-fill your request and get scheduled with the appropriate dental specialist.
+              Select a treatment or dental case when requesting your
+              appointment. You can provide additional information and supporting
+              documents to help the clinic understand your request.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {consultationCategories.map((cat) => {
               const Icon = cat.icon;
+
               return (
                 <Link
                   key={cat.code}
@@ -238,15 +267,19 @@ export default function Home() {
                     <div className="w-10 h-10 rounded-xl bg-[#FAF2F0] text-teal-deep flex items-center justify-center mb-4 group-hover:bg-[#5E3E3B] group-hover:text-white transition-colors">
                       <Icon className="w-5 h-5" />
                     </div>
+
                     <h3 className="font-display font-medium text-lg text-ink group-hover:text-teal-deep transition-colors mb-1.5">
                       {cat.title}
                     </h3>
+
                     <p className="text-xs text-ink-soft leading-relaxed">
                       {cat.desc}
                     </p>
                   </div>
+
                   <div className="pt-4 mt-4 border-t border-line/60 flex items-center justify-between text-xs font-semibold text-teal-deep group-hover:text-[#262525]">
-                    <span>Start Consultation Request</span>
+                    <span>Request Appointment</span>
+
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-mint-deep" />
                   </div>
                 </Link>
@@ -255,25 +288,31 @@ export default function Home() {
           </div>
         </section>
 
-        {/* How It Works Section */}
-        <section id="how-it-works" className="bg-white border-y border-line py-16 md:py-20">
+        <section
+          id="how-it-works"
+          className="bg-white border-y border-line py-16 md:py-20"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl mx-auto text-center mb-14">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF2F0] text-teal-deep text-xs font-semibold uppercase tracking-wider mb-2">
                 <Clock className="w-3.5 h-3.5 text-mint-deep" />
-                <span>Simple 4-Step Process</span>
+                <span>Simple Appointment Process</span>
               </div>
+
               <h2 className="font-display text-3xl font-medium text-ink mb-3">
-                How your online consultation works
+                How your appointment works
               </h2>
+
               <p className="text-sm text-ink-soft leading-relaxed">
-                From initial request to your live 1-on-1 video call, everything is organized smoothly and securely.
+                From your initial appointment request to the online
+                consultation, each stage is organized through the platform.
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {consultationSteps.map((step) => {
                 const Icon = step.icon;
+
                 return (
                   <div
                     key={step.number}
@@ -284,13 +323,16 @@ export default function Home() {
                         <span className="font-mono text-xl font-bold text-teal-deep/30">
                           {step.number}
                         </span>
+
                         <div className="w-10 h-10 rounded-xl bg-white border border-line flex items-center justify-center text-teal-deep shadow-2xs">
                           <Icon className="w-5 h-5 text-mint-deep" />
                         </div>
                       </div>
+
                       <h3 className="font-display font-medium text-base text-ink mb-2">
                         {step.title}
                       </h3>
+
                       <p className="text-xs sm:text-[13px] text-ink-soft leading-relaxed">
                         {step.body}
                       </p>
@@ -302,20 +344,31 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Feature Highlights Grid */}
+        {/* =========================================================
+            FEATURES
+        ========================================================= */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
           <div className="max-w-2xl mx-auto text-center mb-12">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF2F0] text-teal-deep text-xs font-semibold uppercase tracking-wider mb-3">
+              <Sparkles className="w-3.5 h-3.5 text-mint-deep" />
+              <span>Platform Features</span>
+            </div>
+
             <h2 className="font-display text-3xl font-medium text-ink mb-3">
-              Purpose-built telehealth features
+              Everything you need for your dental appointment
             </h2>
+
             <p className="text-sm text-ink-soft leading-relaxed">
-              Designed as a seamless add-on module providing high-definition video consultations, doctor workspaces, and patient records.
+              The platform brings appointment requests, scheduling,
+              consultations, notifications, and consultation records together in
+              one system.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {portalHighlights.map((feat) => {
               const Icon = feat.icon;
+
               return (
                 <div
                   key={feat.title}
@@ -324,9 +377,11 @@ export default function Home() {
                   <div className="w-10 h-10 rounded-xl bg-[#FAF2F0] text-teal-deep flex items-center justify-center">
                     <Icon className="w-5 h-5 text-mint-deep" />
                   </div>
+
                   <h3 className="font-display font-medium text-base text-ink">
                     {feat.title}
                   </h3>
+
                   <p className="text-xs sm:text-[13px] text-ink-soft leading-relaxed">
                     {feat.body}
                   </p>
@@ -336,58 +391,162 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Portals Access Banner */}
-        <section className="bg-teal-deep text-white py-14 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="space-y-2 text-center md:text-left">
-              <span className="text-xs font-semibold text-mint uppercase tracking-wider block">
-                Workspaces & Portals
-              </span>
-              <h2 className="font-display text-2xl sm:text-3xl font-medium">
-                Are you a Doctor or Clinic Administrator?
-              </h2>
-              <p className="text-xs sm:text-sm text-[#EBD8D5] max-w-xl">
-                Access your consultation management workspace to review assigned patients, conduct video calls, and record clinical diagnosis notes.
-              </p>
-            </div>
+        {/* =========================================================
+            CONSULTATION SECTION
+        ========================================================= */}
+        <section className="bg-white border-y border-line py-16 md:py-20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid md:grid-cols-2 gap-10 items-center">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF2F0] text-teal-deep text-xs font-semibold uppercase tracking-wider mb-4">
+                  <Video className="w-3.5 h-3.5 text-mint-deep" />
+                  <span>Online Consultation</span>
+                </div>
 
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <Link
-                to="/doctor/dashboard"
-                className="px-5 py-3 rounded-xl bg-white text-teal-deep hover:bg-[#FAF7F6] text-xs sm:text-sm font-semibold transition-all shadow-xs"
-              >
-                Doctor Workspace
-              </Link>
-              <Link
-                to="/admin/dashboard"
-                className="px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-medium transition-all"
-              >
-                Admin Portal
-              </Link>
+                <h2 className="font-display text-3xl font-medium text-ink mb-4">
+                  Connect with your doctor online
+                </h2>
+
+                <p className="text-sm text-ink-soft leading-relaxed mb-6">
+                  After an appointment is approved, the system can provide
+                  consultation details and an online meeting link. Patients and
+                  doctors can then join the scheduled consultation.
+                </p>
+
+                <Link
+                  to={appointmentLink}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-4xl bg-[#5E3E3B] hover:bg-[#262525] text-white text-sm font-semibold transition-colors"
+                >
+                  Request an Appointment
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-[#FAF7F6] rounded-2xl border border-line p-5">
+                  <Video className="w-5 h-5 text-mint-deep mb-3" />
+                  <h3 className="font-display font-medium text-base mb-2">
+                    Supported Video Platforms
+                  </h3>
+                  <p className="text-xs text-ink-soft leading-relaxed">
+                    The system can integrate with a suitable third-party video
+                    platform such as Google Meet, Zoom, or Microsoft Teams.
+                  </p>
+                </div>
+
+                <div className="bg-[#FAF7F6] rounded-2xl border border-line p-5">
+                  <FileText className="w-5 h-5 text-mint-deep mb-3" />
+                  <h3 className="font-display font-medium text-base mb-2">
+                    Consultation Records
+                  </h3>
+                  <p className="text-xs text-ink-soft leading-relaxed">
+                    Consultation findings, recommendations, instructions, and
+                    follow-up requirements can be recorded by the doctor.
+                  </p>
+                </div>
+
+                <div className="bg-[#FAF7F6] rounded-2xl border border-line p-5">
+                  <Mail className="w-5 h-5 text-mint-deep mb-3" />
+                  <h3 className="font-display font-medium text-base mb-2">
+                    Email Updates
+                  </h3>
+                  <p className="text-xs text-ink-soft leading-relaxed">
+                    Appointment confirmations, changes, cancellations, and
+                    consultation reminders can be sent through email.
+                  </p>
+                </div>
+
+                <div className="bg-[#FAF7F6] rounded-2xl border border-line p-5">
+                  <RefreshCw className="w-5 h-5 text-mint-deep mb-3" />
+                  <h3 className="font-display font-medium text-base mb-2">
+                    Rescheduling
+                  </h3>
+                  <p className="text-xs text-ink-soft leading-relaxed">
+                    Appointment dates and times can be changed when rescheduling
+                    is required, while retaining appointment history.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Final Call to Action */}
+        {/* =========================================================
+            SECURITY / ACCESS
+        ========================================================= */}
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+          <div className="bg-white rounded-3xl border border-line p-8 sm:p-12">
+            <div className="max-w-2xl mx-auto text-center">
+              <ShieldCheck className="w-8 h-8 text-mint-deep mx-auto mb-4" />
+
+              <h2 className="font-display text-2xl sm:text-3xl font-medium text-ink mb-4">
+                Secure access for every role
+              </h2>
+
+              <p className="text-sm text-ink-soft leading-relaxed mb-8">
+                Patients, doctors, and administrators have role-based access to
+                the information and functions relevant to them. The system is
+                designed around secure authentication, controlled access,
+                protected patient information, and appointment audit trails.
+              </p>
+
+              <div className="grid sm:grid-cols-3 gap-4 text-left">
+                <div className="p-4 rounded-xl bg-[#FAF7F6]">
+                  <h3 className="font-semibold text-sm mb-1">Patient</h3>
+                  <p className="text-xs text-ink-soft">
+                    Manage your profile, appointments, consultation details,
+                    meeting access, and permitted history.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#FAF7F6]">
+                  <h3 className="font-semibold text-sm mb-1">Doctor</h3>
+                  <p className="text-xs text-ink-soft">
+                    View assigned appointments, patient information,
+                    consultations, and consultation notes.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#FAF7F6]">
+                  <h3 className="font-semibold text-sm mb-1">Administrator</h3>
+                  <p className="text-xs text-ink-soft">
+                    Manage appointments, patients, doctors, scheduling,
+                    notifications, reports, and settings.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* =========================================================
+            FINAL CTA
+        ========================================================= */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 text-center">
           <div className="bg-white rounded-3xl border border-line p-8 sm:p-12 shadow-2xs">
             <div className="w-12 h-12 rounded-2xl bg-[#FAF2F0] text-teal-deep flex items-center justify-center mx-auto mb-4">
-              <Video className="w-6 h-6 text-mint-deep" />
+              <Calendar className="w-6 h-6 text-mint-deep" />
             </div>
+
             <h2 className="font-display text-2xl sm:text-3xl font-medium text-ink mb-3">
-              Ready to request your online consultation?
+              Ready to request your dental appointment?
             </h2>
+
             <p className="text-sm text-ink-soft leading-relaxed max-w-lg mx-auto mb-8">
-              Sign in or register to select your preferred consultation time and connect directly with a licensed dentist.
+              Submit your appointment request, select your treatment
+              requirement, and choose your preferred date and time. The clinic
+              team will review your request and provide the appointment details.
             </p>
+
             <div className="flex flex-wrap justify-center items-center gap-3">
               <Link
-                to={isAuthenticated ? "/appointment" : "/auth/login?redirect=/appointment"}
+                to={appointmentLink}
                 className="px-7 py-3 rounded-4xl bg-[#5E3E3B] hover:bg-[#262525] text-white text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs"
               >
-                <span>Book Video Consultation Now</span>
+                <span>Book an Appointment</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
+
               {isAuthenticated && (
                 <Link
                   to="/patient/portal"

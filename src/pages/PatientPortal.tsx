@@ -19,13 +19,12 @@ import {
   XCircle,
   RefreshCw,
   PlayCircle,
+  Sparkles,
+  Phone,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { appointmentService } from "@/lib/appointmentService";
-import type {
-  Appointment,
-  AppointmentStatus,
-} from "@/admin/types";
+import type { Appointment, AppointmentStatus } from "@/admin/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -340,15 +339,44 @@ export const PatientPortal: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FAF7F6] flex flex-col font-sans text-ink">
       {/* Main Navbar */}
+
+      <div className="bg-teal-deep text-[#EBD8D5] text-[12px] py-1.5 px-4 sm:px-6 lg:px-8 border-b border-white/10">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-mint shrink-0" />
+            <div className="truncate text-[12px]">
+              32<span className="text-[11px]">Stories</span> | Online Dental
+              Consultation
+            </div>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-5 text-[11.5px] text-[#D9C7C4]">
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-mint" />
+              <span>Mon–Sat: 8:00 AM – 7:00 PM</span>
+            </div>
+            <span className="w-1 h-1 rounded-full bg-mint/50" />
+            <a
+              href="tel:+918085478598"
+              className="flex items-center gap-1.5 text-white hover:text-mint transition-colors font-medium"
+            >
+              <Phone className="w-3 h-3 text-mint" />
+              <span>+91 8085478598</span>
+            </a>
+          </div>
+        </div>
+      </div>
       <header className="bg-white/95 backdrop-blur-md border-b border-line sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-teal-deep flex items-center justify-center text-paper shadow-xs group-hover:bg-mint-deep transition-colors">
+          <Link
+            to="/"
+            className="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-mint-deep rounded-xl p-1"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-teal-deep flex items-center justify-center text-[#FAF7F6] shadow-xs group-hover:bg-mint-deep transition-colors duration-200">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
-                className="w-5 h-5 text-[#FAF7F6]"
+                className="w-5 h-5 text-mint"
               >
                 <path
                   d="M12 3C8.5 3 6 5.2 6 8.6c0 2.6.7 4.3 1.3 6.6.5 1.9.9 4.4 2 5.5.5.5 1.1.3 1.4-.4.5-1.2.6-3.4 1.3-3.4s.8 2.2 1.3 3.4c.3.7.9.9 1.4.4 1.1-1.1 1.5-3.6 2-5.5.6-2.3 1.3-4 1.3-6.6C18 5.2 15.5 3 12 3z"
@@ -358,14 +386,21 @@ export const PatientPortal: React.FC = () => {
               </svg>
             </div>
             <div className="flex flex-col">
-              <span className="font-display font-medium text-lg leading-tight text-teal-deep">
-                32 stories Dental
-              </span>
-              <span className="text-[10px] font-semibold text-mint-deep tracking-wider uppercase">
-                Patient Portal
+              <div className="font-display font-medium text-[22px] leading-tight text-teal-deep tracking-tight group-hover:text-mint-deep transition-colors">
+                32<span className="text-[19px]">Stories</span>
+              </div>
+              <span className="text-[10.5px] font-semibold text-mint-deep tracking-wider uppercase leading-none mt-0.5">
+                Online Consultation
               </span>
             </div>
-          </div>
+          </Link>
+
+          {/* <Link
+            to="/"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] text-white text-xs font-semibold transition-all shadow-xs"
+          >
+            <span>Home</span>
+          </Link> */}
 
           {/* User Profile & Actions */}
           <div className="flex items-center gap-3">

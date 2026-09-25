@@ -27,10 +27,9 @@ function Header() {
   const navLinks = [
     { name: "Home", href: "/" },
     {
-      name: "Book Video Slot",
+      name: "Book Consultation",
       href: isAuthenticated ? "/appointment" : "/auth/login?redirect=/appointment",
     },
-    ...(isAuthenticated ? [{ name: "Patient Portal", href: "/patient/portal" }] : []),
   ];
 
   const isLinkActive = (href: string) => {
@@ -48,7 +47,7 @@ function Header() {
           <div className="flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5 text-mint shrink-0" />
             <div className="truncate text-[12px]">
-             32<span className="text-[11px]">Stories</span>| Online Dental Consultation
+             32<span className="text-[11px]">Stories</span> | Online Dental Consultation
             </div>
           </div>
 
@@ -57,7 +56,6 @@ function Header() {
               <Clock className="w-3.5 h-3.5 text-mint" />
               <span>Mon–Sat: 8:00 AM – 7:00 PM</span>
             </div>
-            <span className="w-1 h-1 rounded-full bg-mint/50" />
             <a
               href="tel:+918085478598"
               className="flex items-center gap-1.5 text-white hover:text-mint transition-colors font-medium"
@@ -165,28 +163,28 @@ function Header() {
                 <button
                   onClick={() => logout()}
                   className="flex items-center gap-1 text-[13px] font-medium text-ink-soft hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
-                  title="Sign out"
+                  title="Log out"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Logout</span>
+                  <LogOut className="w-4.5 h-4.5" />
+                  
                 </button>
               </div>
             ) : (
               <>
                 <Link
                   to="/auth/register"
-                  className="text-[14px] font-medium text-ink hover:text-teal-deep px-3.5 py-2 rounded-xl hover:bg-line-soft/60 transition-colors"
+                  className="flex items-center gap-1.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] transition-all duration-150 text-paper text-[13.5px] font-semibold py-2.5 px-4 shadow-xs"
                 >
                   Register
                 </Link>
 
-                <Link
+                {/* <Link
                   to={isAuthenticated ? "/appointment" : "/auth/login?redirect=/appointment"}
                   className="flex items-center gap-1.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] transition-all duration-150 text-paper text-[13.5px] font-semibold py-2.5 px-4 shadow-xs"
                 >
                   <Calendar className="w-3.5 h-3.5 text-mint" />
                   <span>Book Consultation</span>
-                </Link>
+                </Link> */}
               </>
             )}
           </div>
