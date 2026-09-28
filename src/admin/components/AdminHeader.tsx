@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   Search,
   Bell,
-  PlusCircle,
   Clock,
   Calendar,
   CheckCircle2,
@@ -34,7 +33,6 @@ interface AdminHeaderProps {
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
   searchQuery,
   onSearchChange,
-  onNewAppointmentClick,
   pendingAppointments,
   onSelectAppointment,
   onOpenMobileMenu,
@@ -155,15 +153,6 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Quick New Appointment Button */}
-        <Button
-          onClick={onNewAppointmentClick}
-          className="gap-2 rounded-xl bg-[#5E3E3B] text-white hover:bg-[#262525] shadow-xs font-semibold cursor-pointer"
-        >
-          <PlusCircle className="w-4 h-4" />
-          <span className="hidden sm:inline">New Appointment</span>
-        </Button>
       </div>
     </header>
   );

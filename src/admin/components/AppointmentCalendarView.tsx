@@ -20,7 +20,7 @@ export const AppointmentCalendarView: React.FC<
   const [calendarMode, setCalendarMode] = useState<"month" | "week" | "day">(
     "month",
   );
-  const [currentDate, setCurrentDate] = useState(new Date("2026-09-17"));
+  const [currentDate, setCurrentDate] = useState(() => new Date());
 
   const handlePrev = () => {
     const nextDate = new Date(currentDate);
@@ -39,27 +39,37 @@ export const AppointmentCalendarView: React.FC<
   };
 
   const handleToday = () => {
-    setCurrentDate(new Date("2026-09-17"));
+    setCurrentDate(new Date());
   };
 
-  // Calendar month days generation (September 2026)
   const monthTitle = currentDate.toLocaleDateString("en-US", {
     month: "long",
     year: "numeric",
   });
 
-  // Simple clean calendar grid for current view
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // Days in month: Sep 2026 has 30 days, Sep 1 2026 is Tuesday (day 2)
-  const daysArray = Array.from({ length: 30 }, (_, i) => {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => {
     const dayNum = i + 1;
-    const dateString = `2026-09-${dayNum < 10 ? "0" + dayNum : dayNum}`;
+    const dayStr = dayNum < 10 ? `0${dayNum}` : `${dayNum}`;
+    const monthStr = month + 1 < 10 ? `0${month + 1}` : `${month + 1}`;
+    const dateString = `${year}-${monthStr}-${dayStr}`;
     const dayAppointments = appointments.filter(
       (a) => (a.confirmedDate || a.requestedDate) === dateString,
     );
     return { dayNum, dateString, dayAppointments };
   });
+
+  const leadingSlots = Array.from({ length: firstDayOfWeek });
+  const totalCells = firstDayOfWeek + daysInMonth;
+  const trailingSlotsCount = (7 - (totalCells % 7)) % 7;
+  const trailingSlots = Array.from({ length: trailingSlotsCount });
 
   return (
     <div className="space-y-4">
@@ -133,12 +143,13 @@ export const AppointmentCalendarView: React.FC<
 
             {/* Days cells */}
             <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-line">
-              {/* Blank leading slots for Tuesday start (Sun, Mon = 2 slots) */}
-              <div className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
-              <div className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
+              {/* Dynamic leading blank slots */}
+              {leadingSlots.map((_, idx) => (
+                <div key={`lead-${idx}`} className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
+              ))}
 
               {daysArray.map(({ dayNum, dateString, dayAppointments }) => {
-                const isToday = dateString === "2026-09-17";
+                const isToday = dateString === todayStr;
                 return (
                   <div
                     key={dateString}
@@ -150,14 +161,14 @@ export const AppointmentCalendarView: React.FC<
                       <span
                         className={`text-xs font-semibold flex items-center justify-center rounded-full w-6 h-6 ${
                           isToday
-                            ? "bg-teal-deep text-white shadow-xs"
+                            ? "bg-teal-deep text-white shadow-xs font-bold"
                             : "text-ink"
                         }`}
                       >
                         {dayNum}
                       </span>
                       {dayAppointments.length > 0 && (
-                        <span className="text-[10px] text-ink-soft font-medium">
+                        <span className="text-[10px] text-teal-deep font-semibold bg-teal-50 px-1.5 py-0.5 rounded-full border border-teal-200">
                           {dayAppointments.length} apt
                         </span>
                       )}
@@ -172,7 +183,7 @@ export const AppointmentCalendarView: React.FC<
                           className={`p-1.5 rounded-md text-[11px] font-medium border transition-all cursor-pointer truncate shadow-2xs hover:scale-[1.01] ${
                             apt.status === "approved"
                               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                              : apt.status === "requested"
+                              : apt.status === "requested" || apt.status === "pending"
                                 ? "bg-amber-50 text-amber-800 border-amber-200"
                                 : apt.status === "completed"
                                   ? "bg-teal-50 text-teal-800 border-teal-200"
@@ -199,10 +210,10 @@ export const AppointmentCalendarView: React.FC<
                 );
               })}
 
-              {/* Trailing slots for 35 grid total (30 + 2 = 32, so 3 trailing) */}
-              <div className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
-              <div className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
-              <div className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
+              {/* Dynamic trailing blank slots */}
+              {trailingSlots.map((_, idx) => (
+                <div key={`trail-${idx}`} className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
+              ))}
             </div>
           </div>
         </div>
@@ -215,8 +226,8 @@ export const AppointmentCalendarView: React.FC<
             <CalendarIcon className="w-10 h-10 text-teal-deep mx-auto opacity-70" />
             <h4 className="font-semibold text-base text-ink">
               {calendarMode === "week"
-                ? "Week Schedule (Sep 14 - Sep 20)"
-                : "Daily Schedule (Sep 17, 2026)"}
+                ? `Week Schedule (${currentDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })})`
+                : `Daily Schedule (${currentDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })})`}
             </h4>
             <p className="text-xs text-ink-soft">
               Active consultations scheduled for this period. Click any card to
@@ -229,7 +240,8 @@ export const AppointmentCalendarView: React.FC<
               (a) =>
                 a.status === "approved" ||
                 a.status === "requested" ||
-                a.status === "proposed",
+                a.status === "proposed" ||
+                a.status === "pending",
             ).length === 0 ? (
               <div className="col-span-full py-8 text-center text-xs text-ink-soft">
                 No appointments scheduled for this view.
@@ -240,7 +252,8 @@ export const AppointmentCalendarView: React.FC<
                   (a) =>
                     a.status === "approved" ||
                     a.status === "requested" ||
-                    a.status === "proposed",
+                    a.status === "proposed" ||
+                    a.status === "pending",
                 )
                 .map((apt) => (
                   <div

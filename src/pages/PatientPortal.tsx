@@ -82,38 +82,19 @@ export const PatientPortal: React.FC = () => {
       // 2. Fetch from backend database
       let backendApts: Appointment[] = [];
       try {
+        const params = new URLSearchParams();
+        if (user.email) params.append("email", user.email);
+        if (user.phoneNumber) params.append("phone", user.phoneNumber);
+        const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+        if (fullName) params.append("name", fullName);
+
         const res = await axios.get(
-          `/api/appointment/get-appointments?email=${encodeURIComponent(user.email)}`,
+          `/api/appointment/get-appointments?${params.toString()}`,
         );
         if (res.data?.success && Array.isArray(res.data.data)) {
-          backendApts = res.data.data.map((b: any) => ({
-            id: String(b.id),
-            referenceNo: `APT-2026-${String(b.id).padStart(4, "0")}`,
-            patient: {
-              name: b.patientName,
-              email: b.patientEmail,
-              phone: b.phoneNumber || "",
-              preferredContact: (b.contactMethod || "email") as any,
-            },
-            treatment: b.tratmentType as any,
-            consultationType: "video",
-            status: (b.status?.toLowerCase() || "pending") as AppointmentStatus,
-            requestedDate: b.preferredDate,
-            requestedTime: b.preferredTime || "Morning",
-            patientMessage: b.additionalDescription || "",
-            meetingLink: `https://meet.google.com/cdr-${String(b.id).padStart(3, "0")}-apt`,
-            meetingPlatform: "google_meet",
-            timeline: [
-              {
-                id: `tl_${b.id}`,
-                timestamp: new Date(
-                  b.createdAt || Date.now(),
-                ).toLocaleDateString(),
-                action: "Appointment Request Submitted",
-                actor: b.patientName,
-              },
-            ],
-          }));
+          backendApts = res.data.data.map((b: any) =>
+            appointmentService.mapDbRecord(b)
+          );
         }
       } catch (backendErr) {
         console.warn("Backend appointments fetch skipped:", backendErr);
@@ -164,7 +145,7 @@ export const PatientPortal: React.FC = () => {
     return () => {
       window.removeEventListener("dental_appointments_updated", handleUpdate);
     };
-  }, [user?.email]);
+  }, [user?.email, user?.phoneNumber, user?.firstName, user?.lastName]);
 
   // Filtering
   const filteredAppointments = useMemo(() => {

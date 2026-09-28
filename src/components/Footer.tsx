@@ -263,7 +263,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-8 pt-4 border-t border-dotted border-white/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white">
           <p>
-            © {new Date().getFullYear()} 32 stories Dental Clinic Ltd. All
+            © {new Date().getFullYear()} 32 Stories.All
             rights reserved.
           </p>
           <div className="flex items-center gap-5">

@@ -48,9 +48,21 @@ import { useAuth } from "@/auth/AuthContext";
 
 function Dashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
-    const saved = appointmentService.getAppointments();
-    return saved.length > 0 ? saved : initialAppointments;
+    return appointmentService.getAppointments();
   });
+  const fetchAppointmentsFromDb = async () => {
+    try {
+      const live = await appointmentService.fetchAppointments();
+      setAppointments(live);
+    } catch (e) {
+      console.error("Failed to load appointments from db:", e);
+    }
+  };
+
+  // Fetch live appointments from DB on mount
+  useEffect(() => {
+    fetchAppointmentsFromDb();
+  }, []);
 
   // Sync to appointmentService whenever appointments change
   useEffect(() => {
@@ -226,9 +238,8 @@ function Dashboard() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // KPIs calculation as required by PDF Page 3
   const kpis = useMemo(() => {
-    const todayDate = "2026-09-17";
+    const todayDate = new Date().toISOString().split("T")[0];
     return {
       newRequests: appointments.filter(
         (a) => a.status === "requested" || a.status === "pending",
@@ -353,6 +364,15 @@ function Dashboard() {
         return apt;
       }),
     );
+
+    if (!isNaN(Number(id))) {
+      fetch(`/api/appointment/update-appointment/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      }).catch((err) => console.error("Failed to sync status to DB:", err));
+    }
+
     showToast(
       `Appointment status updated to "${newStatus.replace("_", " ")}".`,
     );
@@ -435,6 +455,19 @@ function Dashboard() {
         return apt;
       }),
     );
+
+    if (!isNaN(Number(id))) {
+      fetch(`/api/appointment/update-appointment/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          preferredDate: date,
+          preferredTime: time,
+          status: "proposed",
+        }),
+      }).catch((err) => console.error("Failed to sync schedule to DB:", err));
+    }
+
     showToast(`Proposed new schedule slot (${date} at ${time}).`);
   };
 
@@ -513,7 +546,56 @@ function Dashboard() {
     showToast("Clinical consultation notes saved.");
   };
 
-  const handleCreateNewAppointment = (data: Partial<Appointment>) => {
+  const handleCreateNewAppointment = async (
+    data: Appointment | Partial<Appointment>
+  ) => {
+    // If already created and mapped from DB by modal
+    if ("id" in data && data.id && "referenceNo" in data && data.referenceNo) {
+      const fullApt = data as Appointment;
+      setAppointments((prev) => [
+        fullApt,
+        ...prev.filter((a) => a.id !== fullApt.id),
+      ]);
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("patientName", data.patient?.name || "Patient");
+      formData.append("patientEmail", data.patient?.email || "patient@example.com");
+      formData.append("phoneNumber", data.patient?.phone || "");
+      formData.append("contactMethod", (data.patient?.preferredContact || "email").toLowerCase());
+      formData.append("tratmentType", data.treatment || "General Dental Consultation");
+      formData.append("preferredDate", data.requestedDate || new Date().toISOString().split("T")[0]);
+      formData.append("preferredTime", data.requestedTime || "Morning");
+      formData.append("status", data.status || "pending");
+      if (data.patientMessage) {
+        formData.append("additionalDescription", data.patientMessage);
+      }
+      formData.append("sendAcknowledgmentEmail", "false");
+
+      const res = await fetch("/api/appointment/create-appointment", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          const mapped = appointmentService.mapDbRecord(json.data);
+          if (data.assignedDoctorId) {
+            mapped.assignedDoctorId = data.assignedDoctorId;
+            mapped.assignedDoctor = doctors.find((d) => d.id === data.assignedDoctorId);
+          }
+          setAppointments((prev) => [mapped, ...prev]);
+          showToast(`New appointment ${mapped.referenceNo} registered in DB!`);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to save new appointment to DB:", e);
+    }
+
     const referenceNo = `CD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const newApt: Appointment = {
       id: `apt-${Date.now()}`,
@@ -984,28 +1066,38 @@ function Dashboard() {
                   </select>
                 </div>
 
-                {/* View Mode Toggle: Table vs Calendar */}
-                <div className="flex items-center gap-1 bg-line-soft p-1 rounded-xl shrink-0 self-start sm:self-auto">
-                  <button
-                    onClick={() => setAppointmentViewMode("table")}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                      appointmentViewMode === "table"
-                        ? "bg-white text-teal-deep shadow-xs font-bold"
-                        : "text-ink-soft hover:text-ink"
-                    }`}
+                <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+                  {/* View Mode Toggle: Table vs Calendar */}
+                  <div className="flex items-center gap-1 bg-line-soft p-1 rounded-xl">
+                    <button
+                      onClick={() => setAppointmentViewMode("table")}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                        appointmentViewMode === "table"
+                          ? "bg-white text-teal-deep shadow-xs font-bold"
+                          : "text-ink-soft hover:text-ink"
+                      }`}
+                    >
+                      List Table
+                    </button>
+                    <button
+                      onClick={() => setAppointmentViewMode("calendar")}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                        appointmentViewMode === "calendar"
+                          ? "bg-white text-teal-deep shadow-xs font-bold"
+                          : "text-ink-soft hover:text-ink"
+                      }`}
+                    >
+                      Calendar
+                    </button>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    onClick={() => setIsNewModalOpen(true)}
+                    className="h-8.5 px-3 text-xs font-semibold bg-[#5E3E3B] text-white hover:bg-[#262525] shadow-xs cursor-pointer"
                   >
-                    List Table
-                  </button>
-                  <button
-                    onClick={() => setAppointmentViewMode("calendar")}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                      appointmentViewMode === "calendar"
-                        ? "bg-white text-teal-deep shadow-xs font-bold"
-                        : "text-ink-soft hover:text-ink"
-                    }`}
-                  >
-                    Calendar
-                  </button>
+                    + Add
+                  </Button>
                 </div>
               </div>
 

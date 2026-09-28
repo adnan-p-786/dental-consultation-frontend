@@ -59,10 +59,14 @@ export default function DoctorDashboard() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Load appointments directly for UI display (all appointments / mock data)
-  const loadDoctorAppointments = () => {
-    const all = appointmentService.getAppointments();
-    setAppointments(all.length > 0 ? all : initialAppointments);
+  // Load appointments directly from DB for UI display
+  const loadDoctorAppointments = async () => {
+    try {
+      const all = await appointmentService.fetchAppointments();
+      setAppointments(all);
+    } catch (e) {
+      setAppointments(appointmentService.getAppointments());
+    }
   };
 
   useEffect(() => {

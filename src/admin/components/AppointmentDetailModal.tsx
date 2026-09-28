@@ -315,9 +315,14 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs text-mint-deep px-2"
+                        className="h-7 text-xs text-mint-deep px-2 cursor-pointer hover:bg-teal-50"
+                        onClick={() => {
+                          if (doc.url) {
+                            window.open(doc.url, "_blank");
+                          }
+                        }}
                       >
-                        Preview
+                        Preview / View File
                       </Button>
                     </div>
                   ))}

@@ -1,4 +1,4 @@
-import type { Appointment, ConsultationNotes, AppointmentStatus, AuditLog } from "@/admin/types";
+import type { Appointment, ConsultationNotes, AppointmentStatus, AuditLog, TreatmentType } from "@/admin/types";
 
 const STORAGE_KEY = "dental_appointments_v1";
 
@@ -9,6 +9,120 @@ const notifyChange = () => {
 };
 
 export const appointmentService = {
+  /**
+   * Maps a PostgreSQL DB record into the rich frontend Appointment type
+   */
+  mapDbRecord(dbApt: any, existingLocal?: Appointment): Appointment {
+    const idStr = String(dbApt.id);
+    const refNo = existingLocal?.referenceNo || `APT-2026-${String(dbApt.id).padStart(4, "0")}`;
+
+    // Supporting document from backend upload
+    const docUrl = dbApt.supportingDocument || undefined;
+    let documents = existingLocal?.documents || [];
+    if (docUrl && documents.length === 0) {
+      const fileName = docUrl.split("/").pop() || "Supporting Document";
+      const isPdf = docUrl.toLowerCase().endsWith(".pdf");
+      documents = [
+        {
+          id: `doc-${dbApt.id}`,
+          name: fileName,
+          type: isPdf ? "application/pdf" : "image/jpeg",
+          size: "Uploaded File",
+          url: docUrl,
+          uploadedAt: dbApt.createdAt
+            ? new Date(dbApt.createdAt).toLocaleDateString()
+            : "Uploaded",
+        },
+      ];
+    }
+
+    let reqDate = dbApt.preferredDate || existingLocal?.requestedDate || new Date().toISOString().split("T")[0];
+    if (typeof reqDate === "string" && reqDate.includes("T")) {
+      reqDate = reqDate.split("T")[0];
+    }
+
+    const defaultTimeline: AuditLog[] = [
+      {
+        id: `tl_${dbApt.id}`,
+        timestamp: dbApt.createdAt
+          ? new Date(dbApt.createdAt).toLocaleString([], {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : new Date().toLocaleString([], {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+        action: "Appointment Request Submitted",
+        actor: dbApt.patientName || "Patient",
+        details: `${dbApt.tratmentType || "Consultation"} requested for ${reqDate} (${dbApt.preferredTime || "Morning"})`,
+      },
+    ];
+
+    return {
+      id: idStr,
+      referenceNo: refNo,
+      patient: {
+        name: dbApt.patientName || existingLocal?.patient?.name || "Patient",
+        email: dbApt.patientEmail || existingLocal?.patient?.email || "",
+        phone: dbApt.phoneNumber || existingLocal?.patient?.phone || "",
+        preferredContact: (dbApt.contactMethod || existingLocal?.patient?.preferredContact || "email") as any,
+        avatar: existingLocal?.patient?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(dbApt.patientName || "Patient")}`,
+      },
+      treatment: (dbApt.tratmentType || existingLocal?.treatment || "General Dental Consultation") as TreatmentType,
+      consultationType: existingLocal?.consultationType || "video",
+      status: (dbApt.status?.toLowerCase() || existingLocal?.status || "pending") as AppointmentStatus,
+      requestedDate: reqDate,
+      requestedTime: dbApt.preferredTime || existingLocal?.requestedTime || "Morning",
+      confirmedDate: existingLocal?.confirmedDate || reqDate,
+      confirmedTime: existingLocal?.confirmedTime || dbApt.preferredTime || "Morning",
+      assignedDoctorId: existingLocal?.assignedDoctorId,
+      assignedDoctor: existingLocal?.assignedDoctor,
+      meetingPlatform: existingLocal?.meetingPlatform || "google_meet",
+      meetingLink: existingLocal?.meetingLink || `https://meet.google.com/cdr-${String(dbApt.id).padStart(3, "0")}-apt`,
+      patientMessage: dbApt.additionalDescription || existingLocal?.patientMessage || "",
+      documents,
+      consultationNotes: existingLocal?.consultationNotes,
+      timeline: existingLocal?.timeline && existingLocal.timeline.length > 0 ? existingLocal.timeline : defaultTimeline,
+      createdAt: dbApt.createdAt || existingLocal?.createdAt || new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Fetch live appointments directly from PostgreSQL DB via backend API
+   */
+  async fetchAppointments(): Promise<Appointment[]> {
+    try {
+      const res = await fetch("/api/appointment/get-all-appointment");
+      if (!res.ok) {
+        throw new Error(`Failed to fetch appointments: ${res.statusText}`);
+      }
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        const localApts = this.getAppointments();
+        const localMap = new Map<string, Appointment>();
+        localApts.forEach((apt) => localMap.set(apt.id, apt));
+
+        // Map all records from the database
+        const dbMapped: Appointment[] = json.data.map((dbRecord: any) => {
+          const existingLocal = localMap.get(String(dbRecord.id));
+          return this.mapDbRecord(dbRecord, existingLocal);
+        });
+
+        // Save fresh DB appointments to localStorage cache
+        this.saveAppointments(dbMapped);
+        return dbMapped;
+      }
+    } catch (err) {
+      console.warn("Backend appointments fetch failed, falling back to cached:", err);
+    }
+    return this.getAppointments();
+  },
+
   getAppointments(): Appointment[] {
     if (typeof window === "undefined") return [];
     try {
@@ -169,6 +283,24 @@ export const appointmentService = {
 
     if (updatedObj) {
       this.saveAppointments(newAppointments);
+
+      // Also sync to backend database if this is a DB appointment
+      if (!isNaN(Number(id))) {
+        const payload: Record<string, any> = {};
+        if (updates.status) payload.status = updates.status;
+        if (updates.confirmedDate) payload.preferredDate = updates.confirmedDate;
+        if (updates.confirmedTime) payload.preferredTime = updates.confirmedTime;
+        if (updates.patient?.name) payload.patientName = updates.patient.name;
+        if (updates.patient?.email) payload.patientEmail = updates.patient.email;
+        if (updates.patient?.phone) payload.phoneNumber = updates.patient.phone;
+        if (updates.treatment) payload.tratmentType = updates.treatment;
+
+        fetch(`/api/appointment/update-appointment/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).catch((err) => console.error("Failed to sync appointment update to DB:", err));
+      }
     }
     return updatedObj;
   },
@@ -249,6 +381,14 @@ export const appointmentService = {
 
     if (updatedObj) {
       this.saveAppointments(newAppointments);
+
+      if (!isNaN(Number(id))) {
+        fetch(`/api/appointment/update-appointment/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "completed" }),
+        }).catch((err) => console.error("Failed to sync completed status to DB:", err));
+      }
     }
     return updatedObj;
   },

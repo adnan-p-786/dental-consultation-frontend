@@ -156,7 +156,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               {(!collapsed || mobileOpen) && (
                 <div className="flex flex-col truncate">
                   <span className="font-semibold text-base text-ink tracking-tight">
-                    32 stories
+                    32 Stories
                   </span>
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-ink-soft">Dental Portal</span>
