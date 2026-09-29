@@ -33,6 +33,8 @@ const badgeVariants = cva(
           "bg-orange-50 text-orange-700 border border-orange-200",
         cancelled:
           "bg-rose-50 text-rose-700 border border-rose-200",
+        rejected:
+          "bg-red-50 text-red-700 border border-red-200",
         no_show:
           "bg-zinc-100 text-zinc-700 border border-zinc-300",
       },

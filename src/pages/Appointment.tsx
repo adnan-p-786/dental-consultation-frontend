@@ -7,6 +7,7 @@ import {
   Calendar,
   Check,
   CheckCircle2,
+
   Loader2,
   Mail,
   Phone,
@@ -44,6 +45,17 @@ export const documentTreatmentCategories = [
   "Other",
 ] as const;
 
+export const formatDisplayTime = (timeStr?: string) => {
+  if (!timeStr) return "";
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return timeStr;
+  let h = parseInt(match[1], 10);
+  const m = match[2];
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${h}:${m} ${ampm}`;
+};
+
 type TreatmentCategory =
   (typeof documentTreatmentCategories)[number];
 
@@ -73,7 +85,7 @@ export default function Appointment() {
     email: "",
     phone: "",
     preferredDate: "",
-    preferredTime: "Morning",
+    preferredTime: "10:00",
     message: "",
     status: "pending",
     supportingFile: null as File | null,
@@ -135,7 +147,7 @@ export default function Appointment() {
       email: user?.email || "",
       phone: user?.phoneNumber || "",
       preferredDate: "",
-      preferredTime: "Morning",
+      preferredTime: "10:00",
       message: "",
       status: "pending",
       supportingFile: null,
@@ -178,6 +190,12 @@ export default function Appointment() {
       return;
     }
 
+    if (!formData.preferredTime) {
+      setError("Please pick a preferred appointment time.");
+      toast.error("Please pick a preferred appointment time.");
+      return;
+    }
+
     // Open on-screen confirmation modal
     setShowConfirmModal(true);
   };
@@ -195,7 +213,10 @@ export default function Appointment() {
       data.append("contactMethod", contactMethod.toLowerCase());
       data.append("tratmentType", selectedTreatment);
       data.append("preferredDate", formData.preferredDate);
-      data.append("preferredTime", formData.preferredTime || "Morning");
+      data.append(
+        "preferredTime",
+        formatDisplayTime(formData.preferredTime) || formData.preferredTime || "10:00 AM"
+      );
       data.append("status", "pending");
 
       if (formData.message.trim()) {
@@ -350,7 +371,6 @@ export default function Appointment() {
               Request an Online Consultation
             </span>
           </h1>
-
           <p className="text-base sm:text-lg text-[#EBD8D5] leading-relaxed max-w-2xl mx-auto">
             Submit your details and case requirements to request
             an appointment. Your request will be reviewed and
@@ -428,7 +448,7 @@ export default function Appointment() {
                     <div className="flex justify-between items-center">
                       <span className="text-ink-soft">Requested Date:</span>
                       <span className="font-medium text-ink">
-                        {formData.preferredDate} ({formData.preferredTime})
+                        {formData.preferredDate} at {formatDisplayTime(formData.preferredTime)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -501,16 +521,10 @@ export default function Appointment() {
                 id="appointment-form"
               >
                 {/* Form Header */}
-                <div className="border-b border-line/70 pb-4 mb-2">
+                <div className="border-b border-line/70 pb-2">
                   <h2 className="font-display text-2xl font-medium text-teal-deep">
                     Appointment Booking Form
                   </h2>
-
-                  <p className="text-xs text-ink-soft mt-1">
-                    Fields marked with an asterisk (
-                    <span className="text-rose-500">*</span>) are
-                    required.
-                  </p>
                 </div>
 
                 {/* Error Banner */}
@@ -697,23 +711,49 @@ export default function Appointment() {
                       <span className="text-rose-500">*</span>
                     </label>
 
-                    <select
-                      id="preferredTime"
-                      value={formData.preferredTime}
-                      onChange={handleChange}
-                      required
-                      className="w-full text-sm px-4 py-3 rounded-xl border border-line bg-paper/30 text-ink outline-none transition-colors focus:border-mint-deep focus:bg-white focus:ring-4 focus:ring-mint-deep/15 cursor-pointer"
-                    >
-                      <option value="Morning">
-                        Morning
-                      </option>
-                      <option value="Afternoon">
-                        Afternoon
-                      </option>
-                      <option value="Evening">
-                        Evening
-                      </option>
-                    </select>
+                    <div className="relative">
+                      <input
+                        type="time"
+                        id="preferredTime"
+                        value={formData.preferredTime}
+                        onChange={handleChange}
+                        required
+                        className="w-full text-sm px-4 py-3 rounded-xl border border-line bg-paper/30 text-ink outline-none transition-colors focus:border-mint-deep focus:bg-white focus:ring-4 focus:ring-mint-deep/15 cursor-pointer"
+                      />
+                      {/* <Clock className="w-4 h-4 text-ink-soft/60 absolute right-3.5 top-3.5 pointer-events-none" /> */}
+                    </div>
+
+                    {/* Quick Pick Time Slots */}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <span className="text-[11px] font-semibold text-ink-soft mr-0.5">
+                        Quick Pick:
+                      </span>
+                      {[
+                        { label: "09:30 AM", value: "09:30" },
+                        { label: "11:00 AM", value: "11:00" },
+                        { label: "02:30 PM", value: "14:30" },
+                        { label: "04:00 PM", value: "16:00" },
+                        { label: "05:30 PM", value: "17:30" },
+                      ].map((slot) => (
+                        <button
+                          key={slot.value}
+                          type="button"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              preferredTime: slot.value,
+                            }))
+                          }
+                          className={`text-[11px] px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                            formData.preferredTime === slot.value
+                              ? "bg-[#5E3E3B] text-white border-[#5E3E3B] font-semibold shadow-2xs"
+                              : "bg-paper/70 text-ink-soft border-line hover:border-mint-deep hover:text-ink"
+                          }`}
+                        >
+                          {slot.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -814,12 +854,6 @@ export default function Appointment() {
                       </>
                     )}
                   </button>
-
-                  <p className="text-center text-[11.5px] text-ink-soft mt-3">
-                    Your request will initially be marked as{" "}
-                    <strong>Pending</strong> and made available
-                    for review.
-                  </p>
                 </div>
               </form>
             )}
@@ -874,14 +908,8 @@ export default function Appointment() {
               <div className="flex justify-between items-center pb-2 border-b border-line/60">
                 <span className="text-ink-soft">Preferred Slot:</span>
                 <span className="font-semibold text-ink">
-                  {formData.preferredDate} ({formData.preferredTime})
+                  {formData.preferredDate} at {formatDisplayTime(formData.preferredTime)}
                 </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-ink-soft">Initial Status:</span>
-                <Badge variant="pending" className="text-[11px] font-bold">
-                  Pending Review
-                </Badge>
               </div>
             </div>
 

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import {
   Mail,
   Phone,
@@ -10,7 +11,10 @@ import {
   Copy,
   Check,
   FileSpreadsheet,
+  Bell,
+  Clock,
 } from "lucide-react";
+
 import {
   Dialog,
   DialogContent,
@@ -18,42 +22,68 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Appointment, AppointmentStatus, Doctor } from "../types";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+
+import type {
+  Appointment,
+  AppointmentStatus,
+  Doctor,
+} from "../types";
 
 interface AppointmentDetailModalProps {
   appointment: Appointment | null;
   isOpen: boolean;
   onClose: () => void;
   doctors: Doctor[];
+
   onUpdateStatus: (
     id: string,
     newStatus: AppointmentStatus,
-    note?: string,
+    note?: string
   ) => void;
-  onAssignDoctor: (id: string, doctorId: string) => void;
+
+  onAssignDoctor: (
+    id: string,
+    doctorId: string
+  ) => void;
+
   onUpdateSchedule: (
     id: string,
     date: string,
     time: string,
-    note?: string,
+    note?: string
   ) => void;
+
   onUpdateMeetingLink: (
     id: string,
     platform: "google_meet" | "zoom" | "teams",
-    link: string,
+    link: string
   ) => void;
+
   onSaveClinicalNotes: (
     id: string,
-    notes: Appointment["consultationNotes"],
+    notes: Appointment["consultationNotes"]
   ) => void;
 }
 
-export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
+export const AppointmentDetailModal: React.FC<
+  AppointmentDetailModalProps
+> = ({
   appointment,
   isOpen,
   onClose,
@@ -66,70 +96,148 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 }) => {
   if (!appointment) return null;
 
-  // Local state for actions
-  const [selectedDoctorId, setSelectedDoctorId] = useState(
-    appointment.assignedDoctorId || "",
-  );
-  const [rescheduleDate, setRescheduleDate] = useState(
-    appointment.confirmedDate || appointment.requestedDate,
-  );
-  const [rescheduleTime, setRescheduleTime] = useState(
-    appointment.confirmedTime || appointment.requestedTime,
-  );
-  const [actionNote, setActionNote] = useState("");
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [activeMeetingPlatform, setActiveMeetingPlatform] = useState<
-    "google_meet" | "zoom" | "teams"
-  >(appointment.meetingPlatform || "google_meet");
+  // --------------------------------------------------
+  // Local state
+  // --------------------------------------------------
 
-  // Clinical workspace notes state
+  const [selectedDoctorId, setSelectedDoctorId] = useState(
+    appointment.assignedDoctorId || ""
+  );
+
+  const [rescheduleDate, setRescheduleDate] = useState(
+    appointment.confirmedDate || appointment.requestedDate
+  );
+
+  const [rescheduleTime, setRescheduleTime] = useState(
+    appointment.confirmedTime || appointment.requestedTime
+  );
+
+  const [actionNote, setActionNote] = useState("");
+
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Selected video platform
+  const [activeMeetingPlatform, setActiveMeetingPlatform] =
+    useState<"google_meet" | "zoom" | "teams">(
+      appointment.meetingPlatform || "google_meet"
+    );
+
+  // Manually entered video link
+  const [manualMeetingLink, setManualMeetingLink] = useState(
+    appointment.meetingLink || ""
+  );
+
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [reminderFeedback, setReminderFeedback] = useState<string | null>(null);
+
+  const handleSendReminder = async (type: "24_hour" | "1_hour") => {
+    setSendingReminder(type);
+    try {
+      const res = await fetch(`/api/appointment/send-reminder/${appointment.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reminderType: type,
+          assignedDoctorName: appointment.assignedDoctor?.name,
+          meetingLink: appointment.meetingLink,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReminderFeedback(
+          type === "24_hour"
+            ? "24-hour reminder email sent!"
+            : "1-hour urgent reminder email sent!"
+        );
+      } else {
+        setReminderFeedback(data.message || "Failed to send reminder");
+      }
+    } catch {
+      setReminderFeedback("Network error sending reminder");
+    } finally {
+      setSendingReminder(null);
+      setTimeout(() => setReminderFeedback(null), 3000);
+    }
+  };
+
+  // --------------------------------------------------
+  // Clinical notes
+  // --------------------------------------------------
+
   const [clinicalNotes, setClinicalNotes] = useState({
     chiefComplaint:
       appointment.consultationNotes?.chiefComplaint ||
       appointment.patientMessage ||
       "",
-    findings: appointment.consultationNotes?.findings || "",
-    diagnosis: appointment.consultationNotes?.diagnosis || "",
+
+    findings:
+      appointment.consultationNotes?.findings || "",
+
+    diagnosis:
+      appointment.consultationNotes?.diagnosis || "",
+
     recommendedTreatment:
       appointment.consultationNotes?.recommendedTreatment || "",
+
     additionalInstructions:
       appointment.consultationNotes?.additionalInstructions || "",
+
     followUpRequirements:
       appointment.consultationNotes?.followUpRequirements || "",
-    internalNotes: appointment.consultationNotes?.internalNotes || "",
+
+    internalNotes:
+      appointment.consultationNotes?.internalNotes || "",
   });
 
+  // --------------------------------------------------
+  // Copy meeting link
+  // --------------------------------------------------
+
   const handleCopyLink = () => {
-    if (appointment.meetingLink) {
-      navigator.clipboard.writeText(appointment.meetingLink);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
-    }
+    if (!appointment.meetingLink) return;
+
+    navigator.clipboard.writeText(appointment.meetingLink);
+
+    setCopiedLink(true);
+
+    setTimeout(() => {
+      setCopiedLink(false);
+    }, 2000);
   };
 
-  const handleGenerateMeeting = () => {
-    const randomCode =
-      Math.random().toString(36).substring(2, 6) +
-      "-" +
-      Math.random().toString(36).substring(2, 6);
-    let generatedUrl = "";
-    if (activeMeetingPlatform === "google_meet") {
-      generatedUrl = `https://meet.google.com/cdr-${randomCode}`;
-    } else if (activeMeetingPlatform === "zoom") {
-      generatedUrl = `https://zoom.us/j/9${Math.floor(100000000 + Math.random() * 900000000)}`;
-    } else {
-      generatedUrl = `https://teams.microsoft.com/l/meetup-join/cda-${randomCode}`;
+  // --------------------------------------------------
+  // Save manually entered meeting link
+  // --------------------------------------------------
+
+  const handleSaveMeetingLink = () => {
+    const link = manualMeetingLink.trim();
+
+    if (!link) {
+      return;
     }
-    onUpdateMeetingLink(appointment.id, activeMeetingPlatform, generatedUrl);
+
+    onUpdateMeetingLink(
+      appointment.id,
+      activeMeetingPlatform,
+      link
+    );
   };
+
+  // --------------------------------------------------
+  // Approve appointment
+  // --------------------------------------------------
 
   const handleApproveCurrent = () => {
     onUpdateStatus(
       appointment.id,
       "approved",
-      "Approved requested date and time.",
+      "Approved requested date and time."
     );
   };
+
+  // --------------------------------------------------
+  // Reschedule appointment
+  // --------------------------------------------------
 
   const handleProposeSchedule = () => {
     onUpdateSchedule(
@@ -137,41 +245,132 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
       rescheduleDate,
       rescheduleTime,
       actionNote ||
-        `Suggested alternative time slot: ${rescheduleDate} at ${rescheduleTime}`,
+        `Suggested alternative time slot: ${rescheduleDate} at ${rescheduleTime}`
     );
+
     setActionNote("");
   };
 
+  // --------------------------------------------------
+  // Assign doctor
+  // --------------------------------------------------
+
   const handleAssign = (docId: string) => {
     setSelectedDoctorId(docId);
-    onAssignDoctor(appointment.id, docId);
+
+    onAssignDoctor(
+      appointment.id,
+      docId
+    );
   };
+
+  // --------------------------------------------------
+  // Save clinical notes
+  // --------------------------------------------------
 
   const handleSaveNotes = () => {
-    onSaveClinicalNotes(appointment.id, clinicalNotes);
+    onSaveClinicalNotes(
+      appointment.id,
+      clinicalNotes
+    );
   };
 
+  // --------------------------------------------------
+  // Platform label
+  // --------------------------------------------------
+
+  const getPlatformLabel = (
+    platform: "google_meet" | "zoom" | "teams"
+  ) => {
+    switch (platform) {
+      case "google_meet":
+        return "Google Meet";
+
+      case "zoom":
+        return "Zoom";
+
+      case "teams":
+        return "Microsoft Teams";
+
+      default:
+        return platform;
+    }
+  };
+
+  // --------------------------------------------------
+  // Render
+  // --------------------------------------------------
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl w-[95vw] sm:w-full max-h-[92vh] sm:max-h-[90vh] p-0 overflow-hidden flex flex-col bg-[#FCFDFD]">
-        {/* Header Ribbon */}
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+    >
+      <DialogContent
+        className="
+          max-w-3xl
+          w-[95vw]
+          sm:w-full
+          max-h-[92vh]
+          sm:max-h-[90vh]
+          p-0
+          overflow-hidden
+          flex
+          flex-col
+          bg-[#FCFDFD]
+        "
+      >
+        {/* ==========================================
+            HEADER
+        ========================================== */}
+
         <div className="bg-linear-to-r from-teal-deep to-teal-mid text-white p-4 sm:p-6 pb-4 sm:pb-5">
           <div className="flex flex-wrap items-center justify-between gap-2.5 mb-2">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md bg-white/15 text-emerald-200 border border-white/20">
+              <span
+                className="
+                  font-mono
+                  text-[11px]
+                  sm:text-xs
+                  font-semibold
+                  px-2
+                  py-0.5
+                  sm:px-2.5
+                  sm:py-1
+                  rounded-md
+                  bg-white/15
+                  text-emerald-200
+                  border
+                  border-white/20
+                "
+              >
                 {appointment.referenceNo}
               </span>
+
               <Badge
                 variant={appointment.status}
-                className="capitalize text-[10px] sm:text-xs font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 shadow-xs"
+                className="
+                  capitalize
+                  text-[10px]
+                  sm:text-xs
+                  font-bold
+                  px-2.5
+                  py-0.5
+                  sm:px-3
+                  sm:py-1
+                  shadow-xs
+                "
               >
                 {appointment.status.replace("_", " ")}
               </Badge>
             </div>
+
             <div className="text-[11px] sm:text-xs text-white/80 flex items-center gap-1.5">
               <span>Requested:</span>
+
               <span className="font-semibold text-white">
-                {appointment.requestedDate} at {appointment.requestedTime}
+                {appointment.requestedDate} at{" "}
+                {appointment.requestedTime}
               </span>
             </div>
           </div>
@@ -179,6 +378,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
           <DialogTitle className="text-xl sm:text-2xl font-bold text-white tracking-tight">
             {appointment.patient.name}
           </DialogTitle>
+
           <DialogDescription className="text-emerald-100 text-xs sm:text-sm mt-0.5 sm:mt-1">
             {appointment.treatment} •{" "}
             {appointment.consultationType === "video"
@@ -187,30 +387,91 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
           </DialogDescription>
         </div>
 
-        {/* Modal Body with Tabs */}
+        {/* ==========================================
+            BODY
+        ========================================== */}
+
         <Tabs
           defaultValue="details"
-          className="flex-1 overflow-y-auto px-3.5 sm:px-6 py-4"
+          className="
+            flex-1
+            overflow-y-auto
+            px-3.5
+            sm:px-6
+            py-4
+          "
         >
-          <TabsList className="grid grid-cols-2 sm:grid-cols-4 h-auto w-full bg-line-soft p-1 gap-1">
-            <TabsTrigger value="details" className="py-2 text-xs">
+          {/* ========================================
+              TAB LIST
+          ======================================== */}
+
+          <TabsList
+            className="
+              grid
+              grid-cols-2
+              sm:grid-cols-4
+              h-auto
+              w-full
+              bg-line-soft
+              p-1
+              gap-1
+            "
+          >
+            <TabsTrigger
+              value="details"
+              className="py-2 text-xs"
+            >
               Case Details
             </TabsTrigger>
-            <TabsTrigger value="scheduling" className="py-2 text-xs">
+
+            <TabsTrigger
+              value="scheduling"
+              className="py-2 text-xs"
+            >
               Schedule & Doctor
             </TabsTrigger>
-            <TabsTrigger value="workspace" className="py-2 text-xs">
+
+            <TabsTrigger
+              value="workspace"
+              className="py-2 text-xs"
+            >
               Clinical Notes
             </TabsTrigger>
-            <TabsTrigger value="history" className="py-2 text-xs">
+
+            <TabsTrigger
+              value="history"
+              className="py-2 text-xs"
+            >
               Timeline ({appointment.timeline.length})
             </TabsTrigger>
           </TabsList>
 
-          {/* TAB 1: Case Details */}
-          <TabsContent value="details" className="space-y-4 pt-2">
-            {/* Patient profile summary card */}
-            <div className="p-4 rounded-xl border border-line bg-white shadow-xs grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* ========================================
+              TAB 1 - CASE DETAILS
+          ======================================== */}
+
+          <TabsContent
+            value="details"
+            className="space-y-4 pt-2"
+          >
+            {/* Patient profile */}
+
+            <div
+              className="
+                p-4
+                rounded-xl
+                border
+                border-line
+                bg-white
+                shadow-xs
+                grid
+                grid-cols-1
+                md:grid-cols-3
+                gap-3
+              "
+            >
+              {/* Patient */}
+
               <div className="flex items-center gap-3">
                 <Avatar className="w-11 h-11 border border-line">
                   <AvatarFallback className="bg-teal-50 text-teal-deep font-bold text-sm">
@@ -220,11 +481,16 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
+
                 <div className="min-w-0">
-                  <div className="text-xs text-ink-soft">Patient Name</div>
+                  <div className="text-xs text-ink-soft">
+                    Patient Name
+                  </div>
+
                   <div className="font-semibold text-sm text-ink truncate">
                     {appointment.patient.name}
                   </div>
+
                   {appointment.patient.age && (
                     <div className="text-[11px] text-ink-soft">
                       {appointment.patient.age} yrs •{" "}
@@ -234,31 +500,56 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <div className="text-xs text-ink-soft flex items-center gap-1">
-                  <Mail className="w-3 h-3 text-mint-deep" /> Email
-                </div>
-                <a
-                  href={`mailto:${appointment.patient.email}`}
-                  className="text-xs font-medium text-teal-deep hover:underline truncate block"
-                >
-                  {appointment.patient.email}
-                </a>
-                <div className="text-[11px] text-ink-soft">
-                  Prefers: {appointment.patient.preferredContact}
-                </div>
-              </div>
+              {/* Email */}
 
               <div className="space-y-1">
                 <div className="text-xs text-ink-soft flex items-center gap-1">
-                  <Phone className="w-3 h-3 text-mint-deep" /> Phone
+                  <Mail className="w-3 h-3 text-mint-deep" />
+                  Email
                 </div>
+
+                <a
+                  href={`mailto:${appointment.patient.email}`}
+                  className="
+                    text-xs
+                    font-medium
+                    text-teal-deep
+                    hover:underline
+                    truncate
+                    block
+                  "
+                >
+                  {appointment.patient.email}
+                </a>
+
+                <div className="text-[11px] text-ink-soft">
+                  Prefers:{" "}
+                  {appointment.patient.preferredContact}
+                </div>
+              </div>
+
+              {/* Phone */}
+
+              <div className="space-y-1">
+                <div className="text-xs text-ink-soft flex items-center gap-1">
+                  <Phone className="w-3 h-3 text-mint-deep" />
+                  Phone
+                </div>
+
                 <a
                   href={`tel:${appointment.patient.phone}`}
-                  className="text-xs font-medium text-teal-deep hover:underline truncate block"
+                  className="
+                    text-xs
+                    font-medium
+                    text-teal-deep
+                    hover:underline
+                    truncate
+                    block
+                  "
                 >
                   {appointment.patient.phone}
                 </a>
+
                 {appointment.patient.location && (
                   <div className="text-[11px] text-ink-soft">
                     {appointment.patient.location}
@@ -267,58 +558,120 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
               </div>
             </div>
 
-            {/* Patient Request Message */}
-            <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-2">
+            {/* Patient message */}
+
+            <div
+              className="
+                p-4
+                rounded-xl
+                border
+                border-line
+                bg-white
+                shadow-xs
+                space-y-2
+              "
+            >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">
                   Patient Case Description / Symptoms
                 </span>
+
                 <span className="text-xs text-mint-deep font-medium">
                   Primary Requirement
                 </span>
               </div>
-              <p className="text-sm text-ink leading-relaxed bg-[#FAF7F6] p-3 rounded-lg border border-line-soft">
+
+              <p
+                className="
+                  text-sm
+                  text-ink
+                  leading-relaxed
+                  bg-[#FAF7F6]
+                  p-3
+                  rounded-lg
+                  border
+                  border-line-soft
+                "
+              >
                 {appointment.patientMessage ||
                   "No specific notes provided by patient upon booking."}
               </p>
             </div>
 
-            {/* Supporting Documents / Scans */}
-            <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3">
+            {/* Documents */}
+
+            <div
+              className="
+                p-4
+                rounded-xl
+                border
+                border-line
+                bg-white
+                shadow-xs
+                space-y-3
+              "
+            >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">
                   Uploaded Supporting Documents & Scans
                 </span>
+
                 <span className="text-xs text-ink-soft">
-                  {appointment.documents?.length || 0} file(s) attached
+                  {appointment.documents?.length || 0} file(s)
+                  attached
                 </span>
               </div>
 
-              {appointment.documents && appointment.documents.length > 0 ? (
+              {appointment.documents &&
+              appointment.documents.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {appointment.documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-line bg-[#FAF7F6] hover:border-mint-deep/50 transition-colors"
+                      className="
+                        flex
+                        items-center
+                        justify-between
+                        p-3
+                        rounded-lg
+                        border
+                        border-line
+                        bg-[#FAF7F6]
+                        hover:border-mint-deep/50
+                        transition-colors
+                      "
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <FileSpreadsheet className="w-6 h-6 text-teal-deep shrink-0" />
+
                         <div className="min-w-0">
                           <p className="text-xs font-semibold text-ink truncate">
                             {doc.name}
                           </p>
+
                           <p className="text-[10px] text-ink-soft">
                             {doc.type} • {doc.size}
                           </p>
                         </div>
                       </div>
+
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs text-mint-deep px-2 cursor-pointer hover:bg-teal-50"
+                        className="
+                          h-7
+                          text-xs
+                          text-mint-deep
+                          px-2
+                          cursor-pointer
+                          hover:bg-teal-50
+                        "
                         onClick={() => {
                           if (doc.url) {
-                            window.open(doc.url, "_blank");
+                            window.open(
+                              doc.url,
+                              "_blank"
+                            );
                           }
                         }}
                       >
@@ -328,95 +681,68 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="py-4 text-center text-xs text-ink-soft bg-[#FAF7F6] rounded-lg border border-dashed border-line">
-                  No scan files or photos attached to this request.
+                <div
+                  className="
+                    py-4
+                    text-center
+                    text-xs
+                    text-ink-soft
+                    bg-[#FAF7F6]
+                    rounded-lg
+                    border
+                    border-dashed
+                    border-line
+                  "
+                >
+                  No scan files or photos attached to this
+                  request.
                 </div>
               )}
             </div>
-
-            {/* Video Meeting Card */}
-            {appointment.consultationType === "video" && (
-              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Video className="w-4 h-4 text-teal-deep" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-teal-deep">
-                      Video Consultation Link
-                    </span>
-                  </div>
-                  {appointment.meetingLink ? (
-                    <Badge variant="approved" className="text-[10px]">
-                      Ready to Join
-                    </Badge>
-                  ) : (
-                    <Badge variant="requested" className="text-[10px]">
-                      Link Not Generated
-                    </Badge>
-                  )}
-                </div>
-
-                {appointment.meetingLink ? (
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <div className="flex-1 bg-white border border-line rounded-lg px-3 py-2 text-xs font-mono text-ink truncate select-all">
-                      {appointment.meetingLink}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCopyLink}
-                      className="gap-1.5 h-9"
-                    >
-                      {copiedLink ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                      {copiedLink ? "Copied" : "Copy"}
-                    </Button>
-                    <a
-                      href={appointment.meetingLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-[#5E3E3B] text-white hover:bg-[#262525] transition-colors shrink-0"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      Join Consultation
-                    </a>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      onClick={handleGenerateMeeting}
-                      className="gap-1.5 bg-[#5E3E3B] text-white hover:bg-[#262525] text-xs h-9 cursor-pointer"
-                    >
-                      <Video className="w-3.5 h-3.5" />
-                      Generate Video Consultation Room
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
           </TabsContent>
 
-          {/* TAB 2: Scheduling & Doctor Assignment */}
-          <TabsContent value="scheduling" className="space-y-4 pt-2">
-            {/* Assign Doctor Section */}
-            <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3">
+          {/* ========================================
+              TAB 2 - SCHEDULING
+          ======================================== */}
+
+          <TabsContent
+            value="scheduling"
+            className="space-y-4 pt-2"
+          >
+            {/* Doctor assignment */}
+
+            <div
+              className="
+                p-4
+                rounded-xl
+                border
+                border-line
+                bg-white
+                shadow-xs
+                space-y-3
+              "
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-semibold text-ink">
                     Assigned Dental Specialist
                   </h4>
+
                   <p className="text-xs text-ink-soft">
-                    Assign a doctor matching the required treatment
-                    specialization.
+                    Assign a doctor matching the required
+                    treatment specialization.
                   </p>
                 </div>
+
                 {appointment.assignedDoctor && (
                   <Badge
                     variant="outline"
-                    className="text-xs text-teal-deep border-teal-200 bg-teal-50"
+                    className="
+                      text-xs
+                      text-teal-deep
+                      border-teal-200
+                      bg-teal-50
+                    "
                   >
                     Currently Assigned
                   </Badge>
@@ -425,43 +751,73 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 {doctors.map((doc) => {
-                  const isSelected = selectedDoctorId === doc.id;
+                  const isSelected =
+                    selectedDoctorId === doc.id;
+
                   return (
                     <div
                       key={doc.id}
-                      onClick={() => handleAssign(doc.id)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 ${
-                        isSelected
-                          ? "border-teal-deep bg-[#FAF2F0] ring-2 ring-teal-deep/15"
-                          : "border-line bg-white hover:border-mint-deep/40 hover:bg-[#FAF7F6]"
-                      }`}
+                      onClick={() =>
+                        handleAssign(doc.id)
+                      }
+                      className={`
+                        p-3
+                        rounded-xl
+                        border
+                        transition-all
+                        cursor-pointer
+                        flex
+                        items-center
+                        gap-3
+                        ${
+                          isSelected
+                            ? "border-teal-deep bg-[#FAF2F0] ring-2 ring-teal-deep/15"
+                            : "border-line bg-white hover:border-mint-deep/40 hover:bg-[#FAF7F6]"
+                        }
+                      `}
                     >
                       <Avatar className="w-10 h-10 border border-line shrink-0">
                         <AvatarImage src={doc.avatar} />
-                        <AvatarFallback>{doc.name.slice(0, 2)}</AvatarFallback>
+
+                        <AvatarFallback>
+                          {doc.name.slice(0, 2)}
+                        </AvatarFallback>
                       </Avatar>
+
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-bold text-ink truncate">
                           {doc.name}
                         </div>
+
                         <div className="text-[11px] text-ink-soft truncate">
                           {doc.specialization}
                         </div>
+
                         <div className="flex items-center gap-2 mt-1">
                           <span
-                            className={`w-2 h-2 rounded-full ${
-                              doc.status === "available"
-                                ? "bg-emerald-500"
-                                : doc.status === "busy"
+                            className={`
+                              w-2
+                              h-2
+                              rounded-full
+                              ${
+                                doc.status ===
+                                "available"
+                                  ? "bg-emerald-500"
+                                  : doc.status ===
+                                    "busy"
                                   ? "bg-amber-500"
                                   : "bg-zinc-400"
-                            }`}
+                              }
+                            `}
                           />
+
                           <span className="text-[10px] text-ink-soft capitalize">
-                            {doc.status} ({doc.activeAppointments} active)
+                            {doc.status} (
+                            {doc.activeAppointments} active)
                           </span>
                         </div>
                       </div>
+
                       {isSelected && (
                         <UserCheck className="w-5 h-5 text-teal-deep shrink-0" />
                       )}
@@ -471,14 +827,26 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
               </div>
             </div>
 
-            {/* Date & Time Confirmation or Reschedule */}
-            <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3">
+            {/* Schedule */}
+
+            <div
+              className="
+                p-4
+                rounded-xl
+                border
+                border-line
+                bg-white
+                shadow-xs
+                space-y-3
+              "
+            >
               <h4 className="text-sm font-semibold text-ink">
                 Schedule & Time Slots
               </h4>
+
               <p className="text-xs text-ink-soft">
-                Accept requested time or suggest an alternative slot to the
-                patient.
+                Accept requested time or suggest an
+                alternative slot to the patient.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -486,36 +854,73 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   <label className="text-xs font-semibold text-ink">
                     Appointment Date
                   </label>
+
                   <Input
                     type="date"
                     value={rescheduleDate}
-                    onChange={(e) => setRescheduleDate(e.target.value)}
+                    onChange={(e) =>
+                      setRescheduleDate(e.target.value)
+                    }
                     className="text-xs"
                   />
                 </div>
+
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-ink">
                     Appointment Time
                   </label>
+
                   <Input
                     type="text"
                     value={rescheduleTime}
-                    onChange={(e) => setRescheduleTime(e.target.value)}
+                    onChange={(e) =>
+                      setRescheduleTime(e.target.value)
+                    }
                     placeholder="e.g. 10:30 AM"
                     className="text-xs"
                   />
+
+                  <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                    <span className="text-[10px] font-semibold text-ink-soft mr-0.5">
+                      Quick Slots:
+                    </span>
+                    {[
+                      "09:30 AM",
+                      "11:00 AM",
+                      "02:30 PM",
+                      "04:00 PM",
+                      "05:30 PM",
+                    ].map((slot) => (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setRescheduleTime(slot)}
+                        className={`text-[10px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                          rescheduleTime === slot
+                            ? "bg-[#5E3E3B] text-white border-[#5E3E3B] font-semibold shadow-2xs"
+                            : "bg-[#FAF7F6] text-ink-soft border-line hover:border-mint-deep hover:text-ink"
+                        }`}
+                      >
+                        {slot}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-ink">
-                  Reason / Message to Patient (Optional for Reschedule)
+                  Reason / Message to Patient
+                  (Optional for Reschedule)
                 </label>
+
                 <Input
                   type="text"
                   placeholder="e.g. Morning schedule is booked; offering afternoon consultation slot."
                   value={actionNote}
-                  onChange={(e) => setActionNote(e.target.value)}
+                  onChange={(e) =>
+                    setActionNote(e.target.value)
+                  }
                   className="text-xs"
                 />
               </div>
@@ -524,72 +929,212 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 <Button
                   size="sm"
                   onClick={handleProposeSchedule}
-                  className="bg-blue-700 hover:bg-blue-800 text-white text-xs h-9 gap-1.5"
+                  className="
+                    bg-blue-700
+                    hover:bg-blue-800
+                    text-white
+                    text-xs
+                    h-9
+                    gap-1.5
+                  "
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
+
                   Propose This New Time & Notify Patient
                 </Button>
-                {appointment.status !== "approved" && (
+
+                {appointment.status !== "approved" ? (
                   <Button
                     size="sm"
                     onClick={handleApproveCurrent}
-                    className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs h-9 gap-1.5"
+                    className="
+                      bg-emerald-700
+                      hover:bg-emerald-800
+                      text-white
+                      text-xs
+                      h-9
+                      gap-1.5
+                    "
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
+
                     Approve Current Requested Slot
                   </Button>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      <span>
+                        <strong>Automatic Reminders Active:</strong> 24h & 1h consultation reminders will be emailed automatically by system.
+                      </span>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      type="button"
+                      disabled={Boolean(sendingReminder)}
+                      onClick={() => handleSendReminder("24_hour")}
+                      className="text-xs h-8 text-teal-800 hover:bg-teal-50"
+                      title="Send an immediate preview of the 24h reminder email"
+                    >
+                      <Bell className="w-3 h-3 mr-1" />
+                      {sendingReminder === "24_hour" ? "Sending..." : "Test Ping Now"}
+                    </Button>
+                  </div>
+                )}
+
+                {reminderFeedback && (
+                  <span className="text-xs font-semibold text-emerald-700 self-center">
+                    {reminderFeedback}
+                  </span>
                 )}
               </div>
             </div>
 
-            {/* Video Provider Preference */}
-            <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3">
-              <h4 className="text-sm font-semibold text-ink">
-                Video Consultation Provider
-              </h4>
-              <div className="flex items-center gap-3">
-                {(["google_meet", "zoom", "teams"] as const).map((platform) => (
-                  <button
-                    key={platform}
-                    onClick={() => setActiveMeetingPlatform(platform)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold capitalize transition-all cursor-pointer ${
-                      activeMeetingPlatform === platform
-                        ? "border-teal-deep bg-teal-deep text-white shadow-xs"
-                        : "border-line bg-white text-ink-soft hover:border-mint-deep"
-                    }`}
-                  >
-                    {platform.replace("_", " ")}
-                  </button>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateMeeting}
-                  className="text-xs h-8 ml-auto"
-                >
-                  Generate Room URL
-                </Button>
+            {/* Video provider */}
+
+            {appointment.consultationType === "video" && (
+              <div
+                className="
+                  p-4
+                  rounded-xl
+                  border
+                  border-line
+                  bg-white
+                  shadow-xs
+                  space-y-3
+                "
+              >
+                <h4 className="text-sm font-semibold text-ink">
+                  Video Consultation Provider
+                </h4>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {(
+                    [
+                      "google_meet",
+                      "zoom",
+                      "teams",
+                    ] as const
+                  ).map((platform) => (
+                    <button
+                      key={platform}
+                      type="button"
+                      onClick={() =>
+                        setActiveMeetingPlatform(
+                          platform
+                        )
+                      }
+                      className={`
+                        px-3
+                        py-1.5
+                        rounded-lg
+                        border
+                        text-xs
+                        font-semibold
+                        transition-all
+                        cursor-pointer
+                        ${
+                          activeMeetingPlatform ===
+                          platform
+                            ? "border-teal-deep bg-teal-deep text-white shadow-xs"
+                            : "border-line bg-white text-ink-soft hover:border-mint-deep"
+                        }
+                      `}
+                    >
+                      {getPlatformLabel(platform)}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-ink">
+                    Meeting Link
+                  </label>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      type="url"
+                      value={manualMeetingLink}
+                      onChange={(e) =>
+                        setManualMeetingLink(
+                          e.target.value
+                        )
+                      }
+                      placeholder="Paste meeting link"
+                      className="text-xs flex-1"
+                    />
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleSaveMeetingLink}
+                      disabled={
+                        !manualMeetingLink.trim()
+                      }
+                      className="
+                        bg-[#5E3E3B]
+                        hover:bg-[#262525]
+                        text-white
+                        text-xs
+                        h-9
+                      "
+                    >
+                      Save Link
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </TabsContent>
 
-          {/* TAB 3: Clinical Notes Workspace (PDF Section 7) */}
-          <TabsContent value="workspace" className="space-y-4 pt-2">
-            <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3">
+          {/* ========================================
+              TAB 3 - CLINICAL NOTES
+          ======================================== */}
+
+          <TabsContent
+            value="workspace"
+            className="space-y-4 pt-2"
+          >
+            <div
+              className="
+                p-4
+                rounded-xl
+                border
+                border-line
+                bg-white
+                shadow-xs
+                space-y-3
+              "
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-semibold text-ink">
                     Doctor Consultation Workspace
                   </h4>
+
                   <p className="text-xs text-ink-soft">
-                    Clinical findings, diagnosis, and post-consultation
-                    recommendations.
+                    Clinical findings, diagnosis, and
+                    post-consultation recommendations.
                   </p>
                 </div>
+
                 <Button
                   size="sm"
                   onClick={handleSaveNotes}
-                  className="bg-[#5E3E3B] hover:bg-[#262525] text-white text-xs h-8 gap-1 cursor-pointer"
+                  className="
+                    bg-[#5E3E3B]
+                    hover:bg-[#262525]
+                    text-white
+                    text-xs
+                    h-8
+                    gap-1
+                    cursor-pointer
+                  "
                 >
                   <Check className="w-3.5 h-3.5" />
                   Save Notes
@@ -597,29 +1142,49 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
               </div>
 
               <div className="space-y-3">
+                {/* Chief complaint */}
+
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-ink">
                     Chief Complaint
                   </label>
+
                   <textarea
                     rows={2}
                     value={clinicalNotes.chiefComplaint}
                     onChange={(e) =>
                       setClinicalNotes({
                         ...clinicalNotes,
-                        chiefComplaint: e.target.value,
+                        chiefComplaint:
+                          e.target.value,
                       })
                     }
-                    className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
+                    className="
+                      w-full
+                      text-xs
+                      p-2.5
+                      rounded-lg
+                      border
+                      border-line
+                      bg-[#FDFEFE]
+                      text-ink
+                      focus:border-mint-deep
+                      focus:ring-2
+                      focus:ring-mint-deep/15
+                      outline-none
+                    "
                     placeholder="Patient primary symptom or reason for consultation..."
                   />
                 </div>
+
+                {/* Findings + Diagnosis */}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-ink">
                       Consultation Findings
                     </label>
+
                     <textarea
                       rows={3}
                       value={clinicalNotes.findings}
@@ -629,14 +1194,29 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                           findings: e.target.value,
                         })
                       }
-                      className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
+                      className="
+                        w-full
+                        text-xs
+                        p-2.5
+                        rounded-lg
+                        border
+                        border-line
+                        bg-[#FDFEFE]
+                        text-ink
+                        focus:border-mint-deep
+                        focus:ring-2
+                        focus:ring-mint-deep/15
+                        outline-none
+                      "
                       placeholder="Visible clinical observations or scan evaluations..."
                     />
                   </div>
+
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-ink">
                       Diagnosis / Assessment
                     </label>
+
                     <textarea
                       rows={3}
                       value={clinicalNotes.diagnosis}
@@ -646,94 +1226,254 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                           diagnosis: e.target.value,
                         })
                       }
-                      className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
+                      className="
+                        w-full
+                        text-xs
+                        p-2.5
+                        rounded-lg
+                        border
+                        border-line
+                        bg-[#FDFEFE]
+                        text-ink
+                        focus:border-mint-deep
+                        focus:ring-2
+                        focus:ring-mint-deep/15
+                        outline-none
+                      "
                       placeholder="Doctor diagnosis or assessment summary..."
                     />
                   </div>
                 </div>
 
+                {/* Treatment */}
+
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-ink">
                     Recommended Treatment Plan
                   </label>
+
                   <textarea
                     rows={2}
-                    value={clinicalNotes.recommendedTreatment}
+                    value={
+                      clinicalNotes.recommendedTreatment
+                    }
                     onChange={(e) =>
                       setClinicalNotes({
                         ...clinicalNotes,
-                        recommendedTreatment: e.target.value,
+                        recommendedTreatment:
+                          e.target.value,
                       })
                     }
-                    className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
+                    className="
+                      w-full
+                      text-xs
+                      p-2.5
+                      rounded-lg
+                      border
+                      border-line
+                      bg-[#FDFEFE]
+                      text-ink
+                      focus:border-mint-deep
+                      focus:ring-2
+                      focus:ring-mint-deep/15
+                      outline-none
+                    "
                     placeholder="Next steps, procedure recommendations, or scheduled clinic visit..."
                   />
                 </div>
+
+                {/* Additional instructions + Follow up */}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-ink">
                       Additional Instructions
                     </label>
+
                     <textarea
                       rows={2}
-                      value={clinicalNotes.additionalInstructions}
+                      value={
+                        clinicalNotes.additionalInstructions
+                      }
                       onChange={(e) =>
                         setClinicalNotes({
                           ...clinicalNotes,
-                          additionalInstructions: e.target.value,
+                          additionalInstructions:
+                            e.target.value,
                         })
                       }
-                      className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
+                      className="
+                        w-full
+                        text-xs
+                        p-2.5
+                        rounded-lg
+                        border
+                        border-line
+                        bg-[#FDFEFE]
+                        text-ink
+                        focus:border-mint-deep
+                        focus:ring-2
+                        focus:ring-mint-deep/15
+                        outline-none
+                      "
                       placeholder="Medications, hygiene instructions, or diet guidelines..."
                     />
                   </div>
+
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-ink">
                       Follow-up Requirements
                     </label>
+
                     <textarea
                       rows={2}
-                      value={clinicalNotes.followUpRequirements}
+                      value={
+                        clinicalNotes.followUpRequirements
+                      }
                       onChange={(e) =>
                         setClinicalNotes({
                           ...clinicalNotes,
-                          followUpRequirements: e.target.value,
+                          followUpRequirements:
+                            e.target.value,
                         })
                       }
-                      className="w-full text-xs p-2.5 rounded-lg border border-line bg-[#FDFEFE] text-ink focus:border-mint-deep focus:ring-2 focus:ring-mint-deep/15 outline-none"
+                      className="
+                        w-full
+                        text-xs
+                        p-2.5
+                        rounded-lg
+                        border
+                        border-line
+                        bg-[#FDFEFE]
+                        text-ink
+                        focus:border-mint-deep
+                        focus:ring-2
+                        focus:ring-mint-deep/15
+                        outline-none
+                      "
                       placeholder="Follow-up timeframe or required in-person tests..."
                     />
                   </div>
+                </div>
+
+                {/* Internal notes */}
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-ink">
+                    Internal Notes
+                  </label>
+
+                  <textarea
+                    rows={3}
+                    value={clinicalNotes.internalNotes}
+                    onChange={(e) =>
+                      setClinicalNotes({
+                        ...clinicalNotes,
+                        internalNotes:
+                          e.target.value,
+                      })
+                    }
+                    className="
+                      w-full
+                      text-xs
+                      p-2.5
+                      rounded-lg
+                      border
+                      border-line
+                      bg-[#FDFEFE]
+                      text-ink
+                      focus:border-mint-deep
+                      focus:ring-2
+                      focus:ring-mint-deep/15
+                      outline-none
+                    "
+                    placeholder="Private internal notes..."
+                  />
                 </div>
               </div>
             </div>
           </TabsContent>
 
-          {/* TAB 4: Timeline Audit Trail */}
-          <TabsContent value="history" className="space-y-3 pt-2">
-            <div className="p-4 rounded-xl border border-line bg-white shadow-xs">
+          {/* ========================================
+              TAB 4 - HISTORY
+          ======================================== */}
+
+          <TabsContent
+            value="history"
+            className="space-y-3 pt-2"
+          >
+            <div
+              className="
+                p-4
+                rounded-xl
+                border
+                border-line
+                bg-white
+                shadow-xs
+              "
+            >
               <h4 className="text-sm font-semibold text-ink mb-3">
                 Audit Trail & Status History
               </h4>
-              <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-line">
+
+              <div
+                className="
+                  relative
+                  pl-6
+                  space-y-4
+                  before:absolute
+                  before:left-2.5
+                  before:top-2
+                  before:bottom-2
+                  before:w-0.5
+                  before:bg-line
+                "
+              >
                 {appointment.timeline.map((log) => (
-                  <div key={log.id} className="relative">
-                    <span className="absolute -left-4.75 top-1 w-3 h-3 rounded-full bg-teal-deep ring-4 ring-emerald-50" />
+                  <div
+                    key={log.id}
+                    className="relative"
+                  >
+                    <span
+                      className="
+                        absolute
+                        -left-4.75
+                        top-1
+                        w-3
+                        h-3
+                        rounded-full
+                        bg-teal-deep
+                        ring-4
+                        ring-emerald-50
+                      "
+                    />
+
                     <div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-ink">
                           {log.action}
                         </span>
+
                         <span className="text-[11px] text-ink-soft">
                           {log.timestamp}
                         </span>
                       </div>
+
                       <span className="text-[11px] text-teal-deep font-medium block">
                         By {log.actor}
                       </span>
+
                       {log.details && (
-                        <p className="text-xs text-ink-soft mt-1 bg-line-soft/60 p-2 rounded">
+                        <p
+                          className="
+                            text-xs
+                            text-ink-soft
+                            mt-1
+                            bg-line-soft/60
+                            p-2
+                            rounded
+                          "
+                        >
                           {log.details}
                         </p>
                       )}
@@ -745,10 +1485,27 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
           </TabsContent>
         </Tabs>
 
-        {/* Modal Actions Footer */}
-        <DialogFooter className="px-6 py-4 bg-white border-t border-line flex flex-wrap items-center justify-between gap-2">
+        {/* ==========================================
+            FOOTER
+        ========================================== */}
+
+        <DialogFooter
+          className="
+            px-6
+            py-4
+            bg-white
+            border-t
+            border-line
+            flex
+            flex-wrap
+            items-center
+            justify-between
+            gap-2
+          "
+        >
           <div className="flex items-center gap-2">
-            {/* Direct Status Actions based on current status */}
+            {/* Completed */}
+
             {appointment.status !== "completed" && (
               <Button
                 variant="outline"
@@ -757,14 +1514,21 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   onUpdateStatus(
                     appointment.id,
                     "completed",
-                    "Marked completed by admin.",
+                    "Marked completed by admin."
                   )
                 }
-                className="text-xs text-teal-deep border-teal-200 hover:bg-teal-50"
+                className="
+                  text-xs
+                  text-teal-deep
+                  border-teal-200
+                  hover:bg-teal-50
+                "
               >
                 Mark Completed
               </Button>
             )}
+
+            {/* No show */}
 
             {appointment.status !== "no_show" &&
               appointment.status !== "completed" && (
@@ -775,14 +1539,46 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                     onUpdateStatus(
                       appointment.id,
                       "no_show",
-                      "Patient was absent.",
+                      "Patient was absent."
                     )
                   }
-                  className="text-xs text-zinc-700 hover:bg-zinc-100"
+                  className="
+                    text-xs
+                    text-zinc-700
+                    hover:bg-zinc-100
+                  "
                 >
                   Mark No-Show
                 </Button>
               )}
+
+            {/* Reject */}
+
+            {appointment.status !== "rejected" &&
+              appointment.status !== "completed" &&
+              appointment.status !== "cancelled" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    onUpdateStatus(
+                      appointment.id,
+                      "rejected",
+                      "Appointment request rejected by clinic administration."
+                    )
+                  }
+                  className="
+                    text-xs
+                    text-rose-600
+                    hover:bg-rose-50
+                    hover:text-rose-700
+                  "
+                >
+                  Reject Request
+                </Button>
+              )}
+
+            {/* Cancel */}
 
             {appointment.status !== "cancelled" && (
               <Button
@@ -792,21 +1588,33 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   onUpdateStatus(
                     appointment.id,
                     "cancelled",
-                    "Cancelled by clinic administration.",
+                    actionNote || "Appointment cancelled by clinic administration."
                   )
                 }
-                className="text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
+                className="
+                  text-xs
+                  text-red-600
+                  hover:bg-red-50
+                  hover:text-red-700
+                "
               >
                 Cancel Appointment
               </Button>
             )}
           </div>
 
+          {/* Done */}
+
           <Button
             variant="default"
             size="sm"
             onClick={onClose}
-            className="bg-[#5E3E3B] text-white hover:bg-[#262525] cursor-pointer"
+            className="
+              bg-[#5E3E3B]
+              text-white
+              hover:bg-[#262525]
+              cursor-pointer
+            "
           >
             Done
           </Button>

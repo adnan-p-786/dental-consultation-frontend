@@ -32,15 +32,16 @@ function Register() {
   const redirectPath = searchParams.get("redirect");
   const { login, isAuthenticated, user } = useAuth();
 
-  // If already logged in, immediately route to the respective dashboard
+  // If already logged in, immediately route super admin & admin to dashboard
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (redirectPath) {
-        navigate(redirectPath, { replace: true });
-      } else if (user.role === "superadmin" || (user.role as string) === "admin") {
+      const userRole = (user.role || "").toLowerCase();
+      if (userRole === "superadmin" || userRole === "admin") {
         navigate("/admin/dashboard", { replace: true });
-      } else if (user.role === "doctor") {
+      } else if (userRole === "doctor") {
         navigate("/doctor/dashboard", { replace: true });
+      } else if (redirectPath && !redirectPath.startsWith("/auth")) {
+        navigate(redirectPath, { replace: true });
       } else {
         navigate("/", { replace: true });
       }
@@ -149,16 +150,17 @@ function Register() {
       toast.success("Registration successful");
 
       setTimeout(() => {
-        if (redirectPath) {
-          navigate(redirectPath);
-        } else if (userType.toLowerCase() === "doctor") {
-          navigate("/doctor/dashboard");
-        } else if (userType.toLowerCase() === "superadmin" || userType.toLowerCase() === "admin") {
-          navigate("/admin/dashboard");
+        const registeredRole = userType.toLowerCase();
+        if (registeredRole === "superadmin" || registeredRole === "admin") {
+          navigate("/admin/dashboard", { replace: true });
+        } else if (registeredRole === "doctor") {
+          navigate("/doctor/dashboard", { replace: true });
+        } else if (redirectPath && !redirectPath.startsWith("/auth")) {
+          navigate(redirectPath, { replace: true });
         } else {
-          navigate("/");
+          navigate("/", { replace: true });
         }
-      }, 1200);
+      }, 500);
     } catch (err: any) {
       const serverError =
         err?.response?.data?.error ||

@@ -55,18 +55,16 @@ function Login() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // If already logged in, immediately route to the respective dashboard
+  // If already logged in, immediately route super admin & admin to dashboard
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (redirectPath) {
-        navigate(redirectPath, { replace: true });
-      } else if (
-        user.role === "superadmin" ||
-        (user.role as string) === "admin"
-      ) {
+      const userRole = (user.role || "").toLowerCase();
+      if (userRole === "superadmin" || userRole === "admin") {
         navigate("/admin/dashboard", { replace: true });
-      } else if (user.role === "doctor") {
+      } else if (userRole === "doctor") {
         navigate("/doctor/dashboard", { replace: true });
+      } else if (redirectPath && !redirectPath.startsWith("/auth")) {
+        navigate(redirectPath, { replace: true });
       } else {
         navigate("/", { replace: true });
       }
@@ -129,16 +127,16 @@ function Login() {
       toast.success("Login successful");
 
       setTimeout(() => {
-        if (redirectPath) {
-          navigate(redirectPath);
-        } else if (resolvedRole === "superadmin" || resolvedRole === "admin") {
-          navigate("/admin/dashboard");
+        if (resolvedRole === "superadmin" || resolvedRole === "admin") {
+          navigate("/admin/dashboard", { replace: true });
         } else if (resolvedRole === "doctor") {
-          navigate("/doctor/dashboard");
+          navigate("/doctor/dashboard", { replace: true });
+        } else if (redirectPath && !redirectPath.startsWith("/auth")) {
+          navigate(redirectPath, { replace: true });
         } else {
-          navigate("/");
+          navigate("/", { replace: true });
         }
-      }, 700);
+      }, 300);
     } catch (err: any) {
       const serverError =
         err?.response?.data?.error ||
@@ -298,7 +296,7 @@ function Login() {
 
               <Field label="I am logging in as" htmlFor="userType">
                 <div
-                  className="grid grid-cols-3 gap-2"
+                  className="grid grid-cols-2 sm:grid-cols-4 gap-2"
                   role="radiogroup"
                   aria-label="Select user type"
                 >

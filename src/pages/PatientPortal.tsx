@@ -85,7 +85,8 @@ export const PatientPortal: React.FC = () => {
         const params = new URLSearchParams();
         if (user.email) params.append("email", user.email);
         if (user.phoneNumber) params.append("phone", user.phoneNumber);
-        const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+        const fullName =
+          `${user.firstName || ""} ${user.lastName || ""}`.trim();
         if (fullName) params.append("name", fullName);
 
         const res = await axios.get(
@@ -93,7 +94,7 @@ export const PatientPortal: React.FC = () => {
         );
         if (res.data?.success && Array.isArray(res.data.data)) {
           backendApts = res.data.data.map((b: any) =>
-            appointmentService.mapDbRecord(b)
+            appointmentService.mapDbRecord(b),
           );
         }
       } catch (backendErr) {
@@ -278,6 +279,13 @@ export const PatientPortal: React.FC = () => {
           <Badge className="bg-rose-50 text-rose-700 border-rose-200 border font-medium px-2.5 py-1">
             <XCircle className="w-3.5 h-3.5 mr-1 text-rose-500" />
             Cancelled
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge className="bg-red-50 text-red-700 border-red-200 border font-medium px-2.5 py-1">
+            <XCircle className="w-3.5 h-3.5 mr-1 text-red-500" />
+            Rejected
           </Badge>
         );
       case "reschedule_requested":
@@ -671,7 +679,8 @@ export const PatientPortal: React.FC = () => {
             <div className="space-y-4">
               {filteredAppointments.map((apt) => {
                 const stepIdx = getStepIndex(apt.status);
-                const isCancelled = apt.status === "cancelled";
+                const isCancelled =
+                  apt.status === "cancelled" || apt.status === "rejected";
 
                 return (
                   <Card

@@ -39,6 +39,17 @@ interface NewAppointmentModalProps {
   onCreateAppointment: (appointment: Appointment) => void;
 }
 
+const formatDisplayTime = (timeStr?: string) => {
+  if (!timeStr) return "";
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return timeStr;
+  let h = parseInt(match[1], 10);
+  const m = match[2];
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${h}:${m} ${ampm}`;
+};
+
 export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   isOpen,
   onClose,
@@ -59,7 +70,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow.toISOString().split("T")[0];
   });
-  const [requestedTime, setRequestedTime] = useState("Morning");
+  const [requestedTime, setRequestedTime] = useState("10:00");
   const [assignedDoctorId, setAssignedDoctorId] = useState("");
   const [patientMessage, setPatientMessage] = useState("");
   const [supportingFile, setSupportingFile] = useState<File | null>(null);
@@ -76,7 +87,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     setRequestedDate(tomorrow.toISOString().split("T")[0]);
-    setRequestedTime("Morning");
+    setRequestedTime("10:00");
     setAssignedDoctorId("");
     setPatientMessage("");
     setSupportingFile(null);
@@ -119,8 +130,17 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
       return;
     }
 
+    if (!requestedTime) {
+      setError("Please pick a preferred appointment time.");
+      toast.error("Please pick a preferred appointment time.");
+      return;
+    }
+
     try {
       setLoading(true);
+
+      const formattedTime =
+        formatDisplayTime(requestedTime) || requestedTime || "10:00 AM";
 
       const data = new FormData();
       data.append("patientName", patientName.trim());
@@ -129,7 +149,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
       data.append("contactMethod", preferredContact.toLowerCase());
       data.append("tratmentType", treatment);
       data.append("preferredDate", requestedDate);
-      data.append("preferredTime", requestedTime || "Morning");
+      data.append("preferredTime", formattedTime);
       data.append("status", "pending");
 
       if (patientMessage.trim()) {
@@ -337,19 +357,40 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               <label className="text-xs font-semibold text-ink flex items-center gap-1">
                 Preferred Appointment Time <span className="text-rose-500">*</span>
               </label>
-              <Select
-                value={requestedTime}
-                onValueChange={(val) => setRequestedTime(val)}
-              >
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Select time slot" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Morning">Morning (09:00 AM - 12:00 PM)</SelectItem>
-                  <SelectItem value="Afternoon">Afternoon (12:00 PM - 04:00 PM)</SelectItem>
-                  <SelectItem value="Evening">Evening (04:00 PM - 08:00 PM)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <Input
+                  required
+                  type="time"
+                  value={requestedTime}
+                  onChange={(e) => setRequestedTime(e.target.value)}
+                  className="text-xs h-9 cursor-pointer"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                <span className="text-[10px] font-semibold text-ink-soft mr-0.5">
+                  Quick Slots:
+                </span>
+                {[
+                  { label: "09:30 AM", value: "09:30" },
+                  { label: "11:00 AM", value: "11:00" },
+                  { label: "02:30 PM", value: "14:30" },
+                  { label: "04:00 PM", value: "16:00" },
+                  { label: "05:30 PM", value: "17:30" },
+                ].map((slot) => (
+                  <button
+                    key={slot.value}
+                    type="button"
+                    onClick={() => setRequestedTime(slot.value)}
+                    className={`text-[10px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                      requestedTime === slot.value
+                        ? "bg-[#5E3E3B] text-white border-[#5E3E3B] font-semibold shadow-2xs"
+                        : "bg-[#FAF7F6] text-ink-soft border-line hover:border-mint-deep hover:text-ink"
+                    }`}
+                  >
+                    {slot.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

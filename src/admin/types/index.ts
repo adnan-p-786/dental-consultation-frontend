@@ -7,6 +7,7 @@ export type AppointmentStatus =
   | 'completed'
   | 'reschedule_requested'
   | 'cancelled'
+  | 'rejected'
   | 'no_show';
 
 export type TreatmentType =

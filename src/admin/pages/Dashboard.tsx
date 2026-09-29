@@ -329,7 +329,7 @@ function Dashboard() {
     setIsDetailModalOpen(true);
   };
 
-  const handleUpdateStatus = (
+  const handleUpdateStatus = async (
     id: string,
     newStatus: AppointmentStatus,
     note?: string,
@@ -365,20 +365,36 @@ function Dashboard() {
       }),
     );
 
+    const targetApt = appointments.find((a) => a.id === id);
+
     if (!isNaN(Number(id))) {
-      fetch(`/api/appointment/update-appointment/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      }).catch((err) => console.error("Failed to sync status to DB:", err));
+      try {
+        await fetch(`/api/appointment/update-appointment/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: newStatus,
+            note: note,
+            assignedDoctorName: targetApt?.assignedDoctor?.name,
+            meetingLink: targetApt?.meetingLink,
+          }),
+        });
+        await fetchAppointmentsFromDb();
+      } catch (err) {
+        console.error("Failed to sync status to DB:", err);
+      }
     }
 
     showToast(
-      `Appointment status updated to "${newStatus.replace("_", " ")}".`,
+      newStatus === "approved"
+        ? "Appointment approved and confirmation email sent to patient."
+        : newStatus === "cancelled"
+        ? "Appointment cancelled and cancellation email sent to patient."
+        : `Appointment status updated to "${newStatus.replace("_", " ")}".`,
     );
   };
 
-  const handleAssignDoctor = (id: string, doctorId: string) => {
+  const handleAssignDoctor = async (id: string, doctorId: string) => {
     const doctorObj = doctors.find((d) => d.id === doctorId);
     setAppointments((prev) =>
       prev.map((apt) => {
@@ -414,10 +430,24 @@ function Dashboard() {
         return apt;
       }),
     );
+
+    if (!isNaN(Number(id))) {
+      try {
+        await fetch(`/api/appointment/update-appointment/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "under_review" }),
+        });
+        await fetchAppointmentsFromDb();
+      } catch (err) {
+        console.error("Failed to sync doctor assignment to DB:", err);
+      }
+    }
+
     showToast(`Assigned to ${doctorObj?.name}.`);
   };
 
-  const handleUpdateSchedule = (
+  const handleUpdateSchedule = async (
     id: string,
     date: string,
     time: string,
@@ -456,19 +486,29 @@ function Dashboard() {
       }),
     );
 
+    const targetApt = appointments.find((a) => a.id === id);
+
     if (!isNaN(Number(id))) {
-      fetch(`/api/appointment/update-appointment/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          preferredDate: date,
-          preferredTime: time,
-          status: "proposed",
-        }),
-      }).catch((err) => console.error("Failed to sync schedule to DB:", err));
+      try {
+        await fetch(`/api/appointment/update-appointment/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            preferredDate: date,
+            preferredTime: time,
+            status: "proposed",
+            note: note,
+            assignedDoctorName: targetApt?.assignedDoctor?.name,
+            meetingLink: targetApt?.meetingLink,
+          }),
+        });
+        await fetchAppointmentsFromDb();
+      } catch (err) {
+        console.error("Failed to sync schedule to DB:", err);
+      }
     }
 
-    showToast(`Proposed new schedule slot (${date} at ${time}).`);
+    showToast(`Proposed new schedule slot (${date} at ${time}) & email sent to patient.`);
   };
 
   const handleUpdateMeetingLink = (
@@ -547,7 +587,7 @@ function Dashboard() {
   };
 
   const handleCreateNewAppointment = async (
-    data: Appointment | Partial<Appointment>
+    data: Appointment | Partial<Appointment>,
   ) => {
     // If already created and mapped from DB by modal
     if ("id" in data && data.id && "referenceNo" in data && data.referenceNo) {
@@ -562,12 +602,24 @@ function Dashboard() {
     try {
       const formData = new FormData();
       formData.append("patientName", data.patient?.name || "Patient");
-      formData.append("patientEmail", data.patient?.email || "patient@example.com");
+      formData.append(
+        "patientEmail",
+        data.patient?.email || "patient@example.com",
+      );
       formData.append("phoneNumber", data.patient?.phone || "");
-      formData.append("contactMethod", (data.patient?.preferredContact || "email").toLowerCase());
-      formData.append("tratmentType", data.treatment || "General Dental Consultation");
-      formData.append("preferredDate", data.requestedDate || new Date().toISOString().split("T")[0]);
-      formData.append("preferredTime", data.requestedTime || "Morning");
+      formData.append(
+        "contactMethod",
+        (data.patient?.preferredContact || "email").toLowerCase(),
+      );
+      formData.append(
+        "tratmentType",
+        data.treatment || "General Dental Consultation",
+      );
+      formData.append(
+        "preferredDate",
+        data.requestedDate || new Date().toISOString().split("T")[0],
+      );
+      formData.append("preferredTime", data.requestedTime || "10:00 AM");
       formData.append("status", data.status || "pending");
       if (data.patientMessage) {
         formData.append("additionalDescription", data.patientMessage);
@@ -585,7 +637,9 @@ function Dashboard() {
           const mapped = appointmentService.mapDbRecord(json.data);
           if (data.assignedDoctorId) {
             mapped.assignedDoctorId = data.assignedDoctorId;
-            mapped.assignedDoctor = doctors.find((d) => d.id === data.assignedDoctorId);
+            mapped.assignedDoctor = doctors.find(
+              (d) => d.id === data.assignedDoctorId,
+            );
           }
           setAppointments((prev) => [mapped, ...prev]);
           showToast(`New appointment ${mapped.referenceNo} registered in DB!`);
@@ -1034,6 +1088,7 @@ function Dashboard() {
                       { id: "approved", label: "Approved" },
                       { id: "completed", label: "Completed" },
                       { id: "reschedule_requested", label: "Reschedules" },
+                      { id: "rejected", label: "Rejected" },
                       { id: "cancelled", label: "Cancelled" },
                       { id: "no_show", label: "No Show" },
                     ].map((st) => (
@@ -1284,6 +1339,21 @@ function Dashboard() {
                                   Reschedule
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
+                                {apt.status !== "rejected" && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateStatus(
+                                        apt.id,
+                                        "rejected",
+                                        "Appointment request rejected by admin.",
+                                      )
+                                    }
+                                    className="text-rose-600"
+                                  >
+                                    <XCircle className="w-3.5 h-3.5 mr-2" />{" "}
+                                    Reject Request
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem
                                   onClick={() =>
                                     handleUpdateStatus(
