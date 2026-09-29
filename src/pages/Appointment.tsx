@@ -7,7 +7,6 @@ import {
   Calendar,
   Check,
   CheckCircle2,
-
   Loader2,
   Mail,
   Phone,
@@ -29,6 +28,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "../auth/AuthContext";
 
 // SOW Section 2: Treatment / Case Selection categories
@@ -56,8 +62,7 @@ export const formatDisplayTime = (timeStr?: string) => {
   return `${h}:${m} ${ampm}`;
 };
 
-type TreatmentCategory =
-  (typeof documentTreatmentCategories)[number];
+export type TreatmentCategory = string;
 
 type ContactMethod = "Phone" | "Email" | "Other";
 
@@ -65,15 +70,22 @@ export default function Appointment() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading } = useAuth();
 
-  const [selectedTreatment, setSelectedTreatment] =
-    useState<TreatmentCategory>("General Dental Consultation");
+  const [activeTreatments, setActiveTreatments] = useState<string[]>([
+    ...documentTreatmentCategories,
+  ]);
+  const [loadingTreatments, setLoadingTreatments] = useState(false);
 
-  const [contactMethod, setContactMethod] =
-    useState<ContactMethod>("Email");
+  const [selectedTreatment, setSelectedTreatment] = useState<TreatmentCategory>(
+    "General Dental Consultation",
+  );
+
+  const [contactMethod, setContactMethod] = useState<ContactMethod>("Email");
 
   const [submitted, setSubmitted] = useState(false);
   const [createdRefNo, setCreatedRefNo] = useState<string>("");
-  const [createdAppointmentId, setCreatedAppointmentId] = useState<string | number | null>(null);
+  const [createdAppointmentId, setCreatedAppointmentId] = useState<
+    string | number | null
+  >(null);
   const [appointmentStatus, setAppointmentStatus] = useState<string>("pending");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -91,18 +103,59 @@ export default function Appointment() {
     supportingFile: null as File | null,
   });
 
-  // Support pre-selecting treatment category from URL query parameter
+  // Fetch active treatments from backend
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const treatmentParam = params.get("treatment");
-    if (treatmentParam) {
-      const match = documentTreatmentCategories.find(
-        (t) =>
-          t.toLowerCase() === treatmentParam.toLowerCase() ||
-          t.toLowerCase().includes(treatmentParam.toLowerCase().replace(/_/g, " "))
-      );
-      if (match) setSelectedTreatment(match);
-    }
+    let isMounted = true;
+    const fetchActiveTreatments = async () => {
+      try {
+        setLoadingTreatments(true);
+        const res = await axios.get("/api/treatment/active");
+        if (
+          res.data?.success &&
+          Array.isArray(res.data.data) &&
+          res.data.data.length > 0
+        ) {
+          const names: string[] = res.data.data.map(
+            (t: { name: string }) => t.name,
+          );
+          if (isMounted) {
+            setActiveTreatments(names);
+
+            const params = new URLSearchParams(window.location.search);
+            const treatmentParam = params.get("treatment");
+            if (treatmentParam) {
+              const match = names.find(
+                (t) =>
+                  t.toLowerCase() === treatmentParam.toLowerCase() ||
+                  t
+                    .toLowerCase()
+                    .includes(treatmentParam.toLowerCase().replace(/_/g, " ")),
+              );
+              if (match) {
+                setSelectedTreatment(match);
+                return;
+              }
+            }
+
+            setSelectedTreatment((prev) =>
+              names.includes(prev) ? prev : names[0],
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load active treatments:", err);
+      } finally {
+        if (isMounted) {
+          setLoadingTreatments(false);
+        }
+      }
+    };
+
+    fetchActiveTreatments();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Automatically pre-fill logged-in patient's information
@@ -110,7 +163,9 @@ export default function Appointment() {
     if (user) {
       setFormData((prev) => ({
         ...prev,
-        patientName: prev.patientName || `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        patientName:
+          prev.patientName ||
+          `${user.firstName || ""} ${user.lastName || ""}`.trim(),
         email: prev.email || user.email || "",
         phone: prev.phone || user.phoneNumber || "",
       }));
@@ -120,7 +175,7 @@ export default function Appointment() {
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { id, value } = e.target;
 
@@ -130,9 +185,7 @@ export default function Appointment() {
     }));
   };
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
 
     setFormData((prev) => ({
@@ -143,7 +196,9 @@ export default function Appointment() {
 
   const handleResetForm = () => {
     setFormData({
-      patientName: user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "",
+      patientName: user
+        ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+        : "",
       email: user?.email || "",
       phone: user?.phoneNumber || "",
       preferredDate: "",
@@ -215,7 +270,9 @@ export default function Appointment() {
       data.append("preferredDate", formData.preferredDate);
       data.append(
         "preferredTime",
-        formatDisplayTime(formData.preferredTime) || formData.preferredTime || "10:00 AM"
+        formatDisplayTime(formData.preferredTime) ||
+          formData.preferredTime ||
+          "10:00 AM",
       );
       data.append("status", "pending");
 
@@ -236,7 +293,7 @@ export default function Appointment() {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       const serverAppointment = response.data?.data;
@@ -258,8 +315,7 @@ export default function Appointment() {
         treatment: selectedTreatment as any,
         consultationType: "video",
         requestedDate:
-          formData.preferredDate ||
-          new Date().toISOString().split("T")[0],
+          formData.preferredDate || new Date().toISOString().split("T")[0],
         requestedTime: formData.preferredTime || "Morning",
         patientMessage: formData.message.trim(),
         status: "pending",
@@ -270,7 +326,9 @@ export default function Appointment() {
       setAppointmentStatus("pending");
       setShowConfirmModal(false);
       setSubmitted(true);
-      toast.success("Appointment booked successfully with Initial Status: Pending");
+      toast.success(
+        "Appointment booked successfully with Initial Status: Pending",
+      );
     } catch (err: any) {
       console.error("Appointment submission error:", err);
       const serverMessage =
@@ -292,17 +350,31 @@ export default function Appointment() {
     try {
       setCancelling(true);
       if (createdAppointmentId) {
-        await axios.patch(`/api/appointment/cancel-appointment/${createdAppointmentId}`).catch((err) => {
-          console.warn("Backend cancel endpoint note:", err);
-        });
-        appointmentService.updateAppointment(String(createdAppointmentId), { status: "cancelled" }, "Patient");
+        await axios
+          .patch(`/api/appointment/cancel-appointment/${createdAppointmentId}`)
+          .catch((err) => {
+            console.warn("Backend cancel endpoint note:", err);
+          });
+        appointmentService.updateAppointment(
+          String(createdAppointmentId),
+          { status: "cancelled" },
+          "Patient",
+        );
       }
 
       // Also ensure matched by reference number in appointmentService
       const all = appointmentService.getAppointments();
-      const found = all.find((a) => a.referenceNo === createdRefNo || a.id === String(createdAppointmentId));
+      const found = all.find(
+        (a) =>
+          a.referenceNo === createdRefNo ||
+          a.id === String(createdAppointmentId),
+      );
       if (found) {
-        appointmentService.updateAppointment(found.id, { status: "cancelled" }, "Patient");
+        appointmentService.updateAppointment(
+          found.id,
+          { status: "cancelled" },
+          "Patient",
+        );
       }
 
       setAppointmentStatus("cancelled");
@@ -319,7 +391,11 @@ export default function Appointment() {
     return (
       <div className="min-h-screen bg-[#FAF7F6] flex flex-col items-center justify-center gap-3">
         <div className="w-12 h-12 rounded-2xl bg-teal-deep text-white flex items-center justify-center shadow-md">
-          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-[#FAF7F6]">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            className="w-7 h-7 text-[#FAF7F6]"
+          >
             <path
               d="M12 3C8.5 3 6 5.2 6 8.6c0 2.6.7 4.3 1.3 6.6.5 1.9.9 4.4 2 5.5.5.5 1.1.3 1.4-.4.5-1.2.6-3.4 1.3-3.4s.8 2.2 1.3 3.4c.3.7.9.9 1.4.4 1.1-1.1 1.5-3.6 2-5.5.6-2.3 1.3-4 1.3-6.6C18 5.2 15.5 3 12 3z"
               stroke="currentColor"
@@ -358,23 +434,16 @@ export default function Appointment() {
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-mint text-xs font-semibold uppercase tracking-wider mb-5">
             <Sparkles className="w-3.5 h-3.5 text-mint" />
 
-            <span>
-              Online Dental Appointment & Consultation
-            </span>
+            <span>Online Dental Appointment & Consultation</span>
           </div>
 
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white leading-[1.15] mb-5">
-            Book an Appointment &{" "}
-            <br className="hidden sm:inline" />
-
-            <span className="text-mint">
-              Request an Online Consultation
-            </span>
+            Book an Appointment & <br className="hidden sm:inline" />
+            <span className="text-mint">Request an Online Consultation</span>
           </h1>
           <p className="text-base sm:text-lg text-[#EBD8D5] leading-relaxed max-w-2xl mx-auto">
-            Submit your details and case requirements to request
-            an appointment. Your request will be reviewed and
-            scheduled by the clinic.
+            Submit your details and case requirements to request an appointment.
+            Your request will be reviewed and scheduled by the clinic.
           </p>
         </div>
       </section>
@@ -383,7 +452,6 @@ export default function Appointment() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 mb-20 w-full relative z-10">
         <div className="max-w-3xl mx-auto">
           <div className="bg-white rounded-3xl border border-line p-6 sm:p-8 md:p-10 shadow-[0_4px_30px_rgba(16,56,50,0.05)]">
-
             {submitted ? (
               /* On-Screen Confirmation View After Submission */
               <div className="py-6 text-center animate-in fade-in-50">
@@ -416,7 +484,9 @@ export default function Appointment() {
                 {createdRefNo && (
                   <div className="mb-5 inline-flex items-center gap-2 bg-[#FAF2F0] border border-teal-deep/20 px-4 py-2 rounded-xl text-xs font-mono font-bold text-teal-deep shadow-xs">
                     <span>Reference ID:</span>
-                    <span className="text-sm tracking-wide">{createdRefNo}</span>
+                    <span className="text-sm tracking-wide">
+                      {createdRefNo}
+                    </span>
                   </div>
                 )}
 
@@ -430,14 +500,18 @@ export default function Appointment() {
                       variant={appointmentStatus as any}
                       className="text-xs font-bold capitalize"
                     >
-                      {appointmentStatus === "cancelled" ? "Cancelled" : "Pending Review"}
+                      {appointmentStatus === "cancelled"
+                        ? "Cancelled"
+                        : "Pending Review"}
                     </Badge>
                   </div>
 
                   <div className="space-y-2.5 text-xs">
                     <div className="flex justify-between items-center">
                       <span className="text-ink-soft">Patient Name:</span>
-                      <span className="font-semibold text-ink">{formData.patientName}</span>
+                      <span className="font-semibold text-ink">
+                        {formData.patientName}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-ink-soft">Treatment:</span>
@@ -448,7 +522,8 @@ export default function Appointment() {
                     <div className="flex justify-between items-center">
                       <span className="text-ink-soft">Requested Date:</span>
                       <span className="font-medium text-ink">
-                        {formData.preferredDate} at {formatDisplayTime(formData.preferredTime)}
+                        {formData.preferredDate} at{" "}
+                        {formatDisplayTime(formData.preferredTime)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -499,7 +574,11 @@ export default function Appointment() {
                     className="w-full sm:w-auto px-5 py-2.5 rounded-xl border-line hover:bg-paper text-ink font-semibold text-xs h-11 transition-colors shadow-xs cursor-pointer"
                   >
                     <Check className="w-4 h-4 mr-1.5 text-mint-deep" />
-                    <span>{appointmentStatus === "cancelled" ? "Book New Appointment" : "Book Another"}</span>
+                    <span>
+                      {appointmentStatus === "cancelled"
+                        ? "Book New Appointment"
+                        : "Book Another"}
+                    </span>
                   </Button>
 
                   {isAuthenticated && (
@@ -535,13 +614,10 @@ export default function Appointment() {
                       <p className="font-semibold text-xs uppercase tracking-wide text-rose-800">
                         Submission Failed
                       </p>
-                      <p className="text-xs text-rose-600 mt-0.5">
-                        {error}
-                      </p>
+                      <p className="text-xs text-rose-600 mt-0.5">{error}</p>
                     </div>
                   </div>
                 )}
-
 
                 {/* 1. Treatment / Case */}
                 <div>
@@ -553,23 +629,36 @@ export default function Appointment() {
                     <span className="text-rose-500">*</span>
                   </label>
 
-                  <select
-                    id="treatment-select"
-                    required
+                  <Select
                     value={selectedTreatment}
-                    onChange={(e) =>
-                      setSelectedTreatment(
-                        e.target.value as TreatmentCategory
-                      )
-                    }
-                    className="w-full text-sm px-4 py-3 rounded-xl border border-line bg-paper/40 text-ink font-medium outline-none transition-colors focus:border-mint-deep focus:bg-white focus:ring-4 focus:ring-mint-deep/15 cursor-pointer"
+                    onValueChange={(val: string) => setSelectedTreatment(val)}
+                    disabled={loadingTreatments}
                   >
-                    {documentTreatmentCategories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      id="treatment-select"
+                      className="w-full h-12 text-sm px-4 py-3 rounded-xl border border-line bg-paper/30 hover:bg-white text-ink font-medium outline-none transition-all focus:border-mint-deep focus:bg-white focus:ring-4 focus:ring-mint-deep/15 cursor-pointer disabled:opacity-60 shadow-2xs"
+                    >
+                      <SelectValue
+                        placeholder={
+                          loadingTreatments
+                            ? "Loading active treatments..."
+                            : "Select treatment"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white rounded-xl border border-line shadow-xl p-1.5 max-h-72 z-50">
+                      {activeTreatments.map((cat) => (
+                        <SelectItem
+                          key={cat}
+                          value={cat}
+                          hideIndicator
+                          className="cursor-pointer py-2.5 px-3 text-sm rounded-lg hover:bg-line-soft focus:bg-[#FAF7F6] focus:text-teal-deep font-medium transition-colors"
+                        >
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* 2. Patient Details */}
@@ -580,8 +669,7 @@ export default function Appointment() {
                       htmlFor="patientName"
                       className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5"
                     >
-                      Patient Full Name{" "}
-                      <span className="text-rose-500">*</span>
+                      Patient Full Name <span className="text-rose-500">*</span>
                     </label>
 
                     <div className="relative">
@@ -606,8 +694,7 @@ export default function Appointment() {
                         htmlFor="email"
                         className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5"
                       >
-                        Email Address{" "}
-                        <span className="text-rose-500">*</span>
+                        Email Address <span className="text-rose-500">*</span>
                       </label>
 
                       <div className="relative">
@@ -630,8 +717,7 @@ export default function Appointment() {
                         htmlFor="phone"
                         className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1.5"
                       >
-                        Phone Number{" "}
-                        <span className="text-rose-500">*</span>
+                        Phone Number <span className="text-rose-500">*</span>
                       </label>
 
                       <div className="relative">
@@ -658,15 +744,11 @@ export default function Appointment() {
                     </label>
 
                     <div className="grid grid-cols-3 gap-2">
-                      {(
-                        ["Email" , "Phone"] as const
-                      ).map((method) => (
+                      {(["Email", "Phone"] as const).map((method) => (
                         <button
                           key={method}
                           type="button"
-                          onClick={() =>
-                            setContactMethod(method)
-                          }
+                          onClick={() => setContactMethod(method)}
                           className={`py-2.5 px-3 rounded-xl border text-xs font-medium transition-all text-center cursor-pointer ${
                             contactMethod === method
                               ? "bg-[#5E3E3B] text-white border-[#5E3E3B] shadow-2xs font-semibold"
@@ -796,8 +878,8 @@ export default function Appointment() {
                     </span>
 
                     <span className="text-[11px] text-ink-soft block mt-1">
-                      Supporting documents or images related to
-                      your appointment request
+                      Supporting documents or images related to your appointment
+                      request
                     </span>
 
                     {formData.supportingFile && (
@@ -885,11 +967,15 @@ export default function Appointment() {
             <div className="bg-[#FAF7F6] border border-line rounded-xl p-4 space-y-2.5 text-xs">
               <div className="flex justify-between items-center pb-2 border-b border-line/60">
                 <span className="text-ink-soft">Patient Name:</span>
-                <span className="font-semibold text-ink">{formData.patientName}</span>
+                <span className="font-semibold text-ink">
+                  {formData.patientName}
+                </span>
               </div>
               <div className="flex justify-between items-center pb-2 border-b border-line/60">
                 <span className="text-ink-soft">Email:</span>
-                <span className="font-medium text-ink truncate max-w-57.5">{formData.email}</span>
+                <span className="font-medium text-ink truncate max-w-57.5">
+                  {formData.email}
+                </span>
               </div>
               <div className="flex justify-between items-center pb-2 border-b border-line/60">
                 <span className="text-ink-soft">Phone Number:</span>
@@ -897,7 +983,9 @@ export default function Appointment() {
               </div>
               <div className="flex justify-between items-center pb-2 border-b border-line/60">
                 <span className="text-ink-soft">Preferred Contact:</span>
-                <span className="font-medium text-teal-deep capitalize">{contactMethod}</span>
+                <span className="font-medium text-teal-deep capitalize">
+                  {contactMethod}
+                </span>
               </div>
               <div className="flex justify-between items-center pb-2 border-b border-line/60">
                 <span className="text-ink-soft">Treatment:</span>
@@ -908,22 +996,29 @@ export default function Appointment() {
               <div className="flex justify-between items-center pb-2 border-b border-line/60">
                 <span className="text-ink-soft">Preferred Slot:</span>
                 <span className="font-semibold text-ink">
-                  {formData.preferredDate} at {formatDisplayTime(formData.preferredTime)}
+                  {formData.preferredDate} at{" "}
+                  {formatDisplayTime(formData.preferredTime)}
                 </span>
               </div>
             </div>
 
             {formData.message.trim() && (
               <div className="bg-paper/60 border border-line rounded-xl p-3 text-xs">
-                <span className="text-ink-soft block font-semibold mb-0.5">Notes / Description:</span>
-                <p className="text-ink italic line-clamp-2">"{formData.message.trim()}"</p>
+                <span className="text-ink-soft block font-semibold mb-0.5">
+                  Notes / Description:
+                </span>
+                <p className="text-ink italic line-clamp-2">
+                  "{formData.message.trim()}"
+                </p>
               </div>
             )}
 
             {formData.supportingFile && (
               <div className="flex items-center gap-2 text-xs bg-paper/60 border border-line rounded-xl p-3 text-ink-soft">
                 <Upload className="w-4 h-4 text-teal-deep shrink-0" />
-                <span className="truncate">Attached File: {formData.supportingFile.name}</span>
+                <span className="truncate">
+                  Attached File: {formData.supportingFile.name}
+                </span>
               </div>
             )}
           </div>

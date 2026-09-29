@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import {
@@ -57,13 +57,17 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   onCreateAppointment,
 }) => {
   const [treatment, setTreatment] = useState<TreatmentType>(
-    "General Dental Consultation"
+    "General Dental Consultation",
   );
+  const [activeTreatments, setActiveTreatments] = useState<string[]>([
+    ...treatmentOptions,
+  ]);
+  const [loadingTreatments, setLoadingTreatments] = useState(false);
   const [patientName, setPatientName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [preferredContact, setPreferredContact] = useState<"email" | "phone">(
-    "email"
+    "email",
   );
   const [requestedDate, setRequestedDate] = useState(() => {
     const tomorrow = new Date();
@@ -78,8 +82,45 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let isMounted = true;
+    const fetchActiveTreatments = async () => {
+      try {
+        setLoadingTreatments(true);
+        const res = await axios.get("/api/treatment/active");
+        if (
+          res.data?.success &&
+          Array.isArray(res.data.data) &&
+          res.data.data.length > 0
+        ) {
+          const names: string[] = res.data.data.map(
+            (t: { name: string }) => t.name,
+          );
+          if (isMounted) {
+            setActiveTreatments(names);
+            setTreatment((prev) => (names.includes(prev) ? prev : names[0]));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load active treatments in admin modal:", err);
+      } finally {
+        if (isMounted) {
+          setLoadingTreatments(false);
+        }
+      }
+    };
+
+    fetchActiveTreatments();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen]);
+
   const handleClose = () => {
-    setTreatment("General Dental Consultation");
+    setTreatment(activeTreatments[0] || "General Dental Consultation");
     setPatientName("");
     setEmail("");
     setPhone("");
@@ -169,7 +210,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       const serverAppointment = response.data?.data;
@@ -177,7 +218,9 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
         const mapped = appointmentService.mapDbRecord(serverAppointment);
         if (assignedDoctorId) {
           mapped.assignedDoctorId = assignedDoctorId;
-          mapped.assignedDoctor = doctors.find((d) => d.id === assignedDoctorId);
+          mapped.assignedDoctor = doctors.find(
+            (d) => d.id === assignedDoctorId,
+          );
         }
 
         // Sync with local appointments cache
@@ -210,7 +253,8 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             Create New Appointment
           </DialogTitle>
           <DialogDescription className="text-xs text-ink-soft">
-            Directly register an appointment booking into the database with the same fields as the booking portal.
+            Directly register an appointment booking into the database with the
+            same fields as the booking portal.
           </DialogDescription>
         </DialogHeader>
 
@@ -229,18 +273,26 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
           {/* 1. Major Treatment / Case Requirement */}
           <div className="space-y-1">
             <label className="text-xs font-semibold text-ink flex items-center gap-1">
-              Major Treatment / Case Requirement <span className="text-rose-500">*</span>
+              Major Treatment / Case Requirement{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <Select
               value={treatment}
               onValueChange={(val: TreatmentType) => setTreatment(val)}
+              disabled={loadingTreatments}
             >
               <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder="Select treatment" />
+                <SelectValue
+                  placeholder={
+                    loadingTreatments
+                      ? "Loading active treatments..."
+                      : "Select treatment"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {treatmentOptions.map((opt: string) => (
-                  <SelectItem key={opt} value={opt}>
+                {activeTreatments.map((opt: string) => (
+                  <SelectItem key={opt} value={opt} hideIndicator>
                     {opt}
                   </SelectItem>
                 ))}
@@ -308,7 +360,8 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             {/* Preferred Contact Method */}
             <div className="space-y-1">
               <label className="text-xs font-semibold text-ink flex items-center gap-1">
-                Preferred Contact Method <span className="text-rose-500">*</span>
+                Preferred Contact Method{" "}
+                <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-2 gap-2 h-9">
                 {(["email", "phone"] as const).map((method) => (
@@ -338,7 +391,8 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs font-semibold text-ink flex items-center gap-1">
-                Preferred Appointment Date <span className="text-rose-500">*</span>
+                Preferred Appointment Date{" "}
+                <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <Input
@@ -355,7 +409,8 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
 
             <div className="space-y-1">
               <label className="text-xs font-semibold text-ink flex items-center gap-1">
-                Preferred Appointment Time <span className="text-rose-500">*</span>
+                Preferred Appointment Time{" "}
+                <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <Input
@@ -402,16 +457,21 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             </label>
             <Select
               value={assignedDoctorId}
-              onValueChange={(val) => setAssignedDoctorId(val === "unassigned" ? "" : val)}
+              onValueChange={(val) =>
+                setAssignedDoctorId(val === "unassigned" ? "" : val)
+              }
             >
               <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder="Leave unassigned or select doctor..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unassigned">-- Leave Unassigned --</SelectItem>
+                <SelectItem value="unassigned" hideIndicator>
+                  -- Leave Unassigned --
+                </SelectItem>
                 {doctors.map((doc) => (
-                  <SelectItem key={doc.id} value={doc.id}>
-                    {doc.name} {doc.specialization ? `(${doc.specialization})` : ""}
+                  <SelectItem key={doc.id} value={doc.id} hideIndicator>
+                    {doc.name}{" "}
+                    {doc.specialization ? `(${doc.specialization})` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -448,7 +508,9 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
 
               {supportingFile && (
                 <div className="mt-2.5 inline-flex items-center gap-2 bg-white border border-line px-3 py-1 rounded-lg text-xs text-mint-deep font-medium shadow-2xs">
-                  <span className="truncate max-w-xs">Selected: {supportingFile.name}</span>
+                  <span className="truncate max-w-xs">
+                    Selected: {supportingFile.name}
+                  </span>
                   <button
                     type="button"
                     onClick={(e) => {

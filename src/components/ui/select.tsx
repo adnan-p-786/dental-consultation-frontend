@@ -108,27 +108,40 @@ const SelectLabel = React.forwardRef<
 ))
 SelectLabel.displayName = SelectPrimitive.Label.displayName
 
+export interface SelectItemProps
+  extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> {
+  hideIndicator?: boolean;
+  showIndicator?: boolean;
+}
+
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-2 text-sm outline-none focus:bg-line-soft focus:text-teal-deep data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className
-    )}
-    {...props}
-  >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-      <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4 text-teal-deep" />
-      </SelectPrimitive.ItemIndicator>
-    </span>
+  SelectItemProps
+>(({ className, children, hideIndicator = false, showIndicator, ...props }, ref) => {
+  const shouldHideIndicator = hideIndicator || showIndicator === false;
 
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-  </SelectPrimitive.Item>
-))
+  return (
+    <SelectPrimitive.Item
+      ref={ref}
+      className={cn(
+        "relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 text-sm outline-none focus:bg-line-soft focus:text-teal-deep data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-colors",
+        shouldHideIndicator ? "px-3" : "pl-8 pr-2",
+        className
+      )}
+      {...props}
+    >
+      {!shouldHideIndicator && (
+        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+          <SelectPrimitive.ItemIndicator>
+            <Check className="h-4 w-4 text-teal-deep" />
+          </SelectPrimitive.ItemIndicator>
+        </span>
+      )}
+
+      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    </SelectPrimitive.Item>
+  );
+})
 SelectItem.displayName = SelectPrimitive.Item.displayName
 
 const SelectSeparator = React.forwardRef<

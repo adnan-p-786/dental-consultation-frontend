@@ -11,16 +11,7 @@ export type AppointmentStatus =
   | 'no_show';
 
 export type TreatmentType =
-  | 'General Dental Consultation'
-  | 'Dental Implant'
-  | 'Orthodontics'
-  | 'Cosmetic Dentistry'
-  | 'Root Canal Treatment'
-  | 'Tooth Extraction'
-  | 'Pediatric Dentistry'
-  | 'Gum Treatment'
-  | 'Dental Crowns & Bridges'
-  | 'Other';
+ (string & {});
 
 export type ConsultationType = 'video' | 'in_person';
 
