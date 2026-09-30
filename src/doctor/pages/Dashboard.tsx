@@ -148,9 +148,6 @@ export default function DoctorDashboard() {
       doctorName,
     );
 
-    showToast(
-      `Consultation for ${activeWorkspaceApt.patient.name} marked as Completed.`,
-    );
     setActiveWorkspaceApt(null);
     loadDoctorAppointments();
   };
@@ -200,14 +197,14 @@ export default function DoctorDashboard() {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-display font-semibold text-lg text-teal-deep tracking-tight">
-                32 stories Dental
+                32Stories Dental
               </span>
               <span className="text-[10.5px] font-bold uppercase tracking-wider bg-[#FAF2F0] text-teal-deep px-2 py-0.5 rounded-full border border-teal-deep/15">
                 Doctor Portal
               </span>
             </div>
             <p className="text-xs text-ink-soft">
-              Consultation Workspace & Patient Queue
+              Consultation Workspace
             </p>
           </div>
         </div>
@@ -809,7 +806,7 @@ export default function DoctorDashboard() {
                         followUpRequirements: e.target.value,
                       }))
                     }
-                    placeholder="Required follow-up visit timeline (e.g. In-clinic scan in 2 weeks, review in 1 month)..."
+                    placeholder="Required follow-up timeline (e.g. Follow-up consultation in 2 weeks, review in 1 month)..."
                     className="w-full text-xs p-3 rounded-xl border border-line bg-paper/40 focus:bg-white focus:border-mint-deep focus:outline-none transition-colors"
                   />
                 </div>

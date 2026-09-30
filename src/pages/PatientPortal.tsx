@@ -101,22 +101,30 @@ export const PatientPortal: React.FC = () => {
         console.warn("Backend appointments fetch skipped:", backendErr);
       }
 
-      // 3. Merge: Local appointments take priority for updated notes, status, and doctors
+      // 3. Merge: Start with local appointments (mock/unpersisted), then overlay authoritative backend records
       const map = new Map<string, Appointment>();
 
-      // First add backend
-      backendApts.forEach((apt) => map.set(apt.id, apt));
+      // First add local
+      localApts.forEach((apt) => map.set(apt.id, apt));
 
-      // Then overlay local updates (which include doctor notes, confirmed times, etc.)
-      localApts.forEach((apt) => {
-        const existing = map.get(apt.id);
-        if (existing) {
+      // Then overlay backend DB appointments (authoritative truth from DB)
+      backendApts.forEach((apt) => {
+        const local = map.get(apt.id);
+        if (local) {
           map.set(apt.id, {
-            ...existing,
+            ...local,
             ...apt,
-            consultationNotes:
-              apt.consultationNotes || existing.consultationNotes,
-            meetingLink: apt.meetingLink || existing.meetingLink,
+            assignedDoctor: apt.assignedDoctor || local.assignedDoctor,
+            assignedDoctorId: apt.assignedDoctorId || local.assignedDoctorId,
+            confirmedDate: apt.confirmedDate || local.confirmedDate,
+            confirmedTime: apt.confirmedTime || local.confirmedTime,
+            meetingLink: apt.meetingLink || local.meetingLink,
+            meetingPlatform: apt.meetingPlatform || local.meetingPlatform,
+            consultationNotes: apt.consultationNotes || local.consultationNotes,
+            documents:
+              apt.documents && apt.documents.length > 0
+                ? apt.documents
+                : local.documents,
           });
         } else {
           map.set(apt.id, apt);
@@ -501,7 +509,15 @@ export const PatientPortal: React.FC = () => {
                   </p>
                   {activeMeetingAppointment.assignedDoctor && (
                     <div className="flex items-center gap-2 mt-2 text-xs text-teal-deep font-medium">
-                      <Stethoscope className="w-3.5 h-3.5 text-mint-deep" />
+                      {activeMeetingAppointment.assignedDoctor.avatar ? (
+                        <img
+                          src={activeMeetingAppointment.assignedDoctor.avatar}
+                          alt={activeMeetingAppointment.assignedDoctor.name}
+                          className="w-5 h-5 rounded-full object-cover border border-teal-200"
+                        />
+                      ) : (
+                        <Stethoscope className="w-3.5 h-3.5 text-mint-deep" />
+                      )}
                       <span>
                         Dentist: {activeMeetingAppointment.assignedDoctor.name}{" "}
                         (
@@ -797,7 +813,15 @@ export const PatientPortal: React.FC = () => {
                           Assigned Dentist
                         </span>
                         <div className="font-semibold text-ink flex items-center gap-1.5">
-                          <Stethoscope className="w-3.5 h-3.5 text-mint-deep shrink-0" />
+                          {apt.assignedDoctor?.avatar ? (
+                            <img
+                              src={apt.assignedDoctor.avatar}
+                              alt={apt.assignedDoctor.name}
+                              className="w-5 h-5 rounded-full object-cover border border-line"
+                            />
+                          ) : (
+                            <Stethoscope className="w-3.5 h-3.5 text-mint-deep shrink-0" />
+                          )}
                           <span>
                             {apt.assignedDoctor?.name ||
                               (apt.status === "approved"
@@ -917,10 +941,7 @@ export const PatientPortal: React.FC = () => {
                   {selectedAppointment.treatment}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-ink-soft">
-                  Requested on {selectedAppointment.requestedDate} &bull;{" "}
-                  {selectedAppointment.consultationType === "video"
-                    ? "Online Video Consultation"
-                    : "In-Clinic Visit"}
+                  Requested on {selectedAppointment.requestedDate} &bull; Online Video Consultation
                 </DialogDescription>
               </DialogHeader>
 

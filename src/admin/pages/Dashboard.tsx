@@ -9,9 +9,17 @@ import {
   Eye,
   CalendarCheck,
   Check,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -36,7 +44,7 @@ import { AppointmentCalendarView } from "../components/AppointmentCalendarView";
 import { DoctorManagementView } from "../components/DoctorManagementView";
 import { ReportsView } from "../components/ReportsView";
 import { SettingsView } from "../components/SettingsView";
-import { initialAppointments, initialDoctors } from "../data/mockData";
+import { initialDoctors } from "../data/mockData";
 import type {
   Appointment,
   AppointmentStatus,
@@ -230,6 +238,16 @@ function Dashboard() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
+  // Keep selected appointment synchronized with latest data
+  useEffect(() => {
+    if (selectedAppointment) {
+      const fresh = appointments.find((a) => a.id === selectedAppointment.id);
+      if (fresh && fresh !== selectedAppointment) {
+        setSelectedAppointment(fresh);
+      }
+    }
+  }, [appointments]);
+
   // Toast notification feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -324,8 +342,14 @@ function Dashboard() {
   }, [appointments, searchQuery, selectedStatusFilter, selectedDoctorFilter]);
 
   // Actions
-  const handleOpenDetail = (apt: Appointment) => {
+  const [detailModalTab, setDetailModalTab] = useState<"details" | "scheduling">("details");
+
+  const handleOpenDetail = (
+    apt: Appointment,
+    tab: "details" | "scheduling" = "details"
+  ) => {
     setSelectedAppointment(apt);
+    setDetailModalTab(tab);
     setIsDetailModalOpen(true);
   };
 
@@ -375,8 +399,12 @@ function Dashboard() {
           body: JSON.stringify({
             status: newStatus,
             note: note,
+            assignedDoctorId: targetApt?.assignedDoctorId,
             assignedDoctorName: targetApt?.assignedDoctor?.name,
             meetingLink: targetApt?.meetingLink,
+            meetingPlatform: targetApt?.meetingPlatform,
+            confirmedDate: targetApt?.confirmedDate || targetApt?.requestedDate,
+            confirmedTime: targetApt?.confirmedTime || targetApt?.requestedTime,
           }),
         });
         await fetchAppointmentsFromDb();
@@ -395,56 +423,79 @@ function Dashboard() {
   };
 
   const handleAssignDoctor = async (id: string, doctorId: string) => {
-    const doctorObj = doctors.find((d) => d.id === doctorId);
-    setAppointments((prev) =>
-      prev.map((apt) => {
-        if (apt.id === id) {
-          const updated: Appointment = {
-            ...apt,
-            assignedDoctorId: doctorId,
-            assignedDoctor: doctorObj,
-            status:
-              apt.status === "requested" || apt.status === "pending"
-                ? "under_review"
-                : apt.status,
-            timeline: [
-              {
-                id: `tl-${Date.now()}`,
-                timestamp: new Date().toLocaleString([], {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-                action: `Assigned to ${doctorObj?.name}`,
-                actor: currentActor,
-              },
-              ...apt.timeline,
-            ],
-          };
-          if (selectedAppointment?.id === id) {
-            setSelectedAppointment(updated);
-          }
-          return updated;
+    let doctorObj = doctors.find((d) => String(d.id) === String(doctorId));
+    if (!doctorObj) {
+      try {
+        const saved = localStorage.getItem("dental_doctors_v1");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          doctorObj = parsed.find((d: any) => String(d.id) === String(doctorId));
         }
-        return apt;
-      }),
+      } catch (e) {}
+    }
+
+    const targetApt = appointments.find((a) => String(a.id) === String(id));
+    const nextStatus =
+      targetApt?.status === "requested" || targetApt?.status === "pending"
+        ? "under_review"
+        : targetApt?.status || "under_review";
+
+    const updatedApt: Appointment = {
+      ...(targetApt || ({} as Appointment)),
+      id: String(id),
+      assignedDoctorId: String(doctorId),
+      assignedDoctor: doctorObj,
+      status: nextStatus,
+      timeline: [
+        {
+          id: `tl-${Date.now()}`,
+          timestamp: new Date().toLocaleString([], {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          action: `Assigned to ${doctorObj?.name || "Doctor"}`,
+          actor: currentActor,
+        },
+        ...(targetApt?.timeline || []),
+      ],
+    };
+
+    setSelectedAppointment(updatedApt);
+    setAppointments((prev) =>
+      prev.map((apt) => (String(apt.id) === String(id) ? updatedApt : apt)),
     );
+
+    appointmentService.updateAppointment(String(id), {
+      assignedDoctorId: String(doctorId),
+      assignedDoctor: doctorObj,
+      status: nextStatus,
+    });
 
     if (!isNaN(Number(id))) {
       try {
         await fetch(`/api/appointment/update-appointment/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "under_review" }),
+          body: JSON.stringify({
+            status: nextStatus,
+            assignedDoctorId: String(doctorId),
+            assignedDoctorName: doctorObj?.name,
+          }),
         });
-        await fetchAppointmentsFromDb();
+        const fresh = await appointmentService.fetchAppointments();
+        setAppointments(fresh);
+        const freshSelected = fresh.find((a) => String(a.id) === String(id));
+        if (freshSelected) {
+          setSelectedAppointment(freshSelected);
+        }
       } catch (err) {
         console.error("Failed to sync doctor assignment to DB:", err);
       }
     }
 
-    showToast(`Assigned to ${doctorObj?.name}.`);
+    showToast(`Assigned to ${doctorObj?.name || "doctor"} successfully.`);
   };
 
   const handleUpdateSchedule = async (
@@ -453,6 +504,8 @@ function Dashboard() {
     time: string,
     note?: string,
   ) => {
+    const targetApt = appointments.find((a) => a.id === id);
+
     setAppointments((prev) =>
       prev.map((apt) => {
         if (apt.id === id) {
@@ -486,8 +539,6 @@ function Dashboard() {
       }),
     );
 
-    const targetApt = appointments.find((a) => a.id === id);
-
     if (!isNaN(Number(id))) {
       try {
         await fetch(`/api/appointment/update-appointment/${id}`, {
@@ -496,10 +547,14 @@ function Dashboard() {
           body: JSON.stringify({
             preferredDate: date,
             preferredTime: time,
+            confirmedDate: date,
+            confirmedTime: time,
             status: "proposed",
             note: note,
+            assignedDoctorId: targetApt?.assignedDoctorId,
             assignedDoctorName: targetApt?.assignedDoctor?.name,
             meetingLink: targetApt?.meetingLink,
+            meetingPlatform: targetApt?.meetingPlatform,
           }),
         });
         await fetchAppointmentsFromDb();
@@ -511,7 +566,7 @@ function Dashboard() {
     showToast(`Proposed new schedule slot (${date} at ${time}) & email sent to patient.`);
   };
 
-  const handleUpdateMeetingLink = (
+  const handleUpdateMeetingLink = async (
     id: string,
     platform: "google_meet" | "zoom" | "teams",
     link: string,
@@ -547,10 +602,27 @@ function Dashboard() {
         return apt;
       }),
     );
+
+    if (!isNaN(Number(id))) {
+      try {
+        await fetch(`/api/appointment/update-appointment/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            meetingPlatform: platform,
+            meetingLink: link,
+          }),
+        });
+        await fetchAppointmentsFromDb();
+      } catch (err) {
+        console.error("Failed to sync meeting link to DB:", err);
+      }
+    }
+
     showToast("Video consultation link updated!");
   };
 
-  const handleSaveClinicalNotes = (
+  const handleSaveClinicalNotes = async (
     id: string,
     notes: Appointment["consultationNotes"],
   ) => {
@@ -583,6 +655,26 @@ function Dashboard() {
         return apt;
       }),
     );
+
+    if (notes) {
+      appointmentService.saveConsultationNotes(id, notes, currentActor);
+    }
+
+    if (!isNaN(Number(id))) {
+      try {
+        await fetch(`/api/appointment/update-appointment/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            consultationNotes: notes,
+          }),
+        });
+        await fetchAppointmentsFromDb();
+      } catch (err) {
+        console.error("Failed to sync clinical notes to DB:", err);
+      }
+    }
+
     showToast("Clinical consultation notes saved.");
   };
 
@@ -1107,18 +1199,42 @@ function Dashboard() {
                   </div>
 
                   {/* Doctor filter dropdown */}
-                  <select
-                    value={selectedDoctorFilter}
-                    onChange={(e) => setSelectedDoctorFilter(e.target.value)}
-                    className="h-8 px-2.5 text-xs font-semibold rounded-lg border border-line bg-white text-ink-soft hover:text-ink cursor-pointer outline-none shrink-0 w-full sm:w-auto"
-                  >
-                    <option value="all">All Doctors</option>
-                    {doctors.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name.split(",")[0]}
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+  value={selectedDoctorFilter}
+  onValueChange={(value) => setSelectedDoctorFilter(value)}
+>
+  <SelectTrigger
+    className="
+      h-9
+      w-full sm:w-[190px]
+      px-3
+      rounded-lg
+      border border-line
+      bg-white
+      text-xs font-semibold text-ink-soft
+      hover:text-ink
+      cursor-pointer
+      outline-none
+      focus:ring-2 focus:ring-primary/20
+      flex items-center justify-between
+    "
+  >
+    <SelectValue placeholder="All Doctors" />
+  </SelectTrigger>
+
+  <SelectContent>
+    <SelectItem value="all">All Doctors</SelectItem>
+
+    {doctors.map((d) => (
+      <SelectItem
+        key={d.id}
+        value={String(d.id)}
+      >
+        {d.name.split(",")[0]}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
@@ -1219,9 +1335,7 @@ function Dashboard() {
                               {apt.treatment}
                             </div>
                             <div className="text-[11px] text-ink-soft">
-                              {apt.consultationType === "video"
-                                ? "Online Tele-Dentistry"
-                                : "In-Clinic"}
+                              Online Consultation
                             </div>
                           </TableCell>
 
@@ -1238,23 +1352,45 @@ function Dashboard() {
                           {/* Doctor */}
                           <TableCell>
                             {apt.assignedDoctor ? (
-                              <div className="flex items-center gap-2">
-                                <Avatar className="w-6 h-6 border border-line">
-                                  <AvatarImage
-                                    src={apt.assignedDoctor.avatar}
-                                  />
-                                  <AvatarFallback>
-                                    {apt.assignedDoctor.name.slice(0, 2)}
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenDetail(apt, "scheduling");
+                                }}
+                                title="Click to view or reassign doctor"
+                                className="flex items-center gap-2 group cursor-pointer hover:opacity-85 transition-opacity"
+                              >
+                                <Avatar className="w-7 h-7 border border-line shrink-0">
+                                  {apt.assignedDoctor.avatar && (
+                                    <AvatarImage
+                                      src={apt.assignedDoctor.avatar}
+                                      alt={apt.assignedDoctor.name}
+                                      className="object-cover"
+                                    />
+                                  )}
+                                  <AvatarFallback className="text-[10px] font-bold bg-teal-50 text-teal-deep">
+                                    {apt.assignedDoctor.name
+                                      .replace(/^Dr\.\s*/i, "")
+                                      .slice(0, 2)
+                                      .toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span className="text-xs font-medium text-ink">
+                                <span className="text-xs font-semibold text-ink group-hover:text-teal-deep group-hover:underline">
                                   {apt.assignedDoctor.name.split(",")[0]}
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-xs text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                                Unassigned
-                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenDetail(apt, "scheduling");
+                                }}
+                                className="inline-flex items-center gap-1 text-[11px] text-amber-800 font-semibold bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-md border border-amber-300 transition-colors cursor-pointer shadow-2xs"
+                              >
+                                <UserCheck className="w-3.5 h-3.5 text-amber-700" />
+                                Assign Doctor
+                              </button>
                             )}
                           </TableCell>
 
@@ -1280,7 +1416,7 @@ function Dashboard() {
                                 <Video className="w-3 h-3 text-teal-deep" />
                                 Join Call
                               </a>
-                            ) : apt.consultationType === "video" ? (
+                            ) : (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -1289,10 +1425,6 @@ function Dashboard() {
                               >
                                 + Add Link
                               </Button>
-                            ) : (
-                              <span className="text-[11px] text-ink-soft">
-                                In-Clinic
-                              </span>
                             )}
                           </TableCell>
 
@@ -1426,6 +1558,7 @@ function Dashboard() {
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         doctors={doctors}
+        initialTab={detailModalTab}
         onUpdateStatus={handleUpdateStatus}
         onAssignDoctor={handleAssignDoctor}
         onUpdateSchedule={handleUpdateSchedule}

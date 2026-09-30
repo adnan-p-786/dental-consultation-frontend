@@ -5,6 +5,7 @@ import type {
   AuditLog,
   TreatmentType,
 } from "@/admin/types";
+import { consultationService } from "./consultationService";
 
 const STORAGE_KEY = "dental_appointments_v1";
 
@@ -74,6 +75,54 @@ export const appointmentService = {
       },
     ];
 
+    // Look up doctor photo and specialization from backend, local cache, or stored doctors
+    let doctorPhoto =
+      dbApt.assignedDoctorPhoto ||
+      dbApt.doctorPhoto ||
+      existingLocal?.assignedDoctor?.avatar;
+
+    let doctorSpecialization =
+      dbApt.assignedDoctorSpecialization ||
+      existingLocal?.assignedDoctor?.specialization;
+
+    let matchedDoctor: any = null;
+    if (typeof window !== "undefined") {
+      try {
+        const savedDocsRaw = localStorage.getItem("dental_doctors_v1");
+        if (savedDocsRaw) {
+          const savedDocs = JSON.parse(savedDocsRaw);
+          if (Array.isArray(savedDocs)) {
+            matchedDoctor = savedDocs.find(
+              (d: any) =>
+                (dbApt.assignedDoctorId &&
+                  String(d.id) === String(dbApt.assignedDoctorId)) ||
+                (dbApt.assignedDoctorName &&
+                  d.name?.toLowerCase().trim() ===
+                    dbApt.assignedDoctorName?.toLowerCase().trim()),
+            );
+            if (matchedDoctor) {
+              if (!doctorPhoto)
+                doctorPhoto = matchedDoctor.avatar || matchedDoctor.doctorPhoto;
+              if (!doctorSpecialization)
+                doctorSpecialization = matchedDoctor.specialization;
+            }
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    const resolvedDoctorName =
+      dbApt.assignedDoctorName ||
+      matchedDoctor?.name ||
+      existingLocal?.assignedDoctor?.name;
+
+    const resolvedDoctorId =
+      dbApt.assignedDoctorId ||
+      matchedDoctor?.id ||
+      existingLocal?.assignedDoctorId;
+
     return {
       id: idStr,
       referenceNo: refNo,
@@ -98,19 +147,90 @@ export const appointmentService = {
       requestedDate: reqDate,
       requestedTime:
         dbApt.preferredTime || existingLocal?.requestedTime || "Morning",
-      confirmedDate: existingLocal?.confirmedDate || reqDate,
+      confirmedDate:
+        dbApt.confirmedDate ||
+        existingLocal?.confirmedDate ||
+        reqDate,
       confirmedTime:
-        existingLocal?.confirmedTime || dbApt.preferredTime || "Morning",
-      assignedDoctorId: existingLocal?.assignedDoctorId,
-      assignedDoctor: existingLocal?.assignedDoctor,
-      meetingPlatform: existingLocal?.meetingPlatform || "google_meet",
+        dbApt.confirmedTime ||
+        existingLocal?.confirmedTime ||
+        dbApt.preferredTime ||
+        "Morning",
+      assignedDoctorId: resolvedDoctorId ? String(resolvedDoctorId) : undefined,
+      assignedDoctor: resolvedDoctorName || resolvedDoctorId
+        ? {
+            id: resolvedDoctorId ? String(resolvedDoctorId) : "1",
+            name: resolvedDoctorName || "Doctor",
+            email:
+              matchedDoctor?.email ||
+              existingLocal?.assignedDoctor?.email ||
+              "",
+            specialization:
+              doctorSpecialization ||
+              matchedDoctor?.specialization ||
+              existingLocal?.assignedDoctor?.specialization ||
+              "Specialist",
+            activeAppointments:
+              existingLocal?.assignedDoctor?.activeAppointments || 0,
+            status:
+              matchedDoctor?.status ||
+              existingLocal?.assignedDoctor?.status ||
+              "available",
+            workingHours:
+              matchedDoctor?.workingHours ||
+              existingLocal?.assignedDoctor?.workingHours ||
+              "9am-5pm",
+            avatar: doctorPhoto || matchedDoctor?.avatar || undefined,
+          }
+        : existingLocal?.assignedDoctor,
+      meetingPlatform:
+        dbApt.meetingPlatform ||
+        existingLocal?.meetingPlatform ||
+        "google_meet",
       meetingLink:
+        dbApt.meetingLink ||
         existingLocal?.meetingLink ||
         `https://meet.google.com/cdr-${String(dbApt.id).padStart(3, "0")}-apt`,
       patientMessage:
         dbApt.additionalDescription || existingLocal?.patientMessage || "",
       documents,
-      consultationNotes: existingLocal?.consultationNotes,
+      consultationNotes: dbApt.consultation
+        ? {
+            chiefComplaint:
+              dbApt.consultation.chiefComplaint ||
+              existingLocal?.consultationNotes?.chiefComplaint ||
+              dbApt.additionalDescription ||
+              "",
+            findings:
+              dbApt.consultation.consultationFindings ||
+              existingLocal?.consultationNotes?.findings ||
+              "",
+            diagnosis:
+              dbApt.consultation.diagnosis ||
+              existingLocal?.consultationNotes?.diagnosis ||
+              "",
+            recommendedTreatment:
+              dbApt.consultation.recommendedTreatment ||
+              existingLocal?.consultationNotes?.recommendedTreatment ||
+              dbApt.tratmentType ||
+              "",
+            additionalInstructions:
+              dbApt.consultation.additionalInstructions ||
+              existingLocal?.consultationNotes?.additionalInstructions ||
+              "",
+            followUpRequirements:
+              dbApt.consultation.followUpDate ||
+              (dbApt.consultation.followUpRequired
+                ? "Follow-up required"
+                : "") ||
+              existingLocal?.consultationNotes?.followUpRequirements ||
+              "",
+            internalNotes:
+              dbApt.consultation.internalNotes ||
+              existingLocal?.consultationNotes?.internalNotes ||
+              "",
+          }
+        : dbApt.consultationNotes || existingLocal?.consultationNotes,
       timeline:
         existingLocal?.timeline && existingLocal.timeline.length > 0
           ? existingLocal.timeline
@@ -133,7 +253,7 @@ export const appointmentService = {
       if (json.success && Array.isArray(json.data)) {
         const localApts = this.getAppointments();
         const localMap = new Map<string, Appointment>();
-        localApts.forEach((apt) => localMap.set(apt.id, apt));
+        localApts.forEach((apt) => localMap.set(String(apt.id), apt));
 
         // Map all records from the database
         const dbMapped: Appointment[] = json.data.map((dbRecord: any) => {
@@ -322,64 +442,70 @@ export const appointmentService = {
     actorName = "System",
   ): Appointment | null {
     const all = this.getAppointments();
-    let updatedObj: Appointment | null = null;
+    const aptIndex = all.findIndex((apt) => String(apt.id) === String(id));
+    if (aptIndex === -1) return null;
 
-    const newAppointments = all.map((apt) => {
-      if (apt.id === id) {
-        const timeline = [...apt.timeline];
-        if (updates.status && updates.status !== apt.status) {
-          timeline.unshift({
-            id: `tl_${Date.now()}`,
-            timestamp: new Date().toLocaleString([], {
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            action: `Status updated to ${updates.status.replace("_", " ")}`,
-            actor: actorName,
-          });
-        }
-        updatedObj = {
-          ...apt,
-          ...updates,
-          timeline,
-        };
-        return updatedObj;
-      }
-      return apt;
-    });
-
-    if (updatedObj) {
-      this.saveAppointments(newAppointments);
-
-      // Also sync to backend database if this is a DB appointment
-      if (!isNaN(Number(id))) {
-        const payload: Record<string, any> = {};
-        if (updates.status) payload.status = updates.status;
-        if (updates.confirmedDate)
-          payload.preferredDate = updates.confirmedDate;
-        if (updates.confirmedTime)
-          payload.preferredTime = updates.confirmedTime;
-        if (updates.patient?.name) payload.patientName = updates.patient.name;
-        if (updates.patient?.email)
-          payload.patientEmail = updates.patient.email;
-        if (updates.patient?.phone) payload.phoneNumber = updates.patient.phone;
-        if (updates.treatment) payload.tratmentType = updates.treatment;
-        if (updatedObj.assignedDoctor?.name)
-          payload.assignedDoctorName = updatedObj.assignedDoctor.name;
-        if (updatedObj.meetingLink) payload.meetingLink = updatedObj.meetingLink;
-        if (updates.patientMessage) payload.note = updates.patientMessage;
-
-        fetch(`/api/appointment/update-appointment/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }).catch((err) =>
-          console.error("Failed to sync appointment update to DB:", err),
-        );
-      }
+    const apt = all[aptIndex];
+    const timeline = [...apt.timeline];
+    if (updates.status && updates.status !== apt.status) {
+      timeline.unshift({
+        id: `tl_${Date.now()}`,
+        timestamp: new Date().toLocaleString([], {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        action: `Status updated to ${updates.status.replace("_", " ")}`,
+        actor: actorName,
+      });
     }
+
+    const updatedObj: Appointment = {
+      ...apt,
+      ...updates,
+      timeline,
+    };
+
+    all[aptIndex] = updatedObj;
+    this.saveAppointments(all);
+
+    // Also sync to backend database if this is a DB appointment
+    if (!isNaN(Number(id))) {
+      const payload: Record<string, any> = {};
+      if (updates.status) payload.status = updates.status;
+      if (updates.confirmedDate) {
+        payload.confirmedDate = updates.confirmedDate;
+        payload.preferredDate = updates.confirmedDate;
+      }
+      if (updates.confirmedTime) {
+        payload.confirmedTime = updates.confirmedTime;
+        payload.preferredTime = updates.confirmedTime;
+      }
+      if (updates.patient?.name) payload.patientName = updates.patient.name;
+      if (updates.patient?.email)
+        payload.patientEmail = updates.patient.email;
+      if (updates.patient?.phone) payload.phoneNumber = updates.patient.phone;
+      if (updates.treatment) payload.tratmentType = updates.treatment;
+      if (updatedObj.assignedDoctorId)
+        payload.assignedDoctorId = updatedObj.assignedDoctorId;
+      if (updatedObj.assignedDoctor?.name)
+        payload.assignedDoctorName = updatedObj.assignedDoctor.name;
+      if (updatedObj.meetingLink)
+        payload.meetingLink = updatedObj.meetingLink;
+      if (updatedObj.meetingPlatform)
+        payload.meetingPlatform = updatedObj.meetingPlatform;
+      if (updates.patientMessage) payload.note = updates.patientMessage;
+
+      fetch(`/api/appointment/update-appointment/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch((err) =>
+        console.error("Failed to sync appointment update to DB:", err),
+      );
+    }
+
     return updatedObj;
   },
 
@@ -392,7 +518,7 @@ export const appointmentService = {
     let updatedObj: Appointment | null = null;
 
     const newAppointments = all.map((apt) => {
-      if (apt.id === id) {
+      if (String(apt.id) === String(id)) {
         const timeline = [
           {
             id: `tl_${Date.now()}`,
@@ -422,6 +548,18 @@ export const appointmentService = {
 
     if (updatedObj) {
       this.saveAppointments(newAppointments);
+
+      if (!isNaN(Number(id))) {
+        consultationService
+          .saveOrCompleteConsultation({
+            appointmentId: Number(id),
+            notes,
+            isCompleted: false,
+          })
+          .catch((err) =>
+            console.error("Failed to sync consultation notes to DB:", err),
+          );
+      }
     }
     return updatedObj;
   },
@@ -435,7 +573,7 @@ export const appointmentService = {
     let updatedObj: Appointment | null = null;
 
     const newAppointments = all.map((apt) => {
-      if (apt.id === id) {
+      if (String(apt.id) === String(id)) {
         const timeline = [
           {
             id: `tl_${Date.now()}`,
@@ -471,6 +609,16 @@ export const appointmentService = {
       this.saveAppointments(newAppointments);
 
       if (!isNaN(Number(id))) {
+        consultationService
+          .saveOrCompleteConsultation({
+            appointmentId: Number(id),
+            notes,
+            isCompleted: true,
+          })
+          .catch((err) =>
+            console.error("Failed to sync completed consultation to DB:", err),
+          );
+
         fetch(`/api/appointment/update-appointment/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },

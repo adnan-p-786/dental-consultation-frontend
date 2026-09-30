@@ -1,25 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import {
   Mail,
   Phone,
-  Video,
   CheckCircle2,
   RotateCcw,
-  UserCheck,
-  ExternalLink,
-  Copy,
   Check,
   FileSpreadsheet,
   Bell,
-  Clock,
+  UserCheck,
 } from "lucide-react";
 
 import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 
@@ -50,6 +45,7 @@ interface AppointmentDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   doctors: Doctor[];
+  initialTab?: "details" | "scheduling";
 
   onUpdateStatus: (
     id: string,
@@ -88,6 +84,7 @@ export const AppointmentDetailModal: React.FC<
   isOpen,
   onClose,
   doctors,
+  initialTab = "details",
   onUpdateStatus,
   onAssignDoctor,
   onUpdateSchedule,
@@ -100,8 +97,60 @@ export const AppointmentDetailModal: React.FC<
   // Local state
   // --------------------------------------------------
 
+  const [activeTab, setActiveTab] = useState<"details" | "scheduling">(
+    initialTab || "details"
+  );
+
+  const [localDoctors, setLocalDoctors] = useState<Doctor[]>(doctors || []);
+  const [assignedFeedback, setAssignedFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab || "details");
+    }
+  }, [isOpen, initialTab]);
+
+  useEffect(() => {
+    if (doctors && doctors.length > 0) {
+      setLocalDoctors(doctors);
+    } else {
+      try {
+        const saved = localStorage.getItem("dental_doctors_v1");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setLocalDoctors(parsed);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      fetch("/api/doctor/get-doctors")
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.success && Array.isArray(res.data)) {
+            const tableDocs: Doctor[] = res.data.map((d: any) => ({
+              id: String(d.id),
+              name: d.doctorName,
+              avatar: d.doctorPhoto || "",
+              specialization: d.specialization,
+              email: d.doctorEmail,
+              phone: d.phoneNumber,
+              workingHours: d.workingHours,
+              status: d.status || "available",
+              activeAppointments: 0,
+            }));
+            setLocalDoctors(tableDocs);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [doctors]);
+
+  const availableDoctors = localDoctors.length > 0 ? localDoctors : doctors;
+
   const [selectedDoctorId, setSelectedDoctorId] = useState(
-    appointment.assignedDoctorId || ""
+    appointment.assignedDoctorId ? String(appointment.assignedDoctorId) : ""
   );
 
   const [rescheduleDate, setRescheduleDate] = useState(
@@ -113,8 +162,6 @@ export const AppointmentDetailModal: React.FC<
   );
 
   const [actionNote, setActionNote] = useState("");
-
-  const [copiedLink, setCopiedLink] = useState(false);
 
   // Selected video platform
   const [activeMeetingPlatform, setActiveMeetingPlatform] =
@@ -189,22 +236,34 @@ export const AppointmentDetailModal: React.FC<
       appointment.consultationNotes?.internalNotes || "",
   });
 
+  // Keep modal fields in sync whenever the selected appointment updates
+  useEffect(() => {
+    setSelectedDoctorId(
+      appointment.assignedDoctorId ? String(appointment.assignedDoctorId) : ""
+    );
+    setRescheduleDate(appointment.confirmedDate || appointment.requestedDate);
+    setRescheduleTime(appointment.confirmedTime || appointment.requestedTime);
+    setActiveMeetingPlatform(appointment.meetingPlatform || "google_meet");
+    setManualMeetingLink(appointment.meetingLink || "");
+    setClinicalNotes({
+      chiefComplaint:
+        appointment.consultationNotes?.chiefComplaint ||
+        appointment.patientMessage ||
+        "",
+      findings: appointment.consultationNotes?.findings || "",
+      diagnosis: appointment.consultationNotes?.diagnosis || "",
+      recommendedTreatment:
+        appointment.consultationNotes?.recommendedTreatment || "",
+      additionalInstructions:
+        appointment.consultationNotes?.additionalInstructions || "",
+      followUpRequirements:
+        appointment.consultationNotes?.followUpRequirements || "",
+      internalNotes: appointment.consultationNotes?.internalNotes || "",
+    });
+  }, [appointment]);
+
   // --------------------------------------------------
   // Copy meeting link
-  // --------------------------------------------------
-
-  const handleCopyLink = () => {
-    if (!appointment.meetingLink) return;
-
-    navigator.clipboard.writeText(appointment.meetingLink);
-
-    setCopiedLink(true);
-
-    setTimeout(() => {
-      setCopiedLink(false);
-    }, 2000);
-  };
-
   // --------------------------------------------------
   // Save manually entered meeting link
   // --------------------------------------------------
@@ -256,11 +315,19 @@ export const AppointmentDetailModal: React.FC<
   // --------------------------------------------------
 
   const handleAssign = (docId: string) => {
-    setSelectedDoctorId(docId);
+    const idStr = String(docId);
+    setSelectedDoctorId(idStr);
+    const targetDoc = availableDoctors.find((d) => String(d.id) === idStr);
+    setAssignedFeedback(
+      targetDoc?.name
+        ? `Doctor ${targetDoc.name} assigned!`
+        : "Doctor assigned successfully!"
+    );
+    setTimeout(() => setAssignedFeedback(null), 3500);
 
     onAssignDoctor(
       appointment.id,
-      docId
+      idStr
     );
   };
 
@@ -363,6 +430,34 @@ export const AppointmentDetailModal: React.FC<
               >
                 {appointment.status.replace("_", " ")}
               </Badge>
+
+              {appointment.assignedDoctor ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("scheduling")}
+                  className="flex items-center gap-1.5 px-2.5 py-0.5 sm:py-1 rounded-md bg-white/20 hover:bg-white/30 text-white text-[11px] sm:text-xs font-medium cursor-pointer transition-colors border border-white/25"
+                  title="Click to view or change assigned doctor"
+                >
+                  <Avatar className="w-4 h-4 border border-white/40 shrink-0">
+                    {appointment.assignedDoctor.avatar && (
+                      <AvatarImage src={appointment.assignedDoctor.avatar} alt={appointment.assignedDoctor.name} />
+                    )}
+                    <AvatarFallback className="text-[8px] bg-teal-800 text-white">
+                      Dr
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="truncate max-w-[120px] sm:max-w-none">{appointment.assignedDoctor.name}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("scheduling")}
+                  className="flex items-center gap-1 px-2.5 py-0.5 sm:py-1 rounded-md bg-amber-400/30 hover:bg-amber-400/40 text-amber-100 hover:text-white text-[11px] sm:text-xs font-semibold cursor-pointer transition-colors border border-amber-300/40"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Assign Doctor</span>
+                </button>
+              )}
             </div>
 
             <div className="text-[11px] sm:text-xs text-white/80 flex items-center gap-1.5">
@@ -378,21 +473,34 @@ export const AppointmentDetailModal: React.FC<
           <DialogTitle className="text-xl sm:text-2xl font-bold text-white tracking-tight">
             {appointment.patient.name}
           </DialogTitle>
-
-          <DialogDescription className="text-emerald-100 text-xs sm:text-sm mt-0.5 sm:mt-1">
-            {appointment.treatment} •{" "}
-            {appointment.consultationType === "video"
-              ? "Online Video Consultation"
-              : "In-Clinic Appointment"}
-          </DialogDescription>
         </div>
+
+        {/* ==========================================
+            FEEDBACK BANNER
+        ========================================== */}
+        {assignedFeedback && (
+          <div className="mx-3.5 sm:mx-6 mt-3 p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold flex items-center justify-between shadow-xs">
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              {assignedFeedback}
+            </span>
+            <button
+              type="button"
+              onClick={() => setAssignedFeedback(null)}
+              className="text-emerald-700 hover:text-emerald-900 text-xs cursor-pointer px-1"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* ==========================================
             BODY
         ========================================== */}
 
         <Tabs
-          defaultValue="details"
+          value={activeTab}
+          onValueChange={(val) => setActiveTab(val as "details" | "scheduling")}
           className="
             flex-1
             overflow-y-auto
@@ -409,7 +517,7 @@ export const AppointmentDetailModal: React.FC<
             className="
               grid
               grid-cols-2
-              sm:grid-cols-4
+              sm:grid-cols-2
               h-auto
               w-full
               bg-line-soft
@@ -431,19 +539,7 @@ export const AppointmentDetailModal: React.FC<
               Schedule & Doctor
             </TabsTrigger>
 
-            <TabsTrigger
-              value="workspace"
-              className="py-2 text-xs"
-            >
-              Clinical Notes
-            </TabsTrigger>
-
-            <TabsTrigger
-              value="history"
-              className="py-2 text-xs"
-            >
-              Timeline ({appointment.timeline.length})
-            </TabsTrigger>
+            
           </TabsList>
 
           {/* ========================================
@@ -558,6 +654,216 @@ export const AppointmentDetailModal: React.FC<
               </div>
             </div>
 
+            {/* Assigned Dental Specialist (Directly accessible on Case Details tab) */}
+            <div
+              className="
+                p-4
+                rounded-xl
+                border
+                border-line
+                bg-white
+                shadow-xs
+                space-y-3
+              "
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-teal-deep" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink">
+                    Assigned Dental Specialist
+                  </span>
+                </div>
+                {appointment.assignedDoctor ? (
+                  <Badge
+                    variant="outline"
+                    className="text-xs text-teal-deep border-teal-200 bg-teal-50 font-semibold"
+                  >
+                    ✓ Currently Assigned
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="text-xs text-amber-700 border-amber-300 bg-amber-50 font-semibold"
+                  >
+                    ⚠️ Unassigned
+                  </Badge>
+                )}
+              </div>
+
+              {appointment.assignedDoctor ? (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-teal-200 bg-teal-50/40">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-12 h-12 border-2 border-teal-200 shrink-0">
+                      {appointment.assignedDoctor.avatar && (
+                        <AvatarImage
+                          src={appointment.assignedDoctor.avatar}
+                          alt={appointment.assignedDoctor.name}
+                          className="object-cover"
+                        />
+                      )}
+                      <AvatarFallback className="bg-teal-100 text-teal-deep font-bold text-sm">
+                        {appointment.assignedDoctor.name
+                          .replace(/^Dr\.\s*/i, "")
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-ink truncate">
+                        {appointment.assignedDoctor.name}
+                      </div>
+                      <div className="text-xs text-teal-deep font-semibold truncate">
+                        {appointment.assignedDoctor.specialization}
+                      </div>
+                      <div className="text-[11px] text-ink-soft mt-0.5">
+                        {appointment.assignedDoctor.email ||
+                          appointment.assignedDoctor.phone ||
+                          "Available for consultation"}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActiveTab("scheduling")}
+                    className="text-xs text-teal-deep border-teal-300 hover:bg-teal-100 shrink-0 cursor-pointer"
+                  >
+                    Change Specialist
+                  </Button>
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-xl border border-dashed border-amber-300 bg-amber-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold text-amber-900">
+                      No doctor assigned to this consultation yet
+                    </p>
+                    <p className="text-[11px] text-amber-700 mt-0.5">
+                      Select a doctor below to assign them immediately to this appointment.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setActiveTab("scheduling")}
+                    className="bg-teal-deep hover:bg-teal-mid text-white text-xs font-semibold shrink-0 cursor-pointer shadow-xs"
+                  >
+                    View All Doctors
+                  </Button>
+                </div>
+              )}
+
+              {/* Quick Doctor Selection */}
+              {availableDoctors.length > 0 && (
+                <div className="pt-2 border-t border-line-soft">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-semibold text-ink-soft">
+                      Quick Doctor Assignment (click any doctor to assign):
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("scheduling")}
+                      className="text-[11px] text-teal-deep font-semibold hover:underline cursor-pointer"
+                    >
+                      See schedule & slots →
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {availableDoctors.map((doc) => {
+                      const isSelected =
+                        String(selectedDoctorId) === String(doc.id);
+                      return (
+                        <button
+                          type="button"
+                          key={`quick-${doc.id}`}
+                          onClick={() => handleAssign(String(doc.id))}
+                          className={`
+                            p-2.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer select-none
+                            ${
+                              isSelected
+                                ? "border-teal-deep bg-teal-50 ring-2 ring-teal-deep/30 shadow-xs"
+                                : "border-line bg-zinc-50/60 hover:bg-white hover:border-teal-300"
+                            }
+                          `}
+                        >
+                          <Avatar className="w-8 h-8 border border-line shrink-0">
+                            {doc.avatar && (
+                              <AvatarImage
+                                src={doc.avatar}
+                                alt={doc.name}
+                                className="object-cover"
+                              />
+                            )}
+                            <AvatarFallback className="text-[10px] font-bold bg-teal-50 text-teal-deep">
+                              {doc.name
+                                .replace(/^Dr\.\s*/i, "")
+                                .slice(0, 2)
+                                .toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-ink truncate">
+                                {doc.name}
+                              </span>
+                              {isSelected ? (
+                                <span className="text-[10px] text-teal-deep font-bold flex items-center gap-0.5 bg-teal-100/80 px-1.5 py-0.5 rounded">
+                                  <Check className="w-3 h-3 text-teal-deep" /> Assigned
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-teal-deep font-semibold hover:underline bg-white px-1.5 py-0.5 rounded border border-line">
+                                  Assign
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-ink-soft truncate block">
+                              {doc.specialization}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div
+              className="
+                p-4
+                rounded-xl
+                border
+                border-line
+                bg-white
+                shadow-xs
+                space-y-2
+              "
+            >
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">
+                  Treatment
+                </span>
+              </div>
+
+              <p
+                className="
+                  text-sm
+                  text-ink
+                  leading-relaxed
+                  bg-[#FAF7F6]
+                  p-3
+                  rounded-lg
+                  border
+                  border-line-soft
+                "
+              >
+                {appointment.treatment ||
+                  "No treatment mentioned."}
+              </p>
+            </div>
+            
+
             {/* Patient message */}
 
             <div
@@ -571,13 +877,10 @@ export const AppointmentDetailModal: React.FC<
                 space-y-2
               "
             >
+
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">
                   Patient Case Description / Symptoms
-                </span>
-
-                <span className="text-xs text-mint-deep font-medium">
-                  Primary Requirement
                 </span>
               </div>
 
@@ -750,61 +1053,81 @@ export const AppointmentDetailModal: React.FC<
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                {doctors.map((doc) => {
+                {availableDoctors.map((doc) => {
                   const isSelected =
-                    selectedDoctorId === doc.id;
+                    String(selectedDoctorId) === String(doc.id);
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={doc.id}
-                      onClick={() =>
-                        handleAssign(doc.id)
-                      }
+                      onClick={() => handleAssign(String(doc.id))}
                       className={`
-                        p-3
+                        w-full
+                        text-left
+                        p-3.5
                         rounded-xl
-                        border
+                        border-2
                         transition-all
                         cursor-pointer
                         flex
                         items-center
                         gap-3
+                        select-none
                         ${
                           isSelected
-                            ? "border-teal-deep bg-[#FAF2F0] ring-2 ring-teal-deep/15"
-                            : "border-line bg-white hover:border-mint-deep/40 hover:bg-[#FAF7F6]"
+                            ? "border-teal-deep bg-teal-50/70 shadow-xs ring-2 ring-teal-deep/30"
+                            : "border-line bg-white hover:border-teal-300 hover:bg-[#FAF7F6]"
                         }
                       `}
                     >
-                      <Avatar className="w-10 h-10 border border-line shrink-0">
-                        <AvatarImage src={doc.avatar} />
-
-                        <AvatarFallback>
-                          {doc.name.slice(0, 2)}
+                      <Avatar className="w-12 h-12 border-2 border-line shrink-0">
+                        {doc.avatar && (
+                          <AvatarImage
+                            src={doc.avatar}
+                            alt={doc.name}
+                            className="object-cover"
+                          />
+                        )}
+                        <AvatarFallback className="text-xs font-bold bg-teal-50 text-teal-deep">
+                          {doc.name
+                            .replace(/^Dr\.\s*/i, "")
+                            .slice(0, 2)
+                            .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
 
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-ink truncate">
-                          {doc.name}
+                        <div className="flex items-center justify-between gap-1">
+                          <div className="text-xs font-bold text-ink truncate">
+                            {doc.name}
+                          </div>
+                          {isSelected ? (
+                            <span className="text-[10px] font-bold text-teal-deep bg-teal-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                              <Check className="w-3 h-3 text-teal-deep" />
+                              Assigned
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-teal-deep bg-teal-50 border border-teal-200 hover:bg-teal-100 font-semibold shrink-0 px-2.5 py-0.5 rounded-full">
+                              Assign
+                            </span>
+                          )}
                         </div>
 
-                        <div className="text-[11px] text-ink-soft truncate">
+                        <div className="text-[11px] text-ink-soft truncate mt-0.5 font-medium">
                           {doc.specialization}
                         </div>
 
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1.5">
                           <span
                             className={`
                               w-2
                               h-2
                               rounded-full
                               ${
-                                doc.status ===
-                                "available"
+                                doc.status === "available"
                                   ? "bg-emerald-500"
-                                  : doc.status ===
-                                    "busy"
+                                  : doc.status === "busy"
                                   ? "bg-amber-500"
                                   : "bg-zinc-400"
                               }
@@ -812,19 +1135,49 @@ export const AppointmentDetailModal: React.FC<
                           />
 
                           <span className="text-[10px] text-ink-soft capitalize">
-                            {doc.status} (
-                            {doc.activeAppointments} active)
+                            {doc.status} • {doc.workingHours || "9am-5pm"}
                           </span>
                         </div>
                       </div>
-
-                      {isSelected && (
-                        <UserCheck className="w-5 h-5 text-teal-deep shrink-0" />
-                      )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
+
+              {availableDoctors.length === 0 && (
+                <div className="p-6 text-center bg-zinc-50 border border-dashed rounded-xl space-y-1">
+                  <p className="text-xs font-medium text-ink-soft">
+                    No registered doctors available.
+                  </p>
+                  <p className="text-[11px] text-zinc-500">
+                    Add doctors in the Doctors tab to assign them to consultations.
+                  </p>
+                </div>
+              )}
+
+              {selectedDoctorId && (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-teal-50/80 border border-teal-200 mt-2">
+                  <div className="text-xs text-teal-900 font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-teal-deep" />
+                    <span>
+                      Selected Doctor:{" "}
+                      <strong>
+                        {availableDoctors.find(
+                          (d) => String(d.id) === String(selectedDoctorId)
+                        )?.name || "Doctor"}
+                      </strong>
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleAssign(selectedDoctorId)}
+                    className="bg-teal-deep hover:bg-teal-mid text-white text-xs font-semibold px-3 py-1 h-8 cursor-pointer shadow-xs"
+                  >
+                    Confirm Doctor Assignment
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Schedule */}

@@ -30,7 +30,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import axios from "axios";
-import { defaultSettings } from "../data/mockData";
+import { defaultSettings as mockDefaults } from "../data/mockData";
 
 export interface Treatment {
   id: number;
@@ -38,6 +38,15 @@ export interface Treatment {
   description?: string | null;
   isActive: boolean;
   createdAt?: string;
+}
+
+export interface ClinicSettings {
+  clinicName: string;
+  supportEmail: string;
+  clinicPhone: string;
+  defaultDuration: number;
+  meetingProvider: string;
+  manualMeetingLink: string;
 }
 
 export interface ReminderConfig {
@@ -50,6 +59,15 @@ export interface ReminderConfig {
   smsEnabled: boolean;
 }
 
+const defaultClinicSettings: ClinicSettings = {
+  clinicName: mockDefaults.clinicName || "Dental Clinic",
+  supportEmail: mockDefaults.supportEmail || "care@32storiesdental.com",
+  clinicPhone: mockDefaults.clinicPhone || "+1 (555) 234-CARE",
+  defaultDuration: mockDefaults.defaultDuration || 30,
+  meetingProvider: "manual",
+  manualMeetingLink: "",
+};
+
 const defaultReminderConfig: ReminderConfig = {
   instantAckEnabled: true,
   reminder24hEnabled: true,
@@ -60,15 +78,20 @@ const defaultReminderConfig: ReminderConfig = {
   smsEnabled: false,
 };
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("dental_auth_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const SettingsView: React.FC = () => {
-  const [settings, setSettings] = useState(() => {
+  const [settings, setSettings] = useState<ClinicSettings>(() => {
     try {
       const saved = localStorage.getItem("dental_clinic_settings");
       return saved
-        ? { ...defaultSettings, ...JSON.parse(saved) }
-        : defaultSettings;
+        ? { ...defaultClinicSettings, ...JSON.parse(saved) }
+        : defaultClinicSettings;
     } catch {
-      return defaultSettings;
+      return defaultClinicSettings;
     }
   });
 
@@ -83,6 +106,8 @@ export const SettingsView: React.FC = () => {
     }
   });
 
+  const [loadingSettings, setLoadingSettings] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [testStatus, setTestStatus] = useState<string | null>(null);
 
@@ -186,9 +211,6 @@ export const SettingsView: React.FC = () => {
         setTreatments((prev) =>
           prev.map((t) => (t.id === id ? updated : t))
         );
-        toast.success(
-          `Treatment "${updated.name}" marked as ${updated.isActive ? "Active" : "Inactive"}`
-        );
       }
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || "Failed to toggle treatment status";
@@ -211,53 +233,91 @@ export const SettingsView: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetch("/api/appointment/reminder-settings")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.data) {
-          setReminders((prev) => ({ ...prev, ...data.data }));
-        }
-      })
-      .catch(() => {
-        // Fallback to local storage
+  const loadSettings = async () => {
+    try {
+      setLoadingSettings(true);
+      const res = await axios.get("/api/settings", {
+        headers: getAuthHeaders(),
       });
+      if (res.data?.success && res.data.data) {
+        const d = res.data.data;
+        setSettings({
+          clinicName: d.clinicName || defaultClinicSettings.clinicName,
+          supportEmail: d.supportEmail || "",
+          clinicPhone: d.clinicPhone || "",
+          defaultDuration: d.defaultDuration || 30,
+          meetingProvider: d.meetingProvider || "manual",
+          manualMeetingLink: d.manualMeetingLink || "",
+        });
+        setReminders({
+          instantAckEnabled: d.instantAckEnabled ?? true,
+          reminder24hEnabled: d.reminder24hEnabled ?? true,
+          reminder24hHours: d.reminder24hHours ?? 24,
+          reminder1hEnabled: d.reminder1hEnabled ?? true,
+          reminder1hMinutes: d.reminder1hMinutes ?? 60,
+          emailEnabled: d.emailEnabled ?? true,
+          smsEnabled: d.smsEnabled ?? false,
+        });
+      }
+    } catch (err: any) {
+      console.warn("Could not load settings from server, falling back to local:", err?.message);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSettings();
   }, []);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("dental_clinic_settings", JSON.stringify(settings));
-    } catch (e) {
-      console.error("Failed to save clinic settings:", e);
-    }
-  }, [settings]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        "dental_reminder_settings",
-        JSON.stringify(reminders),
-      );
-    } catch (e) {
-      console.error("Failed to save reminder settings:", e);
-    }
-  }, [reminders]);
-
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem("dental_clinic_settings", JSON.stringify(settings));
-    localStorage.setItem("dental_reminder_settings", JSON.stringify(reminders));
+    setIsSaving(true);
 
-    fetch("/api/appointment/reminder-settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(reminders),
-    }).catch((err) =>
-      console.error("Failed to sync reminder config to server:", err),
-    );
+    try {
+      const payload = {
+        clinicName: settings.clinicName,
+        supportEmail: settings.supportEmail,
+        clinicPhone: settings.clinicPhone,
+        defaultDuration: settings.defaultDuration,
+        meetingProvider: settings.meetingProvider,
+        manualMeetingLink: settings.manualMeetingLink,
 
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+        instantAckEnabled: reminders.instantAckEnabled,
+        reminder24hEnabled: reminders.reminder24hEnabled,
+        reminder24hHours: reminders.reminder24hHours,
+        reminder1hEnabled: reminders.reminder1hEnabled,
+        reminder1hMinutes: reminders.reminder1hMinutes,
+        emailEnabled: reminders.emailEnabled,
+        smsEnabled: reminders.smsEnabled,
+      };
+
+      const res = await axios.put("/api/settings", payload, {
+        headers: getAuthHeaders(),
+      });
+
+      if (res.data?.success) {
+        toast.success("Settings saved successfully to database!");
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+
+        try {
+          localStorage.setItem("dental_clinic_settings", JSON.stringify(settings));
+          localStorage.setItem("dental_reminder_settings", JSON.stringify(reminders));
+        } catch {
+          // Ignore local storage error
+        }
+      }
+    } catch (err: any) {
+      console.error("Failed to save settings:", err);
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to save settings to server";
+      toast.error(msg);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSendTestReminder = async (type: "24_hour" | "1_hour") => {
@@ -307,24 +367,18 @@ export const SettingsView: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <Button
-              type="button"
-              onClick={handleOpenAddTreatment}
-              className="gap-1.5 bg-[#FAF2F0] text-[#5E3E3B] hover:bg-[#ebd8d5] border border-[#5E3E3B]/20 text-xs h-9 shadow-xs cursor-pointer font-semibold"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Treatment
-            </Button>
-
-            <Button
               type="submit"
-              className="gap-2 bg-[#5E3E3B] text-white hover:bg-[#262525] text-xs h-9 shadow-xs cursor-pointer"
+              disabled={isSaving || loadingSettings}
+              className="gap-2 bg-[#5E3E3B] text-white hover:bg-[#262525] text-xs h-9 shadow-xs cursor-pointer font-semibold disabled:opacity-60"
             >
-              {saved ? (
+              {isSaving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : saved ? (
                 <Check className="w-3.5 h-3.5 text-emerald-300" />
               ) : (
                 <Save className="w-3.5 h-3.5" />
               )}
-              {saved ? "Changes Saved!" : "Save Settings"}
+              {saved ? "Changes Saved!" : isSaving ? "Saving..." : "Save Settings"}
             </Button>
           </div>
         </div>
@@ -582,54 +636,86 @@ export const SettingsView: React.FC = () => {
           <CardHeader className="pb-3 border-b border-line">
             <CardTitle className="text-base font-semibold text-ink flex items-center gap-2">
               <Video className="w-4 h-4 text-teal-deep" />
-              Video Consultation Third-Party Integration
+              Video Consultation Integration
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
             <p className="text-xs text-ink-soft">
-              Supported video consultation platforms for remote patient
-              assessments.
+              Choose the primary video consultation platform for remote patient assessments.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-3.5 rounded-xl border border-line bg-[#FAF7F6] space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-ink">Google Meet</span>
-                  <span className="text-[10px] bg-[#FAF2F0] text-[#5E3E3B] font-bold px-1.5 py-0.5 rounded">
-                    Connected
-                  </span>
-                </div>
-                <p className="text-[11px] text-ink-soft">
-                  Auto-generates Google Meet room on approval.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl border border-line bg-[#FAF7F6] space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-ink">Zoom Video</span>
-                  <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-1.5 py-0.5 rounded">
-                    Active
-                  </span>
-                </div>
-                <p className="text-[11px] text-ink-soft">
-                  Generates unique meeting ID with passcode.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl border border-line bg-[#FAF7F6] space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-ink">
-                    Microsoft Teams
-                  </span>
-                  <span className="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.5 rounded">
-                    Enabled
-                  </span>
-                </div>
-                <p className="text-[11px] text-ink-soft">
-                  Enterprise tenant video link dispatching.
-                </p>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              {[
+                {
+                  id: "manual",
+                  name: "Custom / Manual Link",
+                  desc: "Use static or custom meeting room link.",
+                },
+                {
+                  id: "google_meet",
+                  name: "Google Meet",
+                  desc: "Auto-generates Google Meet room on approval.",
+                },
+                {
+                  id: "zoom",
+                  name: "Zoom Video",
+                  desc: "Unique Zoom meeting ID & passcode.",
+                },
+                {
+                  id: "microsoft_teams",
+                  name: "Microsoft Teams",
+                  desc: "Enterprise tenant video link dispatching.",
+                },
+              ].map((provider) => {
+                const isSelected = settings.meetingProvider === provider.id;
+                return (
+                  <div
+                    key={provider.id}
+                    onClick={() =>
+                      setSettings({ ...settings, meetingProvider: provider.id })
+                    }
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-1.5 ${
+                      isSelected
+                        ? "bg-[#FAF2F0] border-[#5E3E3B] shadow-xs ring-1 ring-[#5E3E3B]"
+                        : "bg-[#FAF7F6] border-line hover:border-mint-deep"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-ink">
+                        {provider.name}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          isSelected
+                            ? "bg-[#5E3E3B] text-white"
+                            : "bg-zinc-200 text-zinc-700"
+                        }`}
+                      >
+                        {isSelected ? "Active" : "Select"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-ink-soft">{provider.desc}</p>
+                  </div>
+                );
+              })}
             </div>
+
+            {settings.meetingProvider === "manual" && (
+              <div className="pt-2 space-y-1">
+                <label className="text-xs font-semibold text-ink">
+                  Default Meeting Link / Room URL
+                </label>
+                <Input
+                  type="url"
+                  placeholder="e.g. https://meet.google.com/abc-defg-hij or https://zoom.us/j/..."
+                  value={settings.manualMeetingLink || ""}
+                  onChange={(e) =>
+                    setSettings({ ...settings, manualMeetingLink: e.target.value })
+                  }
+                  className="text-xs"
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 

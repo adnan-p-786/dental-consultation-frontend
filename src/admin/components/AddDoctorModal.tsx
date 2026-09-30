@@ -1,22 +1,22 @@
-import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useRef, useEffect } from "react";
+import axios from "axios";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+} from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   UserPlus,
   Clock,
@@ -30,9 +30,9 @@ import {
   X,
   Pencil,
   Trash2,
-} from 'lucide-react';
-import { DeleteDoctorModal } from './DeleteDoctorModal';
-import type { Doctor } from '../types';
+} from "lucide-react";
+import { DeleteDoctorModal } from "./DeleteDoctorModal";
+import type { Doctor } from "../types";
 
 interface AddDoctorModalProps {
   isOpen: boolean;
@@ -43,23 +43,11 @@ interface AddDoctorModalProps {
   doctorToEdit?: Doctor | null;
 }
 
-const SPECIALTY_OPTIONS = [
-  'General Dentistry & Diagnostics',
-  'Cosmetic Dentistry & Veneers',
-  'Orthodontics & Clear Aligners',
-  'Implantology & Oral Surgery',
-  'Periodontics & Gum Health',
-  'Endodontics & Root Canal',
-  'Pediatric Dentistry',
-  'Prosthodontics & Restorative',
-  'Custom / Other',
-];
-
 const PRESET_HOURS = [
-  'Mon - Fri, 08:00 AM - 04:00 PM',
-  'Mon - Fri, 09:00 AM - 05:00 PM',
-  'Tue - Sat, 10:00 AM - 06:00 PM',
-  'Mon, Wed, Fri, 08:00 AM - 02:00 PM',
+  "Mon - Fri, 08:00 AM - 04:00 PM",
+  "Mon - Fri, 09:00 AM - 05:00 PM",
+  "Tue - Sat, 10:00 AM - 06:00 PM",
+  "Mon, Wed, Fri, 08:00 AM - 02:00 PM",
 ];
 
 export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
@@ -73,14 +61,19 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
   const isEditMode = Boolean(doctorToEdit);
 
   // Schema-aligned form state
-  const [doctorName, setDoctorName] = useState('');
-  const [doctorEmail, setDoctorEmail] = useState('');
-  const [doctorPassword, setDoctorPassword] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [specialization, setSpecialization] = useState(SPECIALTY_OPTIONS[0]);
-  const [customSpecialty, setCustomSpecialty] = useState('');
-  const [workingHours, setWorkingHours] = useState('Mon - Fri, 09:00 AM - 05:00 PM');
-  const [status, setStatus] = useState<'available' | 'busy' | 'on_leave'>('available');
+  const [doctorName, setDoctorName] = useState("");
+  const [doctorEmail, setDoctorEmail] = useState("");
+  const [doctorPassword, setDoctorPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [activeTreatments, setActiveTreatments] = useState<string[]>([]);
+  const [loadingTreatments, setLoadingTreatments] = useState(false);
+  const [specialization, setSpecialization] = useState<string>("");
+  const [workingHours, setWorkingHours] = useState(
+    "Mon - Fri, 09:00 AM - 05:00 PM",
+  );
+  const [status, setStatus] = useState<"available" | "busy" | "on_leave">(
+    "available",
+  );
 
   // Photo upload state (File via Multer)
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -94,13 +87,13 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const resetForm = () => {
-    setDoctorName('');
-    setDoctorEmail('');
-    setPhoneNumber('');
-    setSpecialization(SPECIALTY_OPTIONS[0]);
-    setCustomSpecialty('');
-    setWorkingHours('Mon - Fri, 09:00 AM - 05:00 PM');
-    setStatus('available');
+    setDoctorName("");
+    setDoctorEmail("");
+    setPhoneNumber("");
+    setDoctorPassword("");
+    setSpecialization(activeTreatments[0] || "");
+    setWorkingHours("Mon - Fri, 09:00 AM - 05:00 PM");
+    setStatus("available");
     if (photoPreview && photoFile) {
       URL.revokeObjectURL(photoPreview);
     }
@@ -108,26 +101,72 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     setPhotoPreview(null);
     setErrorMessage(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
+
+  // Fetch active treatments from database (like NewAppointmentModal)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let isMounted = true;
+    const fetchActiveTreatments = async () => {
+      try {
+        setLoadingTreatments(true);
+        const res = await axios.get("/api/treatment/active");
+        if (
+          res.data?.success &&
+          Array.isArray(res.data.data) &&
+          res.data.data.length > 0
+        ) {
+          const names: string[] = res.data.data.map(
+            (t: { name: string }) => t.name,
+          );
+          if (isMounted) {
+            const list = [...names];
+            if (
+              doctorToEdit?.specialization &&
+              !list.includes(doctorToEdit.specialization)
+            ) {
+              list.push(doctorToEdit.specialization);
+            }
+            setActiveTreatments(list);
+            if (!doctorToEdit) {
+              setSpecialization((prev) =>
+                prev && list.includes(prev) ? prev : list[0] || "",
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load active treatments in doctor modal:", err);
+      } finally {
+        if (isMounted) {
+          setLoadingTreatments(false);
+        }
+      }
+    };
+
+    fetchActiveTreatments();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, doctorToEdit]);
 
   // Populate data when in edit mode
   useEffect(() => {
     if (isOpen) {
       if (doctorToEdit) {
-        setDoctorName(doctorToEdit.name.replace(/^Dr\.\s*/i, ''));
-        setDoctorEmail(doctorToEdit.email || '');
-        setPhoneNumber(doctorToEdit.phone || '');
-        if (SPECIALTY_OPTIONS.includes(doctorToEdit.specialization)) {
-          setSpecialization(doctorToEdit.specialization);
-          setCustomSpecialty('');
-        } else {
-          setSpecialization('Custom / Other');
-          setCustomSpecialty(doctorToEdit.specialization || '');
-        }
-        setWorkingHours(doctorToEdit.workingHours || 'Mon - Fri, 09:00 AM - 05:00 PM');
-        setStatus(doctorToEdit.status || 'available');
+        setDoctorName(doctorToEdit.name.replace(/^Dr\.\s*/i, ""));
+        setDoctorEmail(doctorToEdit.email || "");
+        setDoctorPassword(doctorToEdit.password || "");
+        setPhoneNumber(doctorToEdit.phone || "");
+        setSpecialization(doctorToEdit.specialization || "");
+        setWorkingHours(
+          doctorToEdit.workingHours || "Mon - Fri, 09:00 AM - 05:00 PM",
+        );
+        setStatus(doctorToEdit.status || "available");
         setPhotoFile(null);
         setPhotoPreview(doctorToEdit.avatar || null);
         setErrorMessage(null);
@@ -148,15 +187,15 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     if (!file) return;
 
     // Validate mime type
-    const validMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const validMimes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!validMimes.includes(file.type)) {
-      setErrorMessage('Please upload a valid image file (JPG, PNG, or WEBP).');
+      setErrorMessage("Please upload a valid image file (JPG, PNG, or WEBP).");
       return;
     }
 
     // Validate size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage('Image size must be smaller than 5 MB.');
+      setErrorMessage("Image size must be smaller than 5 MB.");
       return;
     }
 
@@ -176,7 +215,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     setPhotoFile(null);
     setPhotoPreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -194,7 +233,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       setIsDeleteConfirmOpen(false);
       handleModalClose();
     } catch (err: any) {
-      console.error('Error deleting doctor:', err);
+      console.error("Error deleting doctor:", err);
       if (err.response?.status === 404 && onDeleteDoctor) {
         onDeleteDoctor(doctorId);
         setIsDeleteConfirmOpen(false);
@@ -202,7 +241,8 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
         return;
       }
       setErrorMessage(
-        err.response?.data?.message || 'Failed to delete doctor. Please try again.'
+        err.response?.data?.message ||
+          "Failed to delete doctor. Please try again.",
       );
     } finally {
       setIsDeleting(false);
@@ -218,34 +258,35 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     const trimmedPhone = phoneNumber.trim();
     const trimmedWorkingHours = workingHours.trim();
 
-    if (!trimmedName || !trimmedEmail || !trimmedPhone || !trimmedWorkingHours) {
-      setErrorMessage('Please fill in all required fields marked with *.');
+    if (
+      !trimmedName ||
+      !trimmedEmail ||
+      !trimmedPhone ||
+      !trimmedWorkingHours ||
+      !specialization
+    ) {
+      setErrorMessage("Please fill in all required fields marked with *.");
       return;
     }
 
-    const finalSpecialty =
-      specialization === 'Custom / Other' && customSpecialty.trim()
-        ? customSpecialty.trim()
-        : specialization;
-
-    const formattedName = trimmedName.toLowerCase().startsWith('dr.')
+    const formattedName = trimmedName.toLowerCase().startsWith("dr.")
       ? trimmedName
       : `Dr. ${trimmedName}`;
 
     // Prepare multipart form data for Multer
     const formData = new FormData();
-    formData.append('doctorName', formattedName);
-    formData.append('doctorEmail', trimmedEmail);
-    formData.append('phoneNumber', trimmedPhone);
-    formData.append('doctorPassword', doctorPassword);
-    formData.append('specialization', finalSpecialty);
-    formData.append('workingHours', trimmedWorkingHours);
-    formData.append('status', status);
+    formData.append("doctorName", formattedName);
+    formData.append("doctorEmail", trimmedEmail);
+    formData.append("phoneNumber", trimmedPhone);
+    formData.append("doctorPassword", doctorPassword);
+    formData.append("specialization", specialization);
+    formData.append("workingHours", trimmedWorkingHours);
+    formData.append("status", status);
 
     if (photoFile) {
-      formData.append('doctorPhoto', photoFile);
+      formData.append("doctorPhoto", photoFile);
     } else if (isEditMode) {
-      formData.append('doctorPhoto', photoPreview || '');
+      formData.append("doctorPhoto", photoPreview || "");
     }
 
     setIsSubmitting(true);
@@ -254,11 +295,15 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       if (isEditMode && doctorToEdit) {
         let savedDoctor = null;
         if (!isNaN(Number(doctorToEdit.id))) {
-          const response = await axios.put(`/api/doctor/update-doctor/${doctorToEdit.id}`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
+          const response = await axios.put(
+            `/api/doctor/update-doctor/${doctorToEdit.id}`,
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
             },
-          });
+          );
           if (response.data && response.data.success) {
             savedDoctor = response.data.data;
           }
@@ -267,16 +312,18 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
         const updatedDoctor: Doctor = {
           ...doctorToEdit,
           name: savedDoctor?.doctorName || formattedName,
-          specialization: savedDoctor?.specialization || finalSpecialty,
+          specialization: savedDoctor?.specialization || specialization,
           email: savedDoctor?.doctorEmail || trimmedEmail,
           password: savedDoctor?.doctorPassword || doctorPassword,
           phone: savedDoctor?.phoneNumber || trimmedPhone,
           workingHours: savedDoctor?.workingHours || trimmedWorkingHours,
-          status: (savedDoctor?.status as 'available' | 'busy' | 'on_leave') || status,
+          status:
+            (savedDoctor?.status as "available" | "busy" | "on_leave") ||
+            status,
           avatar:
             savedDoctor?.doctorPhoto !== undefined
               ? savedDoctor.doctorPhoto
-              : photoPreview || '',
+              : photoPreview || "",
         };
 
         if (onUpdateDoctor) {
@@ -288,9 +335,9 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
         resetForm();
         onClose();
       } else {
-        const response = await axios.post('/api/doctor/add-doctor', formData, {
+        const response = await axios.post("/api/doctor/add-doctor", formData, {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         });
 
@@ -299,13 +346,15 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           const newDoctor: Doctor = {
             id: savedDoctor?.id ? String(savedDoctor.id) : `doc-${Date.now()}`,
             name: savedDoctor?.doctorName || formattedName,
-            specialization: savedDoctor?.specialization || finalSpecialty,
+            specialization: savedDoctor?.specialization || specialization,
             email: savedDoctor?.doctorEmail || trimmedEmail,
             password: savedDoctor?.doctorPassword || doctorPassword,
             phone: savedDoctor?.phoneNumber || trimmedPhone,
             workingHours: savedDoctor?.workingHours || trimmedWorkingHours,
-            status: (savedDoctor?.status as 'available' | 'busy' | 'on_leave') || status,
-            avatar: savedDoctor?.doctorPhoto || photoPreview || '',
+            status:
+              (savedDoctor?.status as "available" | "busy" | "on_leave") ||
+              status,
+            avatar: savedDoctor?.doctorPhoto || photoPreview || "",
             activeAppointments: 0,
           };
 
@@ -313,17 +362,20 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
           resetForm();
           onClose();
         } else {
-          setErrorMessage(response.data?.message || 'Failed to save doctor. Please try again.');
+          setErrorMessage(
+            response.data?.message ||
+              "Failed to save doctor. Please try again.",
+          );
         }
       }
     } catch (err: any) {
-      console.error('Error saving doctor:', err);
+      console.error("Error saving doctor:", err);
       const serverMessage =
         err.response?.data?.message ||
         err.response?.data?.error ||
         (isEditMode
-          ? 'Unable to update doctor profile. Please try again.'
-          : 'Unable to upload doctor photo or connect to server. Please try again.');
+          ? "Unable to update doctor profile. Please try again."
+          : "Unable to upload doctor photo or connect to server. Please try again.");
       setErrorMessage(serverMessage);
     } finally {
       setIsSubmitting(false);
@@ -343,7 +395,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
               )}
             </div>
             <DialogTitle className="text-xl font-bold text-ink">
-              {isEditMode ? 'Edit Doctor' : 'Add Doctor'}
+              {isEditMode ? "Edit Doctor" : "Add Doctor"}
             </DialogTitle>
           </div>
         </DialogHeader>
@@ -378,7 +430,9 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
               <Select
                 disabled={isSubmitting}
                 value={status}
-                onValueChange={(val: 'available' | 'busy' | 'on_leave') => setStatus(val)}
+                onValueChange={(val: "available" | "busy" | "on_leave") =>
+                  setStatus(val)
+                }
               >
                 <SelectTrigger className="h-9 text-xs">
                   <SelectValue placeholder="Status" />
@@ -399,32 +453,27 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
               Specialization / Clinical Focus *
             </label>
             <Select
-              disabled={isSubmitting}
+              disabled={isSubmitting || loadingTreatments}
               value={specialization}
               onValueChange={setSpecialization}
             >
               <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder="Select specialty" />
+                <SelectValue
+                  placeholder={
+                    loadingTreatments
+                      ? "Loading active treatments..."
+                      : "Select specialty"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {SPECIALTY_OPTIONS.map((spec) => (
-                  <SelectItem key={spec} value={spec}>
-                    {spec}
+                {activeTreatments.map((opt: string) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-
-            {specialization === 'Custom / Other' && (
-              <Input
-                required
-                disabled={isSubmitting}
-                placeholder="Type custom specialty (e.g. Maxillofacial Prosthodontics)"
-                value={customSpecialty}
-                onChange={(e) => setCustomSpecialty(e.target.value)}
-                className="text-xs h-9 mt-2"
-              />
-            )}
           </div>
 
           {/* Email & Phone */}
@@ -505,8 +554,8 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   onClick={() => setWorkingHours(preset)}
                   className={`text-[10px] px-2 py-0.5 rounded-md border transition-colors cursor-pointer disabled:opacity-50 ${
                     workingHours === preset
-                      ? 'bg-teal-50 border-teal-300 text-teal-deep font-semibold'
-                      : 'bg-paper border-line text-ink-soft hover:border-mint-deep hover:text-ink'
+                      ? "bg-teal-50 border-teal-300 text-teal-deep font-semibold"
+                      : "bg-paper border-line text-ink-soft hover:border-mint-deep hover:text-ink"
                   }`}
                 >
                   {preset}
@@ -529,7 +578,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   <AvatarImage src={photoPreview} alt="Doctor preview" />
                 ) : null}
                 <AvatarFallback className="bg-teal-50 text-teal-deep text-xs font-bold">
-                  {doctorName.trim().slice(0, 2).toUpperCase() || 'DR'}
+                  {doctorName.trim().slice(0, 2).toUpperCase() || "DR"}
                 </AvatarFallback>
               </Avatar>
 
@@ -549,7 +598,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                     <div className="min-w-0 flex items-center gap-2">
                       <ImageIcon className="w-3.5 h-3.5 text-teal-deep shrink-0" />
                       <span className="font-medium text-teal-deep truncate max-w-45 sm:max-w-60">
-                        {photoFile ? photoFile.name : 'Current Profile Photo'}
+                        {photoFile ? photoFile.name : "Current Profile Photo"}
                       </span>
                       {photoFile && (
                         <span className="text-[10px] text-teal-600 shrink-0">
@@ -610,7 +659,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  {isEditMode ? 'Updating Doctor...' : 'Uploading & Saving...'}
+                  {isEditMode ? "Updating Doctor..." : "Uploading & Saving..."}
                 </>
               ) : isEditMode ? (
                 <>

@@ -13,7 +13,7 @@ export type AppointmentStatus =
 export type TreatmentType =
  (string & {});
 
-export type ConsultationType = 'video' | 'in_person';
+export type ConsultationType = 'video';
 
 export type MeetingPlatform = 'google_meet' | 'zoom' | 'teams';
 
@@ -33,11 +33,11 @@ export interface PatientInfo {
 export interface Doctor {
   id: string;
   name: string;
-  avatar: string;
+  avatar?: string;
   specialization: string;
   email: string;
-  password: string;
-  phone: string;
+  password?: string;
+  phone?: string;
   workingHours: string;
   status: 'available' | 'busy' | 'on_leave';
   activeAppointments: number;

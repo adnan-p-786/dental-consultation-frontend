@@ -21,7 +21,6 @@ import {
   Sparkle,
   Sparkles,
   Smile,
-  PlayCircle,
   Mail,
   RefreshCw,
 } from "lucide-react";

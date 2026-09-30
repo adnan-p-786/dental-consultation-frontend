@@ -283,13 +283,9 @@ export const AppointmentCalendarView: React.FC<
                           ? apt.assignedDoctor.name.split(",")[0]
                           : "Unassigned"}
                       </span>
-                      {apt.consultationType === "video" ? (
-                        <span className="flex items-center gap-1 text-teal-deep font-semibold">
-                          <Video className="w-3 h-3" /> Video Call
-                        </span>
-                      ) : (
-                        <span>In-Clinic</span>
-                      )}
+                      <span className="flex items-center gap-1 text-teal-deep font-semibold">
+                        <Video className="w-3 h-3" /> Online
+                      </span>
                     </div>
                   </div>
                 ))
