@@ -68,7 +68,8 @@ import {
 } from "@/api/Doctor/doctorHooks";
 
 function Dashboard() {
-  const { data: dbAppointments = [], refetch: refetchAppointments } = useAppointmentsQuery();
+  const { data: dbAppointments = [], refetch: refetchAppointments } =
+    useAppointmentsQuery();
   const { data: dbDoctors = [] } = useDoctorsQuery();
 
   const updateAppointmentMutation = useUpdateAppointmentMutation();
@@ -201,7 +202,6 @@ function Dashboard() {
     }
   }, [appointments]);
 
-
   const kpis = useMemo(() => {
     const todayDate = new Date().toISOString().split("T")[0];
     return {
@@ -288,11 +288,13 @@ function Dashboard() {
   }, [appointments, searchQuery, selectedStatusFilter, selectedDoctorFilter]);
 
   // Actions
-  const [detailModalTab, setDetailModalTab] = useState<"details" | "scheduling">("details");
+  const [detailModalTab, setDetailModalTab] = useState<
+    "details" | "scheduling"
+  >("details");
 
   const handleOpenDetail = (
     apt: Appointment,
-    tab: "details" | "scheduling" = "details"
+    tab: "details" | "scheduling" = "details",
   ) => {
     setSelectedAppointment(apt);
     setDetailModalTab(tab);
@@ -365,7 +367,9 @@ function Dashboard() {
         const saved = localStorage.getItem("dental_doctors_v1");
         if (saved) {
           const parsed = JSON.parse(saved);
-          doctorObj = parsed.find((d: any) => String(d.id) === String(doctorId));
+          doctorObj = parsed.find(
+            (d: any) => String(d.id) === String(doctorId),
+          );
         }
       } catch (e) {}
     }
@@ -591,7 +595,6 @@ function Dashboard() {
         console.error("Failed to sync clinical notes to DB:", err);
       }
     }
-
   };
 
   const handleCreateNewAppointment = async (
@@ -720,9 +723,11 @@ function Dashboard() {
   const handleDeleteDoctor = (doctorId: string) => {
     setDoctors((prev) => prev.filter((d) => d.id !== doctorId));
     if (!isNaN(Number(doctorId))) {
-      deleteDoctorMutation.mutateAsync(doctorId).catch((err) =>
-        console.error("Failed to delete doctor from backend:", err),
-      );
+      deleteDoctorMutation
+        .mutateAsync(doctorId)
+        .catch((err) =>
+          console.error("Failed to delete doctor from backend:", err),
+        );
     }
   };
 
@@ -749,7 +754,6 @@ function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-[#FAF7F6] text-ink font-sans antialiased">
-
       {/* Sidebar */}
       <AdminSidebar
         activeTab={activeTab}
@@ -1116,11 +1120,11 @@ function Dashboard() {
 
                   {/* Doctor filter dropdown */}
                   <Select
-  value={selectedDoctorFilter}
-  onValueChange={(value) => setSelectedDoctorFilter(value)}
->
-  <SelectTrigger
-    className="
+                    value={selectedDoctorFilter}
+                    onValueChange={(value) => setSelectedDoctorFilter(value)}
+                  >
+                    <SelectTrigger
+                      className="
       h-9
       w-full sm:w-[190px]
       px-3
@@ -1134,23 +1138,20 @@ function Dashboard() {
       focus:ring-2 focus:ring-primary/20
       flex items-center justify-between
     "
-  >
-    <SelectValue placeholder="All Doctors" />
-  </SelectTrigger>
+                    >
+                      <SelectValue placeholder="All Doctors" />
+                    </SelectTrigger>
 
-  <SelectContent>
-    <SelectItem value="all">All Doctors</SelectItem>
+                    <SelectContent>
+                      <SelectItem value="all">All Doctors</SelectItem>
 
-    {doctors.map((d) => (
-      <SelectItem
-        key={d.id}
-        value={String(d.id)}
-      >
-        {d.name.split(",")[0]}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
+                      {doctors.map((d) => (
+                        <SelectItem key={d.id} value={String(d.id)}>
+                          {d.name.split(",")[0]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">

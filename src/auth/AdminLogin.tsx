@@ -5,30 +5,58 @@ import {
   AlertCircle,
   Check,
   CheckCircle2,
+  Crown,
   Eye,
   EyeOff,
   Loader2,
-  User,
+  ShieldCheck,
+  Stethoscope,
+  ArrowLeft,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "./AuthContext";
 
-const benefits = [
-  "Request appointments without calling the clinic",
-  "Join consultations by video from your account",
-  "See your consultation notes and follow-ups anytime",
+type AdminStaffRole = "Doctor" | "Admin" | "Superadmin";
+
+const staffRoles = [
+  {
+    id: "Doctor" as AdminStaffRole,
+    label: "Doctor",
+    icon: Stethoscope,
+    desc: "Care provider",
+    badge: "Medical",
+  },
+  {
+    id: "Admin" as AdminStaffRole,
+    label: "Admin",
+    icon: ShieldCheck,
+    desc: "Clinic manager",
+    badge: "Management",
+  },
+  {
+    id: "Superadmin" as AdminStaffRole,
+    label: "Super Admin",
+    icon: Crown,
+    desc: "System admin",
+    badge: "Full Access",
+  },
 ];
 
-function Login() {
+const portalFeatures = [
+  "Doctors: Review upcoming consultations, medical history & write notes",
+  "Admins: Manage appointments, doctors, patients and clinic reports",
+  "Super Admin: Full system oversight, settings & admin account creation",
+];
+
+function AdminLogin() {
   const loginMutation = useLoginMutation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectPath = searchParams.get("redirect");
   const { login, isAuthenticated, user } = useAuth();
 
-  // Default role is strictly patient
-  const userType = "patient";
+  const [userType, setUserType] = useState<AdminStaffRole>("Admin");
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -40,7 +68,7 @@ function Login() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // If already logged in, route to respective dashboard
+  // If already logged in with authorized role, redirect immediately
   useEffect(() => {
     if (isAuthenticated && user) {
       const userRole = (user.role || "").toLowerCase();
@@ -48,7 +76,7 @@ function Login() {
         navigate("/admin/dashboard", { replace: true });
       } else if (userRole === "doctor") {
         navigate("/doctor/dashboard", { replace: true });
-      } else if (redirectPath && !redirectPath.startsWith("/auth")) {
+      } else if (redirectPath && !redirectPath.startsWith("/auth") && !redirectPath.startsWith("/admin/login")) {
         navigate(redirectPath, { replace: true });
       } else {
         navigate("/", { replace: true });
@@ -62,6 +90,11 @@ function Login() {
       ...prev,
       [id]: type === "checkbox" ? checked : value,
     }));
+    if (error) setError(null);
+  };
+
+  const handleRoleSelect = (roleId: AdminStaffRole) => {
+    setUserType(roleId);
     if (error) setError(null);
   };
 
@@ -90,7 +123,7 @@ function Login() {
       const response = await loginMutation.mutateAsync({
         email: emailClean,
         password: passwordClean,
-        role: "patient",
+        role: userType.toLowerCase(),
       });
 
       if (response.token && response.data) {
@@ -100,14 +133,14 @@ function Login() {
       setSuccess(response.message || "Login successful!");
 
       const resolvedRole =
-        response.data?.role?.toLowerCase() || "patient";
+        response.data?.role?.toLowerCase() || userType.toLowerCase();
 
       setTimeout(() => {
         if (resolvedRole === "superadmin" || resolvedRole === "admin") {
           navigate("/admin/dashboard", { replace: true });
         } else if (resolvedRole === "doctor") {
           navigate("/doctor/dashboard", { replace: true });
-        } else if (redirectPath && !redirectPath.startsWith("/auth")) {
+        } else if (redirectPath && !redirectPath.startsWith("/auth") && !redirectPath.startsWith("/admin/login")) {
           navigate(redirectPath, { replace: true });
         } else {
           navigate("/", { replace: true });
@@ -117,12 +150,14 @@ function Login() {
       const serverError =
         err?.response?.data?.error ||
         err?.response?.data?.message ||
-        "Login failed. Please check your credentials and try again.";
+        "Login failed. Please verify your credentials and selected role.";
       setError(serverError);
     } finally {
       setLoading(false);
     }
   };
+
+  const currentRoleConfig = staffRoles.find((r) => r.id === userType);
 
   return (
     <>
@@ -132,7 +167,7 @@ function Login() {
         <div className="relative overflow-hidden bg-teal-deep text-[#FAF7F6] px-8 py-12 md:px-14 md:py-14 flex flex-col justify-between min-h-65">
           {/* dot texture */}
           <div
-            className="absolute inset-0 opacity-90"
+            className="absolute inset-0 opacity-90 pointer-events-none"
             style={{
               backgroundImage:
                 "radial-gradient(circle, rgba(255,255,255,0.09) 1px, transparent 1px)",
@@ -145,36 +180,37 @@ function Login() {
           />
 
           <div className="relative z-10 max-w-105">
-            <h1 className="font-display font-medium text-[34px] md:text-[40px] leading-[1.12] tracking-[-0.01em] text-white mb-4">
-              One account for booking, records, and your care team.
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-mint text-xs font-semibold uppercase tracking-wider mb-6 border border-white/10">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Clinic Staff & Administration</span>
+            </div>
+
+            <h1 className="font-display font-medium text-[32px] md:text-[38px] leading-[1.15] tracking-[-0.01em] text-white mb-4">
+              Dedicated portal for providers & clinic managers.
             </h1>
-            <p className="text-[15.5px] leading-relaxed text-[#EBD8D5] mb-7">
-              Set up your patient account to request appointments, join video
-              consultations, and keep a running history of your visits — all in
-              one place.
+            <p className="text-[15px] leading-relaxed text-[#EBD8D5] mb-7">
+              Authorized access for Doctors, Clinic Admins, and Super Administrators
+              to orchestrate patient appointments, consultations, and staff governance.
             </p>
 
             <ul className="flex flex-col gap-3.5">
-              {benefits.map((b) => (
+              {portalFeatures.map((feat) => (
                 <li
-                  key={b}
-                  className="flex items-start gap-3 text-[14.5px] text-[#EBD8D5]"
+                  key={feat}
+                  className="flex items-start gap-3 text-[14px] text-[#EBD8D5]"
                 >
                   <Check className="w-4 h-4 mt-0.5 shrink-0 text-mint" />
-                  {b}
+                  <span>{feat}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <p className="relative z-10 text-[13px] text-[#B3A09D]">
-            Your information is encrypted and only shared with your care team.
-          </p>
-
+          {/* Background decorative tooth watermark */}
           <svg
             viewBox="0 0 200 200"
             fill="none"
-            className="absolute -right-16 -bottom-16 w-95 h-95 opacity-[0.16] z-0"
+            className="absolute -right-16 -bottom-16 w-95 h-95 opacity-[0.12] z-0 pointer-events-none"
           >
             <path
               d="M100 20c-30 0-52 18-52 46 0 21 6 35 11 54 4 15 7 36 17 45 4 4 9 2 11-3 4-10 5-28 11-28s7 18 11 28c2 5 7 7 11 3 10-9 13-30 17-45 5-19 11-33 11-54 0-28-22-46-52-46z"
@@ -185,27 +221,17 @@ function Login() {
         </div>
 
         {/* Right: form panel */}
-        <div className="flex items-center justify-center px-6 py-12 md:px-8">
-          <div className="w-full max-w-95">
-            <div className="mb-7">
+        <div className="flex items-center justify-center px-6 py-12 md:px-8 bg-paper">
+          <div className="w-full max-w-105">
+            <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-display font-medium text-[27px] text-ink">
-                  Sign In
+                  Staff & Admin Login
                 </h2>
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[#FAF2F0] text-teal-deep border border-teal-deep/15">
+                  {currentRoleConfig?.badge}
+                </span>
               </div>
-              <p className="text-sm text-ink-soft">
-                Not signed In yet?{" "}
-                <Link
-                  to={
-                    redirectPath
-                      ? `/auth/register?redirect=${encodeURIComponent(redirectPath)}`
-                      : "/auth/register"
-                  }
-                  className="text-mint-deep font-medium border-b border-transparent hover:border-mint-deep"
-                >
-                  Sign Up
-                </Link>
-              </p>
             </div>
 
             {/* Error banner */}
@@ -220,25 +246,82 @@ function Login() {
             {success && (
               <div className="mb-4 flex items-start gap-2.5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[13px] leading-snug">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>{success} Redirecting to your dashboard...</span>
+                <span>{success} Redirecting to your workspace...</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <Field label="Email address" htmlFor="email">
+              {/* Role Selection */}
+              <Field label="Sign in as" htmlFor="staffRole">
+                <div
+                  className="grid grid-cols-3 gap-2"
+                  role="radiogroup"
+                  aria-label="Select staff role"
+                >
+                  {staffRoles.map((role) => {
+                    const isSelected = userType === role.id;
+                    const Icon = role.icon;
+                    return (
+                      <button
+                        key={role.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isSelected}
+                        disabled={loading}
+                        onClick={() => handleRoleSelect(role.id)}
+                        className={`group relative flex flex-col items-center justify-center py-3 px-2 rounded-xl border transition-all duration-150 cursor-pointer text-center ${
+                          isSelected
+                            ? "border-teal-deep bg-[#FAF2F0] text-teal-deep font-semibold shadow-xs ring-2 ring-teal-deep/15"
+                            : "border-line bg-white text-ink-soft hover:border-mint-deep/40 hover:bg-[#FAF7F6] hover:text-ink"
+                        }`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center mb-1.5 transition-colors ${
+                            isSelected
+                              ? "bg-teal-deep text-white shadow-xs"
+                              : "bg-line-soft text-ink-soft group-hover:text-teal-deep group-hover:bg-[#F2E4E1]"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span className="text-[13px] leading-tight font-medium">
+                          {role.label}
+                        </span>
+                        <span
+                          className={`text-[10px] mt-0.5 leading-tight transition-colors ${
+                            isSelected
+                              ? "text-mint-deep font-semibold"
+                              : "text-ink-soft/70"
+                          }`}
+                        >
+                          {role.desc}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+
+              {/* Email */}
+              <Field label="Clinic Email Address" htmlFor="email">
                 <input
                   id="email"
                   type="email"
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="name@example.com"
+                  placeholder={
+                    userType === "Doctor"
+                      ? "doctor@dentalcare.com"
+                      : "admin@dentalcare.com"
+                  }
                   autoComplete="email"
                   className="input placeholder:text-xs"
                   disabled={loading}
                 />
               </Field>
 
+              {/* Password */}
               <Field label="Password" htmlFor="password">
                 <div className="relative">
                   <input
@@ -247,7 +330,7 @@ function Login() {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Your Password"
+                    placeholder="Enter your password"
                     autoComplete="current-password"
                     className="input pr-10 placeholder:text-xs"
                     disabled={loading}
@@ -256,9 +339,7 @@ function Login() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink cursor-pointer p-0.5 transition-colors focus:outline-none"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -281,10 +362,11 @@ function Login() {
                     onChange={handleChange}
                     className="w-4 h-4 rounded border-line text-teal-deep accent-mint-deep focus:ring-mint-deep/20 cursor-pointer"
                   />
-                  <span>Remember me</span>
+                  <span>Remember my session</span>
                 </label>
               </div>
 
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -293,7 +375,7 @@ function Login() {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-paper" />
-                    <span>Logging in...</span>
+                    <span>Signing In..</span>
                   </>
                 ) : (
                   <span>Sign In</span>
@@ -327,4 +409,4 @@ function Field({
   );
 }
 
-export default Login;
+export default AdminLogin;

@@ -175,7 +175,7 @@ function Header() {
                   to="/auth/register"
                   className="flex items-center gap-1.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] transition-all duration-150 text-paper text-[13.5px] font-semibold py-2.5 px-4 shadow-xs"
                 >
-                  Register
+                  Sign Up
                 </Link>
 
                 {/* <Link

@@ -9,7 +9,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  User,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -19,10 +18,6 @@ const benefits = [
   "Request appointments without calling the clinic",
   "Join consultations by video from your account",
   "See your consultation notes and follow-ups anytime",
-];
-
-const roles = [
-  { id: "Patient", label: "Patient", icon: User, desc: "Personal care" },
 ];
 
 function Register() {
@@ -48,7 +43,8 @@ function Register() {
     }
   }, [isAuthenticated, user, navigate, redirectPath]);
 
-  const [userType, setUserType] = useState("Patient");
+  // Default role is strictly patient
+  const userType = "patient";
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -239,7 +235,7 @@ function Register() {
                 Create your account
               </h2>
               <p className="text-sm text-ink-soft">
-                Already registered?{" "}
+                Already Signed Up?{" "}
                 <Link
                   to={
                     redirectPath
@@ -248,7 +244,7 @@ function Register() {
                   }
                   className="text-mint-deep font-medium border-b border-transparent hover:border-mint-deep"
                 >
-                  Log in instead
+                  Sign In instead
                 </Link>
               </p>
             </div>
@@ -280,7 +276,7 @@ function Register() {
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="First name"
-                    className="input disabled:opacity-60"
+                    className="input placeholder:text-xs disabled:opacity-60"
                   />
                 </Field>
                 <Field label="Last name" htmlFor="lastName">
@@ -292,153 +288,99 @@ function Register() {
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="Last name"
-                    className="input disabled:opacity-60"
+                    className="input placeholder:text-xs disabled:opacity-60"
                   />
                 </Field>
               </div>
 
               <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
                 <Field label="Email" htmlFor="email">
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  disabled={loading}
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Email"
-                  className="input disabled:opacity-60"
-                />
-              </Field>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    disabled={loading}
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Email"
+                    className="input placeholder:text-xs disabled:opacity-60"
+                  />
+                </Field>
 
-              <Field label="Phone number" htmlFor="phone">
-                <input
-                  id="phone"
-                  type="tel"
-                  required
-                  disabled={loading}
-                  value={formData.phone}
-                  onChange={handlePhoneChange}
-                  placeholder="+91 98765 43210"
-                  className="input disabled:opacity-60"
-                />
-              </Field>
+                <Field label="Phone number" htmlFor="phone">
+                  <input
+                    id="phone"
+                    type="tel"
+                    required
+                    disabled={loading}
+                    value={formData.phone}
+                    onChange={handlePhoneChange}
+                    placeholder="+91 98765 43210"
+                    className="input placeholder:text-xs disabled:opacity-60"
+                  />
+                </Field>
               </div>
-
-              <Field label="I am registering as" htmlFor="userType">
-                <div
-                  className="grid grid-cols-2 gap-2"
-                  role="radiogroup"
-                  aria-label="Select user type"
-                >
-                  {roles.map((role) => {
-                    const isSelected = userType === role.id;
-                    const Icon = role.icon;
-                    return (
-                      <button
-                        key={role.id}
-                        type="button"
-                        role="radio"
-                        disabled={loading}
-                        aria-checked={isSelected}
-                        onClick={() => setUserType(role.id)}
-                        className={`group relative flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border transition-all duration-150 cursor-pointer text-center ${
-                          isSelected
-                            ? "border-teal-deep bg-[#FAF2F0] text-teal-deep font-semibold shadow-xs ring-2 ring-teal-deep/15"
-                            : "border-line bg-white text-ink-soft hover:border-mint-deep/40 hover:bg-[#FAF7F6] hover:text-ink"
-                        }`}
-                      >
-                        <div
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center mb-1.5 transition-colors ${
-                            isSelected
-                              ? "bg-teal-deep text-white shadow-xs"
-                              : "bg-line-soft text-ink-soft group-hover:text-teal-deep group-hover:bg-[#F2E4E1]"
-                          }`}
-                        >
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-[13px] leading-tight font-medium">
-                          {role.label}
-                        </span>
-                        <span
-                          className={`text-[10.5px] mt-0.5 leading-tight transition-colors ${
-                            isSelected
-                              ? "text-mint-deep font-normal"
-                              : "text-ink-soft/70"
-                          }`}
-                        >
-                          {role.desc}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <input
-                  type="hidden"
-                  name="userType"
-                  id="userType"
-                  value={userType}
-                />
-              </Field>
 
               <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
                 <Field label="Password" htmlFor="password">
-                <div className="relative">
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    disabled={loading}
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="At least 8 characters"
-                    className="input pr-10 disabled:opacity-60"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink transition-colors p-1 cursor-pointer"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              </Field>
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      disabled={loading}
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="At least 8 characters"
+                      className="input pr-10 placeholder:text-xs disabled:opacity-60"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink transition-colors p-1 cursor-pointer"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </Field>
 
-              <Field label="Confirm password" htmlFor="confirmPassword">
-                <div className="relative">
-                  <input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    required
-                    disabled={loading}
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="Re-enter your password"
-                    className="input pr-10 disabled:opacity-60"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink transition-colors p-1 cursor-pointer"
-                    aria-label={
-                      showConfirmPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              </Field>
+                <Field label="Confirm password" htmlFor="confirmPassword">
+                  <div className="relative">
+                    <input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      disabled={loading}
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="Re-enter your password"
+                      className="input pr-10 placeholder:text-xs disabled:opacity-60"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink transition-colors p-1 cursor-pointer"
+                      aria-label={
+                        showConfirmPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </Field>
               </div>
 
               <div className="flex items-start gap-2.5 mt-0.5">
@@ -455,21 +397,7 @@ function Register() {
                   htmlFor="terms"
                   className="text-[13px] text-ink-soft leading-relaxed cursor-pointer"
                 >
-                  I agree to the{" "}
-                  <Link
-                    to="/terms"
-                    className="text-ink font-medium hover:underline"
-                  >
-                    terms of use
-                  </Link>{" "}
-                  and{" "}
-                  <Link
-                    to="/privacy"
-                    className="text-ink font-medium hover:underline"
-                  >
-                    privacy policy
-                  </Link>
-                  , including how my health information is handled.
+                  I agree to the terms of use and privacy policy, including how my health information is handled.
                 </label>
               </div>
 

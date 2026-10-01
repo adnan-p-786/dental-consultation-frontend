@@ -18,15 +18,15 @@ export default function Footer() {
       {/* Dotted Theme Texture */}
       <div
         className="absolute inset-0 opacity-80 pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(255,255,255,0.08) 1.5px, transparent 1.5px)",
-            backgroundSize: "24px 24px",
-            maskImage:
-              "linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)",
-          }}
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, rgba(255,255,255,0.08) 1.5px, transparent 1.5px)",
+          backgroundSize: "24px 24px",
+          maskImage:
+            "linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, transparent, black 25%, black 75%, transparent)",
+        }}
       />
       {/* Subtle depth lighting overlay */}
       <div
@@ -100,7 +100,11 @@ export default function Footer() {
             <ul className="space-y-2 text-xs sm:text-sm text-white">
               <li>
                 <Link
-                  to={isAuthenticated ? "/appointment" : "/auth/login?redirect=/appointment"}
+                  to={
+                    isAuthenticated
+                      ? "/appointment"
+                      : "/auth/login?redirect=/appointment"
+                  }
                   className="hover:text-mint transition-colors"
                 >
                   Book Video Consultation
@@ -108,7 +112,11 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  to={isAuthenticated ? "/appointment" : "/auth/login?redirect=/appointment"}
+                  to={
+                    isAuthenticated
+                      ? "/appointment"
+                      : "/auth/login?redirect=/appointment"
+                  }
                   className="hover:text-mint transition-colors"
                 >
                   Urgent Same-Day Slot
@@ -201,6 +209,14 @@ export default function Footer() {
               )}
               <li>
                 <Link
+                  to="/admin/login"
+                  className="hover:text-mint transition-colors"
+                >
+                  Staff & Admin Login
+                </Link>
+              </li>
+              <li>
+                <Link
                   to="/doctor/dashboard"
                   className="hover:text-mint transition-colors"
                 >
@@ -262,10 +278,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-8 pt-4 border-t border-dotted border-white/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white">
-          <p>
-            © {new Date().getFullYear()} 32 Stories.All
-            rights reserved.
-          </p>
+          <p>© {new Date().getFullYear()} 32 Stories.All rights reserved.</p>
           <div className="flex items-center gap-5">
             <Link to="/privacy" className="hover:text-mint transition-colors">
               Privacy Policy

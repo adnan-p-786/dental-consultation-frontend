@@ -53,8 +53,13 @@ body {
   .input {
     @apply w-full text-[14.5px] px-3.5 py-2.5 rounded-lg border border-line bg-white text-ink
       outline-none transition-colors duration-150
-      placeholder:text-[#9A8987]
+      placeholder:text-[#9A8987] placeholder:text-[12.5px]
       focus:border-[#5E3E3B] focus:ring-4 focus:ring-[#5E3E3B]/15;
+  }
+
+  .input::placeholder {
+    font-size: 12.5px;
+    color: #9A8987;
   }
 
   .btn-primary {

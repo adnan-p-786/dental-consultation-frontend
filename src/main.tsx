@@ -2,8 +2,13 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
-import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+} from "react-router-dom";
 import Login from "./auth/Login.tsx";
+import AdminLogin from "./auth/AdminLogin.tsx";
 import Register from "./auth/Register.tsx";
 import DashboardDoctor from "./doctor/pages/Dashboard.tsx";
 import DashboardAdmin from "./admin/pages/Dashboard.tsx";
@@ -24,6 +29,7 @@ const router = createBrowserRouter([
   { path: "/contact", element: <Navigate to="/" replace /> },
   { path: "/auth/login", element: <Login /> },
   { path: "/auth/register", element: <Register /> },
+  { path: "/auth/admin/login", element: <AdminLogin /> },
   {
     path: "/appointment",
     element: (
@@ -43,7 +49,7 @@ const router = createBrowserRouter([
   {
     path: "/doctor/dashboard",
     element: (
-      <ProtectedRoute allowedRoles={["doctor"]}>
+      <ProtectedRoute allowedRoles={["doctor"]} redirectTo="/admin/login">
         <DashboardDoctor />
       </ProtectedRoute>
     ),
@@ -51,7 +57,7 @@ const router = createBrowserRouter([
   {
     path: "/admin/dashboard",
     element: (
-      <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+      <ProtectedRoute allowedRoles={["admin", "superadmin"]} redirectTo="/admin/login">
         <DashboardAdmin />
       </ProtectedRoute>
     ),
@@ -81,5 +87,5 @@ createRoot(document.getElementById("root")!).render(
         <RouterProvider router={router} />
       </AuthProvider>
     </QueryClientProvider>
-  </StrictMode>
+  </StrictMode>,
 );
