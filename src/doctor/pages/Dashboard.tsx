@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/auth/AuthContext";
 import { appointmentService } from "@/lib/appointmentService";
+import { useAppointmentsQuery } from "@/api/Appointment/appointmentHooks";
 import type { Appointment, ConsultationNotes } from "@/admin/types";
 import { initialAppointments } from "@/admin/data/mockData";
 import {
@@ -27,6 +28,7 @@ type ScheduleTab = "today" | "upcoming" | "completed" | "all";
 
 export default function DoctorDashboard() {
   const { user, logout } = useAuth();
+  const { data: dbAppointments = [], refetch: refetchAppointments } = useAppointmentsQuery();
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     const all = appointmentService.getAppointments();
     return all.length > 0 ? all : initialAppointments;
@@ -52,35 +54,28 @@ export default function DoctorDashboard() {
     internalNotes: "",
   });
 
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  // Load appointments directly from DB for UI display
-  const loadDoctorAppointments = async () => {
-    try {
-      const all = await appointmentService.fetchAppointments();
-      setAppointments(all);
-    } catch (e) {
-      setAppointments(appointmentService.getAppointments());
+  // Sync fresh appointments from query cache
+  useEffect(() => {
+    if (dbAppointments && dbAppointments.length > 0) {
+      setAppointments(dbAppointments);
     }
+  }, [dbAppointments]);
+
+  // Load appointments directly from DB or trigger refetch
+  const loadDoctorAppointments = async () => {
+    refetchAppointments();
   };
 
   useEffect(() => {
-    loadDoctorAppointments();
-
     const handleSync = () => {
-      loadDoctorAppointments();
+      refetchAppointments();
     };
 
     window.addEventListener("dental_appointments_updated", handleSync);
     return () => {
       window.removeEventListener("dental_appointments_updated", handleSync);
     };
-  }, []);
+  }, [refetchAppointments]);
 
   const doctorName = user
     ? `Dr. ${user.firstName} ${user.lastName}`
@@ -162,7 +157,6 @@ export default function DoctorDashboard() {
       doctorName,
     );
 
-    showToast("Consultation notes saved.");
     loadDoctorAppointments();
   };
 
@@ -180,13 +174,6 @@ export default function DoctorDashboard() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F6] text-ink flex flex-col font-sans selection:bg-[#5E3E3B]/20 selection:text-[#5E3E3B]">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-teal-deep text-white text-xs font-semibold py-3 px-4 rounded-xl shadow-lg border border-white/20 flex items-center gap-2 animate-fadeIn">
-          <CheckCircle2 className="w-4 h-4 text-mint" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Top Doctor App Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-line px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xs">

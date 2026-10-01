@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Download,
   CheckCircle2,
@@ -32,62 +31,23 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { toast } from "react-toastify";
 import type { Appointment, Doctor } from "../types";
+import {
+  useReportAnalyticsQuery,
+  useSavedReportsQuery,
+  useSaveReportSnapshotMutation,
+  useDeleteReportSnapshotMutation,
+} from "@/api/Report/reportHooks";
+
+import {
+  reportsApi,
+  type AnalyticsMetrics,
+} from "@/api/Report/reportApi";
 
 interface ReportsViewProps {
   appointments: Appointment[];
   doctors?: Doctor[];
 }
-
-interface AnalyticsMetrics {
-  totalAppointments: number;
-  completedConsultations: number;
-  approvedAppointments: number;
-  pendingAppointments: number;
-  cancelledAppointments: number;
-  noShowAppointments: number;
-  onlineConsultations: number;
-  completionRate: number;
-  cancelRate: number;
-  appointmentsByTreatment: Array<{
-    treatment: string;
-    count: number;
-    percentage: number;
-  }>;
-  appointmentsByDoctor: Array<{
-    doctorName: string;
-    count: number;
-    percentage: number;
-  }>;
-  appointmentsByMonth: Array<{
-    month: string;
-    label: string;
-    total: number;
-    completed: number;
-    cancelled: number;
-  }>;
-  appointmentStatusStatistics: Array<{
-    status: string;
-    count: number;
-    percentage: number;
-  }>;
-}
-
-interface SavedReport {
-  id: number;
-  title: string;
-  reportType: string;
-  description?: string | null;
-  filters?: any;
-  metrics: AnalyticsMetrics;
-  createdAt: string;
-}
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("dental_auth_token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 export const ReportsView: React.FC<ReportsViewProps> = ({
   appointments: initialAppointments = [],
@@ -107,20 +67,50 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   // ------------------------------------------------------------------
   // Data States
   // ------------------------------------------------------------------
-  const [loading, setLoading] = useState(false);
   const [metrics, setMetrics] = useState<AnalyticsMetrics | null>(null);
   const [filteredAppointments, setFilteredAppointments] = useState<any[]>(
     initialAppointments,
   );
 
   // Saved reports snapshots state
-  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
   const [isSavedReportsOpen, setIsSavedReportsOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [snapshotTitle, setSnapshotTitle] = useState("");
   const [snapshotDesc, setSnapshotDesc] = useState("");
-  const [savingSnapshot, setSavingSnapshot] = useState(false);
   const [exporting, setExporting] = useState(false);
+
+  // ------------------------------------------------------------------
+  // Filter Parameters for TanStack Query
+  // ------------------------------------------------------------------
+  const filterParams = useMemo(
+    () => ({
+      search: search.trim() || undefined,
+      doctor: selectedDoctor !== "all" ? selectedDoctor : undefined,
+      treatment: selectedTreatment !== "all" ? selectedTreatment : undefined,
+      status: selectedStatus !== "all" ? selectedStatus : undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+    }),
+    [search, selectedDoctor, selectedTreatment, selectedStatus, startDate, endDate],
+  );
+
+  // ------------------------------------------------------------------
+  // TanStack Query Hooks: Real-time Analytics & Saved Reports
+  // ------------------------------------------------------------------
+  const {
+    data: analyticsData,
+    isLoading: loading,
+    refetch: refetchAnalytics,
+  } = useReportAnalyticsQuery(filterParams);
+
+  const {
+    data: savedReports = [],
+    isLoading: loadingSavedReports,
+  } = useSavedReportsQuery({ enabled: isSavedReportsOpen });
+
+  const saveSnapshotMutation = useSaveReportSnapshotMutation();
+  const deleteSnapshotMutation = useDeleteReportSnapshotMutation();
+  const savingSnapshot = saveSnapshotMutation.isPending;
 
   // ------------------------------------------------------------------
   // Quick Date Presets
@@ -172,44 +162,15 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     setDatePreset("all");
   };
 
-  // ------------------------------------------------------------------
-  // Fetch Analytics & Filtered Data from Backend
-  // ------------------------------------------------------------------
-  const fetchReportData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params: Record<string, string> = {};
-      if (search.trim()) params.search = search.trim();
-      if (selectedDoctor !== "all") params.doctor = selectedDoctor;
-      if (selectedTreatment !== "all") params.treatment = selectedTreatment;
-      if (selectedStatus !== "all") params.status = selectedStatus;
-      if (startDate) params.startDate = startDate;
-      if (endDate) params.endDate = endDate;
-
-      const res = await axios.get("/api/reports/analytics", {
-        params,
-        headers: getAuthHeaders(),
-      });
-
-      if (res.data?.success && res.data.data) {
-        setMetrics(res.data.data.metrics);
-        setFilteredAppointments(res.data.data.appointments || []);
-      }
-    } catch (err: any) {
-      console.warn("Backend analytics fetch failed, calculating from local props:", err?.message);
-      // Fallback calculation using initialAppointments
+  // Sync analyticsData to local display states (with local fallback if server query hasn't resolved)
+  useEffect(() => {
+    if (analyticsData) {
+      setMetrics(analyticsData.metrics);
+      setFilteredAppointments(analyticsData.appointments || []);
+    } else {
       calculateClientFallback();
-    } finally {
-      setLoading(false);
     }
-  }, [
-    search,
-    selectedDoctor,
-    selectedTreatment,
-    selectedStatus,
-    startDate,
-    endDate,
-  ]);
+  }, [analyticsData, initialAppointments]);
 
   // Client-side fallback computation
   const calculateClientFallback = () => {
@@ -308,26 +269,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     });
   };
 
-  useEffect(() => {
-    fetchReportData();
-  }, [fetchReportData]);
-
-  // Load saved report snapshots
-  const loadSavedReports = async () => {
-    try {
-      const res = await axios.get("/api/reports", {
-        headers: getAuthHeaders(),
-      });
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setSavedReports(res.data.data);
-      }
-    } catch (err) {
-      console.warn("Could not load saved reports:", err);
-    }
-  };
-
   const handleOpenSavedReports = () => {
-    loadSavedReports();
     setIsSavedReportsOpen(true);
   };
 
@@ -337,20 +279,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   const handleExportCSV = async () => {
     try {
       setExporting(true);
-      const params = new URLSearchParams();
-      if (search.trim()) params.append("search", search.trim());
-      if (selectedDoctor !== "all") params.append("doctor", selectedDoctor);
-      if (selectedTreatment !== "all") params.append("treatment", selectedTreatment);
-      if (selectedStatus !== "all") params.append("status", selectedStatus);
-      if (startDate) params.append("startDate", startDate);
-      if (endDate) params.append("endDate", endDate);
-
-      const res = await axios.get(`/api/reports/export?${params.toString()}`, {
-        headers: getAuthHeaders(),
-        responseType: "blob",
-      });
-
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const blob = await reportsApi.exportCsv(filterParams);
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute(
@@ -360,7 +290,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success("Report CSV exported successfully");
     } catch {
       // Client-side CSV export fallback
       const headers = [
@@ -401,7 +330,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success("Report CSV exported successfully");
     } finally {
       setExporting(false);
     }
@@ -413,58 +341,31 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   const handleSaveSnapshot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!snapshotTitle.trim()) {
-      toast.error("Please enter a report title");
       return;
     }
 
     try {
-      setSavingSnapshot(true);
-      const payload = {
+      await saveSnapshotMutation.mutateAsync({
         title: snapshotTitle.trim(),
         description: snapshotDesc.trim() || undefined,
         reportType: "custom_filtered_audit",
-        filters: {
-          search: search || undefined,
-          doctor: selectedDoctor !== "all" ? selectedDoctor : undefined,
-          treatment: selectedTreatment !== "all" ? selectedTreatment : undefined,
-          status: selectedStatus !== "all" ? selectedStatus : undefined,
-          startDate: startDate || undefined,
-          endDate: endDate || undefined,
-        },
+        filters: filterParams,
         customMetrics: metrics,
-      };
-
-      const res = await axios.post("/api/reports/save", payload, {
-        headers: getAuthHeaders(),
       });
 
-      if (res.data?.success) {
-        toast.success("Report snapshot saved to database!");
-        setIsSaveModalOpen(false);
-        setSnapshotTitle("");
-        setSnapshotDesc("");
-        loadSavedReports();
-      }
-    } catch (err: any) {
-      toast.error(
-        err.response?.data?.message || "Failed to save report snapshot",
-      );
-    } finally {
-      setSavingSnapshot(false);
+      setIsSaveModalOpen(false);
+      setSnapshotTitle("");
+      setSnapshotDesc("");
+    } catch {
+      // ignore
     }
   };
 
   const handleDeleteSavedReport = async (id: number) => {
     try {
-      const res = await axios.delete(`/api/reports/${id}`, {
-        headers: getAuthHeaders(),
-      });
-      if (res.data?.success) {
-        toast.success("Saved report deleted");
-        setSavedReports((prev) => prev.filter((r) => r.id !== id));
-      }
+      await deleteSnapshotMutation.mutateAsync(id);
     } catch {
-      toast.error("Failed to delete saved report");
+      // ignore
     }
   };
 
@@ -935,7 +836,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             type="button"
             variant="outline"
             size="sm"
-            onClick={fetchReportData}
+            onClick={() => refetchAnalytics()}
             disabled={loading}
             className="text-xs h-8 border-line text-ink cursor-pointer gap-1"
           >
@@ -1149,7 +1050,12 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           </DialogHeader>
 
           <div className="space-y-3 py-2">
-            {savedReports.length === 0 ? (
+            {loadingSavedReports ? (
+              <div className="py-8 text-center text-xs text-ink-soft flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-teal-deep" />
+                Loading archived report snapshots...
+              </div>
+            ) : savedReports.length === 0 ? (
               <div className="py-8 text-center text-xs text-ink-soft">
                 No saved report snapshots found. Click &quot;Save Snapshot&quot; above to create one.
               </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import axios from "axios";
+import { useLoginMutation } from "@/api/User/userHooks";
 import {
   AlertCircle,
   Check,
@@ -15,7 +15,6 @@ import {
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "./AuthContext";
-import { toast } from "react-toastify";
 
 const benefits = [
   "Request appointments without calling the clinic",
@@ -36,6 +35,7 @@ const roles = [
 ];
 
 function Login() {
+  const loginMutation = useLoginMutation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectPath = searchParams.get("redirect");
@@ -109,22 +109,20 @@ function Login() {
     try {
       setLoading(true);
 
-      const response = await axios.post("/api/users/login", {
+      const response = await loginMutation.mutateAsync({
         email: emailClean,
         password: passwordClean,
         role: userType.toLowerCase(),
       });
 
-      if (response.data?.token && response.data?.data) {
-        login(response.data.token, response.data.data);
+      if (response.token && response.data) {
+        login(response.token, response.data);
       }
 
-      setSuccess(response.data?.message || "Login successful!");
+      setSuccess(response.message || "Login successful!");
 
       const resolvedRole =
-        response.data?.data?.role?.toLowerCase() || userType.toLowerCase();
-
-      toast.success("Login successful");
+        response.data?.role?.toLowerCase() || userType.toLowerCase();
 
       setTimeout(() => {
         if (resolvedRole === "superadmin" || resolvedRole === "admin") {
@@ -143,7 +141,6 @@ function Login() {
         err?.response?.data?.message ||
         "Login failed. Please check your credentials and try again.";
       setError(serverError);
-      toast.error(serverError || "Login failed");
     } finally {
       setLoading(false);
     }

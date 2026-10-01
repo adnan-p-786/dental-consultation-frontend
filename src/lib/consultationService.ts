@@ -1,4 +1,5 @@
 import type { ConsultationNotes } from "@/admin/types";
+import { apiClient } from "@/api/Api";
 
 export interface ConsultationPayload {
   appointmentId: number;
@@ -34,14 +35,6 @@ export interface ConsultationRecord {
   updatedAt: string;
 }
 
-const getAuthHeaders = (): HeadersInit => {
-  const token = localStorage.getItem("dental_auth_token");
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-};
-
 export const consultationService = {
   /**
    * Create or update consultation on backend
@@ -53,17 +46,16 @@ export const consultationService = {
     error?: string;
   }> {
     try {
-      const res = await fetch("/api/consultations", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-      });
-      return await res.json();
+      const res = await apiClient.post<{ success: boolean; data: ConsultationRecord; message?: string }>(
+        "/consultations",
+        payload
+      );
+      return res.data;
     } catch (err: any) {
       console.error("Failed to create consultation:", err);
       return {
         success: false,
-        error: err.message || "Failed to create consultation",
+        error: err.response?.data?.error || err.response?.data?.message || err.message || "Failed to create consultation",
       };
     }
   },
@@ -81,17 +73,16 @@ export const consultationService = {
     error?: string;
   }> {
     try {
-      const res = await fetch(`/api/consultations/${id}`, {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-      });
-      return await res.json();
+      const res = await apiClient.put<{ success: boolean; data: ConsultationRecord; message?: string }>(
+        `/consultations/${id}`,
+        payload
+      );
+      return res.data;
     } catch (err: any) {
       console.error(`Failed to update consultation #${id}:`, err);
       return {
         success: false,
-        error: err.message || "Failed to update consultation",
+        error: err.response?.data?.error || err.response?.data?.message || err.message || "Failed to update consultation",
       };
     }
   },
@@ -105,17 +96,14 @@ export const consultationService = {
     error?: string;
   }> {
     try {
-      const res = await fetch(
-        `/api/consultations/appointment/${appointmentId}`,
-        {
-          headers: getAuthHeaders(),
-        },
+      const res = await apiClient.get<{ success: boolean; data?: ConsultationRecord }>(
+        `/consultations/appointment/${appointmentId}`
       );
-      return await res.json();
+      return res.data;
     } catch (err: any) {
       return {
         success: false,
-        error: err.message || "Failed to fetch consultation",
+        error: err.response?.data?.error || err.response?.data?.message || err.message || "Failed to fetch consultation",
       };
     }
   },

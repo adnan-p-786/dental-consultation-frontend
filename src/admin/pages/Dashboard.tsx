@@ -10,6 +10,7 @@ import {
   CalendarCheck,
   Check,
   UserCheck,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,7 @@ import { AdminSidebar, type AdminTab } from "../components/AdminSidebar";
 import { AdminHeader } from "../components/AdminHeader";
 import { AppointmentDetailModal } from "../components/AppointmentDetailModal";
 import { NewAppointmentModal } from "../components/NewAppointmentModal";
+import { DeleteAppointmentModal } from "../components/DeleteAppointmentModal";
 import { AppointmentCalendarView } from "../components/AppointmentCalendarView";
 import { DoctorManagementView } from "../components/DoctorManagementView";
 import { ReportsView } from "../components/ReportsView";
@@ -53,39 +55,53 @@ import type {
 } from "../types";
 import { appointmentService } from "@/lib/appointmentService";
 import { useAuth } from "@/auth/AuthContext";
+import {
+  useAppointmentsQuery,
+  useUpdateAppointmentMutation,
+  useCreateAppointmentMutation,
+  useDeleteAppointmentMutation,
+} from "@/api/Appointment/appointmentHooks";
+import {
+  useDoctorsQuery,
+  useUpdateDoctorStatusMutation,
+  useDeleteDoctorMutation,
+} from "@/api/Doctor/doctorHooks";
 
 function Dashboard() {
+  const { data: dbAppointments = [], refetch: refetchAppointments } = useAppointmentsQuery();
+  const { data: dbDoctors = [] } = useDoctorsQuery();
+
+  const updateAppointmentMutation = useUpdateAppointmentMutation();
+  const createAppointmentMutation = useCreateAppointmentMutation();
+  const updateDoctorStatusMutation = useUpdateDoctorStatusMutation();
+  const deleteDoctorMutation = useDeleteDoctorMutation();
+  const deleteAppointmentMutation = useDeleteAppointmentMutation();
+
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     return appointmentService.getAppointments();
   });
-  const fetchAppointmentsFromDb = async () => {
-    try {
-      const live = await appointmentService.fetchAppointments();
-      setAppointments(live);
-    } catch (e) {
-      console.error("Failed to load appointments from db:", e);
+
+  // Sync fresh appointments from query cache
+  useEffect(() => {
+    if (dbAppointments && dbAppointments.length > 0) {
+      setAppointments(dbAppointments);
     }
-  };
+  }, [dbAppointments]);
 
-  // Fetch live appointments from DB on mount
+  // Sync to appointmentService whenever appointments change (without dispatching refetch event)
   useEffect(() => {
-    fetchAppointmentsFromDb();
-  }, []);
-
-  // Sync to appointmentService whenever appointments change
-  useEffect(() => {
-    appointmentService.saveAppointments(appointments);
+    appointmentService.saveAppointments(appointments, false);
   }, [appointments]);
 
   // Listen to cross-component appointment updates
   useEffect(() => {
     const handleSync = () => {
-      setAppointments(appointmentService.getAppointments());
+      refetchAppointments();
     };
     window.addEventListener("dental_appointments_updated", handleSync);
     return () =>
       window.removeEventListener("dental_appointments_updated", handleSync);
-  }, []);
+  }, [refetchAppointments]);
 
   const [doctors, setDoctors] = useState<Doctor[]>(() => {
     try {
@@ -104,82 +120,16 @@ function Dashboard() {
     } catch (e) {}
   }, [doctors]);
 
-  // Fetch registered doctors from backend
+  // Sync doctors from query cache
   useEffect(() => {
-    const fetchRegisteredDoctors = async () => {
-      try {
-        const fetchedDoctors: Doctor[] = [];
-
-        // 1. Fetch from doctor table
-        try {
-          const docRes = await fetch("/api/doctor/get-doctors");
-          if (docRes.ok) {
-            const docResult = await docRes.json();
-            if (docResult.success && Array.isArray(docResult.data)) {
-              const tableDoctors: Doctor[] = docResult.data.map((d: any) => ({
-                id: String(d.id),
-                name: d.doctorName,
-                avatar: d.doctorPhoto || "",
-                specialization: d.specialization,
-                email: d.doctorEmail,
-                phone: d.phoneNumber,
-                workingHours: d.workingHours,
-                status:
-                  (d.status as "available" | "busy" | "on_leave") ||
-                  "available",
-                activeAppointments: 0,
-              }));
-              fetchedDoctors.push(...tableDoctors);
-            }
-          }
-        } catch (e) {
-          console.error("Failed to fetch doctor table records:", e);
-        }
-
-        // 2. Fetch from users table (role=doctor)
-        try {
-          const res = await fetch("/api/users/doctors");
-          if (res.ok) {
-            const result = await res.json();
-            if (result.success && Array.isArray(result.data)) {
-              const apiDoctors: Doctor[] = result.data.map((u: any) => {
-                const fullName =
-                  `Dr. ${u.firstName.charAt(0).toUpperCase() + u.firstName.slice(1)} ${
-                    u.lastName ? u.lastName.toUpperCase() : ""
-                  }`.trim();
-                return {
-                  id: `user-${u.id}`,
-                  name: fullName,
-                  avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.firstName}`,
-                  specialization: "General Dental Consultation & Surgery",
-                  email: u.email,
-                  phone: u.phoneNumber || "+1 (555) 234-CARE",
-                  workingHours: "08:00 AM - 05:00 PM",
-                  status: "available",
-                  activeAppointments: 0,
-                };
-              });
-              fetchedDoctors.push(...apiDoctors);
-            }
-          }
-        } catch (e) {
-          console.error("Failed to fetch users doctors:", e);
-        }
-
-        if (fetchedDoctors.length > 0) {
-          setDoctors((prev) => {
-            const existingIds = new Set(fetchedDoctors.map((d) => d.id));
-            const customDoctors = prev.filter((d) => !existingIds.has(d.id));
-            return [...fetchedDoctors, ...customDoctors];
-          });
-        }
-      } catch (err) {
-        console.error("Failed to fetch doctors:", err);
-      }
-    };
-
-    fetchRegisteredDoctors();
-  }, []);
+    if (dbDoctors && dbDoctors.length > 0) {
+      setDoctors((prev) => {
+        const existingIds = new Set(dbDoctors.map((d) => d.id));
+        const customDoctors = prev.filter((d) => !existingIds.has(d.id));
+        return [...dbDoctors, ...customDoctors];
+      });
+    }
+  }, [dbDoctors]);
   const { user, isSuperAdmin } = useAuth();
   const isSuper = isSuperAdmin || user?.role === "superadmin";
   const currentActor = isSuper ? "Super Admin" : "Clinic Admin";
@@ -237,6 +187,9 @@ function Dashboard() {
     useState<Appointment | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] =
+    useState<Appointment | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Keep selected appointment synchronized with latest data
   useEffect(() => {
@@ -248,13 +201,6 @@ function Dashboard() {
     }
   }, [appointments]);
 
-  // Toast notification feedback
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
 
   const kpis = useMemo(() => {
     const todayDate = new Date().toISOString().split("T")[0];
@@ -393,10 +339,9 @@ function Dashboard() {
 
     if (!isNaN(Number(id))) {
       try {
-        await fetch(`/api/appointment/update-appointment/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        await updateAppointmentMutation.mutateAsync({
+          id,
+          payload: {
             status: newStatus,
             note: note,
             assignedDoctorId: targetApt?.assignedDoctorId,
@@ -405,21 +350,12 @@ function Dashboard() {
             meetingPlatform: targetApt?.meetingPlatform,
             confirmedDate: targetApt?.confirmedDate || targetApt?.requestedDate,
             confirmedTime: targetApt?.confirmedTime || targetApt?.requestedTime,
-          }),
+          },
         });
-        await fetchAppointmentsFromDb();
       } catch (err) {
         console.error("Failed to sync status to DB:", err);
       }
     }
-
-    showToast(
-      newStatus === "approved"
-        ? "Appointment approved and confirmation email sent to patient."
-        : newStatus === "cancelled"
-        ? "Appointment cancelled and cancellation email sent to patient."
-        : `Appointment status updated to "${newStatus.replace("_", " ")}".`,
-    );
   };
 
   const handleAssignDoctor = async (id: string, doctorId: string) => {
@@ -475,27 +411,18 @@ function Dashboard() {
 
     if (!isNaN(Number(id))) {
       try {
-        await fetch(`/api/appointment/update-appointment/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        await updateAppointmentMutation.mutateAsync({
+          id,
+          payload: {
             status: nextStatus,
             assignedDoctorId: String(doctorId),
             assignedDoctorName: doctorObj?.name,
-          }),
+          },
         });
-        const fresh = await appointmentService.fetchAppointments();
-        setAppointments(fresh);
-        const freshSelected = fresh.find((a) => String(a.id) === String(id));
-        if (freshSelected) {
-          setSelectedAppointment(freshSelected);
-        }
       } catch (err) {
         console.error("Failed to sync doctor assignment to DB:", err);
       }
     }
-
-    showToast(`Assigned to ${doctorObj?.name || "doctor"} successfully.`);
   };
 
   const handleUpdateSchedule = async (
@@ -541,10 +468,9 @@ function Dashboard() {
 
     if (!isNaN(Number(id))) {
       try {
-        await fetch(`/api/appointment/update-appointment/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        await updateAppointmentMutation.mutateAsync({
+          id,
+          payload: {
             preferredDate: date,
             preferredTime: time,
             confirmedDate: date,
@@ -555,15 +481,12 @@ function Dashboard() {
             assignedDoctorName: targetApt?.assignedDoctor?.name,
             meetingLink: targetApt?.meetingLink,
             meetingPlatform: targetApt?.meetingPlatform,
-          }),
+          },
         });
-        await fetchAppointmentsFromDb();
       } catch (err) {
         console.error("Failed to sync schedule to DB:", err);
       }
     }
-
-    showToast(`Proposed new schedule slot (${date} at ${time}) & email sent to patient.`);
   };
 
   const handleUpdateMeetingLink = async (
@@ -605,21 +528,17 @@ function Dashboard() {
 
     if (!isNaN(Number(id))) {
       try {
-        await fetch(`/api/appointment/update-appointment/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        await updateAppointmentMutation.mutateAsync({
+          id,
+          payload: {
             meetingPlatform: platform,
             meetingLink: link,
-          }),
+          },
         });
-        await fetchAppointmentsFromDb();
       } catch (err) {
         console.error("Failed to sync meeting link to DB:", err);
       }
     }
-
-    showToast("Video consultation link updated!");
   };
 
   const handleSaveClinicalNotes = async (
@@ -662,20 +581,17 @@ function Dashboard() {
 
     if (!isNaN(Number(id))) {
       try {
-        await fetch(`/api/appointment/update-appointment/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        await updateAppointmentMutation.mutateAsync({
+          id,
+          payload: {
             consultationNotes: notes,
-          }),
+          },
         });
-        await fetchAppointmentsFromDb();
       } catch (err) {
         console.error("Failed to sync clinical notes to DB:", err);
       }
     }
 
-    showToast("Clinical consultation notes saved.");
   };
 
   const handleCreateNewAppointment = async (
@@ -718,25 +634,18 @@ function Dashboard() {
       }
       formData.append("sendAcknowledgmentEmail", "false");
 
-      const res = await fetch("/api/appointment/create-appointment", {
-        method: "POST",
-        body: formData,
-      });
+      const json = await createAppointmentMutation.mutateAsync(formData);
 
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && json.data) {
-          const mapped = appointmentService.mapDbRecord(json.data);
-          if (data.assignedDoctorId) {
-            mapped.assignedDoctorId = data.assignedDoctorId;
-            mapped.assignedDoctor = doctors.find(
-              (d) => d.id === data.assignedDoctorId,
-            );
-          }
-          setAppointments((prev) => [mapped, ...prev]);
-          showToast(`New appointment ${mapped.referenceNo} registered in DB!`);
-          return;
+      if (json.success && json.data) {
+        const mapped = appointmentService.mapDbRecord(json.data);
+        if (data.assignedDoctorId) {
+          mapped.assignedDoctorId = data.assignedDoctorId;
+          mapped.assignedDoctor = doctors.find(
+            (d) => d.id === data.assignedDoctorId,
+          );
         }
+        setAppointments((prev) => [mapped, ...prev]);
+        return;
       }
     } catch (e) {
       console.error("Failed to save new appointment to DB:", e);
@@ -772,7 +681,6 @@ function Dashboard() {
     };
 
     setAppointments([newApt, ...appointments]);
-    showToast(`New appointment ${referenceNo} created!`);
   };
 
   const handleToggleDoctorStatus = (doctorId: string) => {
@@ -786,53 +694,61 @@ function Dashboard() {
                 ? "on_leave"
                 : "available";
           if (!isNaN(Number(doctorId))) {
-            fetch(`/api/doctor/${doctorId}/status`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ status: nextStatus }),
-            }).catch((err) =>
-              console.error("Failed to sync status to backend:", err),
-            );
+            updateDoctorStatusMutation
+              .mutateAsync({ id: doctorId, status: nextStatus })
+              .catch((err) =>
+                console.error("Failed to sync status to backend:", err),
+              );
           }
           return { ...d, status: nextStatus };
         }
         return d;
       }),
     );
-    showToast("Doctor status updated.");
   };
 
   const handleAddDoctor = (newDoctor: Doctor) => {
     setDoctors((prev) => [newDoctor, ...prev]);
-    showToast(`${newDoctor.name} added to clinic roster.`);
   };
 
   const handleUpdateDoctor = (updatedDoctor: Doctor) => {
     setDoctors((prev) =>
       prev.map((d) => (d.id === updatedDoctor.id ? updatedDoctor : d)),
     );
-    showToast(`${updatedDoctor.name}'s profile updated.`);
   };
 
   const handleDeleteDoctor = (doctorId: string) => {
     setDoctors((prev) => prev.filter((d) => d.id !== doctorId));
     if (!isNaN(Number(doctorId))) {
-      fetch(`/api/doctor/${doctorId}`, { method: "DELETE" }).catch((err) =>
+      deleteDoctorMutation.mutateAsync(doctorId).catch((err) =>
         console.error("Failed to delete doctor from backend:", err),
       );
     }
-    showToast("Doctor profile removed.");
+  };
+
+  const handleConfirmDeleteAppointment = async (
+    appointmentId: string | number,
+  ) => {
+    try {
+      // 1. Optimistic local update
+      setAppointments((prev) =>
+        prev.filter((a) => String(a.id) !== String(appointmentId)),
+      );
+      appointmentService.deleteAppointment(String(appointmentId));
+
+      // 2. Persist to backend database
+      if (!isNaN(Number(appointmentId))) {
+        await deleteAppointmentMutation.mutateAsync(appointmentId);
+      }
+      setIsDeleteModalOpen(false);
+      setAppointmentToDelete(null);
+    } catch (err: any) {
+      console.error("Failed to delete appointment:", err);
+    }
   };
 
   return (
     <div className="flex min-h-screen bg-[#FAF7F6] text-ink font-sans antialiased">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-teal-deep text-white px-4 py-3 shadow-lg animate-in slide-in-from-bottom-3 duration-200 border border-emerald-500/30">
-          <Check className="h-4 w-4 text-emerald-300" />
-          <span className="text-xs font-semibold">{toastMessage}</span>
-        </div>
-      )}
 
       {/* Sidebar */}
       <AdminSidebar
@@ -1334,9 +1250,6 @@ function Dashboard() {
                             <div className="text-xs font-medium text-ink">
                               {apt.treatment}
                             </div>
-                            <div className="text-[11px] text-ink-soft">
-                              Online Consultation
-                            </div>
                           </TableCell>
 
                           {/* Schedule */}
@@ -1499,6 +1412,17 @@ function Dashboard() {
                                   <XCircle className="w-3.5 h-3.5 mr-2" />{" "}
                                   Cancel Booking
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setAppointmentToDelete(apt);
+                                    setIsDeleteModalOpen(true);
+                                  }}
+                                  className="text-rose-600 focus:text-rose-700 focus:bg-rose-50 cursor-pointer font-medium"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 mr-2 text-rose-500" />{" "}
+                                  Delete
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -1572,6 +1496,17 @@ function Dashboard() {
         onClose={() => setIsNewModalOpen(false)}
         doctors={doctors}
         onCreateAppointment={handleCreateNewAppointment}
+      />
+
+      {/* Delete Appointment Confirmation Modal */}
+      <DeleteAppointmentModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setAppointmentToDelete(null);
+        }}
+        onConfirm={handleConfirmDeleteAppointment}
+        appointment={appointmentToDelete}
       />
     </div>
   );

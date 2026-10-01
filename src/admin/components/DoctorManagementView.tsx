@@ -4,7 +4,6 @@ import {
   Mail,
   Clock,
   MapPin,
-  Star,
   User,
   Plus,
   Trash2,
@@ -173,17 +172,6 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
                     <p className="text-xs text-mint-deep font-medium truncate" title={doc.specialization}>
                       {doc.specialization}
                     </p>
-                    {doc.rating && (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                        <span className="text-[11px] font-bold text-ink">
-                          {doc.rating}
-                        </span>
-                        <span className="text-[10px] text-ink-soft">
-                          (50+ consultations)
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
 

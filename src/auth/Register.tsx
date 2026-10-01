@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import axios from "axios";
+import { useRegisterMutation } from "@/api/User/userHooks";
 
 import {
   AlertCircle,
@@ -14,7 +14,6 @@ import {
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "./AuthContext";
-import { toast } from "react-toastify";
 
 const benefits = [
   "Request appointments without calling the clinic",
@@ -27,6 +26,7 @@ const roles = [
 ];
 
 function Register() {
+  const registerMutation = useRegisterMutation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectPath = searchParams.get("redirect");
@@ -133,7 +133,7 @@ function Register() {
     try {
       setLoading(true);
 
-      const response = await axios.post("/api/users/register", {
+      const response = await registerMutation.mutateAsync({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -142,12 +142,11 @@ function Register() {
         role: userType.toLowerCase(),
       });
 
-      if (response.data?.token && response.data?.data) {
-        login(response.data.token, response.data.data);
+      if (response.token && response.data) {
+        login(response.token, response.data);
       }
 
-      setSuccess(response.data?.message || "Account created successfully!");
-      toast.success("Registration successful");
+      setSuccess(response.message || "Account created successfully!");
 
       setTimeout(() => {
         const registeredRole = userType.toLowerCase();
@@ -167,7 +166,6 @@ function Register() {
         err?.response?.data?.message ||
         "Registration failed. Please check your details and try again.";
       setError(serverError);
-      toast.error(serverError || "Registration failed");
     } finally {
       setLoading(false);
     }

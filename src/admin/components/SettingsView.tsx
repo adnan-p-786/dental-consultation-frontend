@@ -16,7 +16,6 @@ import {
   ToggleLeft,
   ToggleRight,
 } from "lucide-react";
-import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -29,16 +28,22 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import axios from "axios";
+import {
+  useTreatmentsQuery,
+  useCreateTreatmentMutation,
+  useUpdateTreatmentMutation,
+  useToggleTreatmentStatusMutation,
+  useDeleteTreatmentMutation,
+} from "@/api/Treatment/treatmentHooks";
+import {
+  type TreatmentItem as Treatment,
+} from "@/api/Treatment/treatmentApi";
+import {
+  useSettingsQuery,
+  useUpdateSettingsMutation,
+  useTriggerRemindersMutation,
+} from "@/api/Setting/settingHooks";
 import { defaultSettings as mockDefaults } from "../data/mockData";
-
-export interface Treatment {
-  id: number;
-  name: string;
-  description?: string | null;
-  isActive: boolean;
-  createdAt?: string;
-}
 
 export interface ClinicSettings {
   clinicName: string;
@@ -78,11 +83,6 @@ const defaultReminderConfig: ReminderConfig = {
   smsEnabled: false,
 };
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("dental_auth_token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const SettingsView: React.FC = () => {
   const [settings, setSettings] = useState<ClinicSettings>(() => {
     try {
@@ -106,14 +106,47 @@ export const SettingsView: React.FC = () => {
     }
   });
 
-  const [loadingSettings, setLoadingSettings] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [testStatus, setTestStatus] = useState<string | null>(null);
 
-  // Treatment Management State (Connected to backend /api/treatment via axios)
-  const [treatments, setTreatments] = useState<Treatment[]>([]);
-  const [loadingTreatments, setLoadingTreatments] = useState(true);
+  // ------------------------------------------------------------------
+  // TanStack Query: Clinic & Reminder Settings
+  // ------------------------------------------------------------------
+  const { data: serverSettings, isLoading: loadingSettings } = useSettingsQuery();
+  const updateSettingsMutation = useUpdateSettingsMutation();
+  const triggerRemindersMutation = useTriggerRemindersMutation();
+
+  useEffect(() => {
+    if (serverSettings) {
+      setSettings({
+        clinicName: serverSettings.clinicName || defaultClinicSettings.clinicName,
+        supportEmail: serverSettings.supportEmail || "",
+        clinicPhone: serverSettings.clinicPhone || "",
+        defaultDuration: serverSettings.defaultDuration || 30,
+        meetingProvider: serverSettings.meetingProvider || "manual",
+        manualMeetingLink: serverSettings.manualMeetingLink || "",
+      });
+      setReminders({
+        instantAckEnabled: serverSettings.instantAckEnabled ?? true,
+        reminder24hEnabled: serverSettings.reminder24hEnabled ?? true,
+        reminder24hHours: serverSettings.reminder24hHours ?? 24,
+        reminder1hEnabled: serverSettings.reminder1hEnabled ?? true,
+        reminder1hMinutes: serverSettings.reminder1hMinutes ?? 60,
+        emailEnabled: serverSettings.emailEnabled ?? true,
+        smsEnabled: serverSettings.smsEnabled ?? false,
+      });
+    }
+  }, [serverSettings]);
+
+  // ------------------------------------------------------------------
+  // TanStack Query: Treatment Management
+  // ------------------------------------------------------------------
+  const { data: treatments = [], isLoading: loadingTreatments } = useTreatmentsQuery();
+  const createTreatmentMutation = useCreateTreatmentMutation();
+  const updateTreatmentMutation = useUpdateTreatmentMutation();
+  const toggleTreatmentMutation = useToggleTreatmentStatusMutation();
+  const deleteTreatmentMutation = useDeleteTreatmentMutation();
+
   const [isTreatmentModalOpen, setIsTreatmentModalOpen] = useState(false);
   const [editingTreatment, setEditingTreatment] = useState<Treatment | null>(null);
   const [treatmentForm, setTreatmentForm] = useState({
@@ -121,27 +154,12 @@ export const SettingsView: React.FC = () => {
     description: "",
     isActive: true,
   });
-  const [savingTreatment, setSavingTreatment] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const loadTreatments = async () => {
-    try {
-      setLoadingTreatments(true);
-      const res = await axios.get("/api/treatment");
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setTreatments(res.data.data);
-      }
-    } catch (err: any) {
-      console.error("Failed to load treatments:", err);
-    } finally {
-      setLoadingTreatments(false);
-    }
-  };
-
-  useEffect(() => {
-    loadTreatments();
-  }, []);
+  const savingTreatment =
+    createTreatmentMutation.isPending || updateTreatmentMutation.isPending;
+  const isSaving = updateSettingsMutation.isPending;
+  const deletingId = deleteTreatmentMutation.isPending ? deleteConfirmId : null;
 
   const handleOpenAddTreatment = () => {
     setEditingTreatment(null);
@@ -163,116 +181,49 @@ export const SettingsView: React.FC = () => {
     if (e) e.preventDefault();
     const trimmed = treatmentForm.name.trim();
     if (!trimmed) {
-      toast.error("Please enter a treatment name");
       return;
     }
 
     try {
-      setSavingTreatment(true);
       if (editingTreatment) {
-        const res = await axios.put(`/api/treatment/${editingTreatment.id}`, {
+        await updateTreatmentMutation.mutateAsync({
+          id: editingTreatment.id,
           name: trimmed,
           description: treatmentForm.description.trim() || undefined,
           isActive: treatmentForm.isActive,
         });
-        const updated = res.data?.data;
-        if (updated) {
-          setTreatments((prev) =>
-            prev.map((t) => (t.id === editingTreatment.id ? updated : t))
-          );
-        }
-        toast.success(`Treatment "${trimmed}" updated successfully`);
       } else {
-        const res = await axios.post("/api/treatment", {
+        await createTreatmentMutation.mutateAsync({
           name: trimmed,
           description: treatmentForm.description.trim() || undefined,
           isActive: treatmentForm.isActive,
         });
-        const created = res.data?.data;
-        if (created) {
-          setTreatments((prev) => [...prev, created]);
-        }
-        toast.success(`Treatment "${trimmed}" added successfully`);
       }
       setIsTreatmentModalOpen(false);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || "Failed to save treatment";
-      toast.error(msg);
-    } finally {
-      setSavingTreatment(false);
+    } catch {
+      // ignore
     }
   };
 
   const handleToggleTreatment = async (id: number) => {
     try {
-      const res = await axios.patch(`/api/treatment/toggle-status/${id}`);
-      const updated = res.data?.data;
-      if (updated) {
-        setTreatments((prev) =>
-          prev.map((t) => (t.id === id ? updated : t))
-        );
-      }
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || "Failed to toggle treatment status";
-      toast.error(msg);
+      await toggleTreatmentMutation.mutateAsync(id);
+    } catch {
+      // ignore
     }
   };
 
   const handleDeleteTreatment = async (id: number) => {
     try {
-      setDeletingId(id);
-      await axios.delete(`/api/treatment/${id}`);
-      setTreatments((prev) => prev.filter((t) => t.id !== id));
-      toast.success("Treatment deleted successfully");
+      await deleteTreatmentMutation.mutateAsync(id);
       setDeleteConfirmId(null);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || "Failed to delete treatment";
-      toast.error(msg);
-    } finally {
-      setDeletingId(null);
+    } catch {
+      // ignore
     }
   };
-
-  const loadSettings = async () => {
-    try {
-      setLoadingSettings(true);
-      const res = await axios.get("/api/settings", {
-        headers: getAuthHeaders(),
-      });
-      if (res.data?.success && res.data.data) {
-        const d = res.data.data;
-        setSettings({
-          clinicName: d.clinicName || defaultClinicSettings.clinicName,
-          supportEmail: d.supportEmail || "",
-          clinicPhone: d.clinicPhone || "",
-          defaultDuration: d.defaultDuration || 30,
-          meetingProvider: d.meetingProvider || "manual",
-          manualMeetingLink: d.manualMeetingLink || "",
-        });
-        setReminders({
-          instantAckEnabled: d.instantAckEnabled ?? true,
-          reminder24hEnabled: d.reminder24hEnabled ?? true,
-          reminder24hHours: d.reminder24hHours ?? 24,
-          reminder1hEnabled: d.reminder1hEnabled ?? true,
-          reminder1hMinutes: d.reminder1hMinutes ?? 60,
-          emailEnabled: d.emailEnabled ?? true,
-          smsEnabled: d.smsEnabled ?? false,
-        });
-      }
-    } catch (err: any) {
-      console.warn("Could not load settings from server, falling back to local:", err?.message);
-    } finally {
-      setLoadingSettings(false);
-    }
-  };
-
-  useEffect(() => {
-    loadSettings();
-  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
 
     try {
       const payload = {
@@ -292,31 +243,18 @@ export const SettingsView: React.FC = () => {
         smsEnabled: reminders.smsEnabled,
       };
 
-      const res = await axios.put("/api/settings", payload, {
-        headers: getAuthHeaders(),
-      });
+      await updateSettingsMutation.mutateAsync(payload);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
 
-      if (res.data?.success) {
-        toast.success("Settings saved successfully to database!");
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2500);
-
-        try {
-          localStorage.setItem("dental_clinic_settings", JSON.stringify(settings));
-          localStorage.setItem("dental_reminder_settings", JSON.stringify(reminders));
-        } catch {
-          // Ignore local storage error
-        }
+      try {
+        localStorage.setItem("dental_clinic_settings", JSON.stringify(settings));
+        localStorage.setItem("dental_reminder_settings", JSON.stringify(reminders));
+      } catch {
+        // Ignore local storage error
       }
     } catch (err: any) {
       console.error("Failed to save settings:", err);
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Failed to save settings to server";
-      toast.error(msg);
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -327,19 +265,14 @@ export const SettingsView: React.FC = () => {
         : "Sending test 1h reminder...",
     );
     try {
-      const res = await fetch("/api/appointment/trigger-reminders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reminderType: type,
-          customHours:
-            type === "24_hour" ? reminders.reminder24hHours : undefined,
-        }),
+      const data = await triggerRemindersMutation.mutateAsync({
+        reminderType: type,
+        customHours:
+          type === "24_hour" ? reminders.reminder24hHours : undefined,
       });
-      const data = await res.json();
       if (data.success) {
         setTestStatus(
-          `Test ${type === "24_hour" ? "24h" : "1h"} reminder sent! (${data.sentCount ?? 1} delivered)`,
+          `Test ${type === "24_hour" ? "24h" : "1h"} reminder sent! (${(data as any).sentCount ?? 1} delivered)`,
         );
       } else {
         setTestStatus(data.message || "Failed to trigger test reminder");

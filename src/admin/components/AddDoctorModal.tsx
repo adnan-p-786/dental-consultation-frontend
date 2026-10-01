@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import axios from "axios";
+import { useActiveTreatmentsQuery } from "@/api/Treatment/treatmentHooks";
+import { apiClient } from "@/api/Api";
 import {
   Dialog,
   DialogContent,
@@ -66,7 +67,8 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
   const [doctorPassword, setDoctorPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [activeTreatments, setActiveTreatments] = useState<string[]>([]);
-  const [loadingTreatments, setLoadingTreatments] = useState(false);
+  const { data: dbActiveTreatments, isLoading: loadingTreatments } =
+    useActiveTreatmentsQuery({ enabled: isOpen });
   const [specialization, setSpecialization] = useState<string>("");
   const [workingHours, setWorkingHours] = useState(
     "Mon - Fri, 09:00 AM - 05:00 PM",
@@ -105,54 +107,25 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
     }
   };
 
-  // Fetch active treatments from database (like NewAppointmentModal)
+  // Populate active treatments from database
   useEffect(() => {
-    if (!isOpen) return;
-
-    let isMounted = true;
-    const fetchActiveTreatments = async () => {
-      try {
-        setLoadingTreatments(true);
-        const res = await axios.get("/api/treatment/active");
-        if (
-          res.data?.success &&
-          Array.isArray(res.data.data) &&
-          res.data.data.length > 0
-        ) {
-          const names: string[] = res.data.data.map(
-            (t: { name: string }) => t.name,
-          );
-          if (isMounted) {
-            const list = [...names];
-            if (
-              doctorToEdit?.specialization &&
-              !list.includes(doctorToEdit.specialization)
-            ) {
-              list.push(doctorToEdit.specialization);
-            }
-            setActiveTreatments(list);
-            if (!doctorToEdit) {
-              setSpecialization((prev) =>
-                prev && list.includes(prev) ? prev : list[0] || "",
-              );
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load active treatments in doctor modal:", err);
-      } finally {
-        if (isMounted) {
-          setLoadingTreatments(false);
-        }
+    if (dbActiveTreatments && dbActiveTreatments.length > 0) {
+      const names = dbActiveTreatments.map((t) => t.name);
+      const list = [...names];
+      if (
+        doctorToEdit?.specialization &&
+        !list.includes(doctorToEdit.specialization)
+      ) {
+        list.push(doctorToEdit.specialization);
       }
-    };
-
-    fetchActiveTreatments();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen, doctorToEdit]);
+      setActiveTreatments(list);
+      if (!doctorToEdit) {
+        setSpecialization((prev) =>
+          prev && list.includes(prev) ? prev : list[0] || "",
+        );
+      }
+    }
+  }, [dbActiveTreatments, doctorToEdit]);
 
   // Populate data when in edit mode
   useEffect(() => {
@@ -225,7 +198,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
 
     try {
       if (!isNaN(Number(doctorId))) {
-        await axios.delete(`/api/doctor/delete-doctor/${doctorId}`);
+        await apiClient.delete(`/doctor/delete-doctor/${doctorId}`);
       }
       if (onDeleteDoctor) {
         onDeleteDoctor(doctorId);
@@ -295,8 +268,8 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
       if (isEditMode && doctorToEdit) {
         let savedDoctor = null;
         if (!isNaN(Number(doctorToEdit.id))) {
-          const response = await axios.put(
-            `/api/doctor/update-doctor/${doctorToEdit.id}`,
+          const response = await apiClient.put(
+            `/doctor/update-doctor/${doctorToEdit.id}`,
             formData,
             {
               headers: {
@@ -335,7 +308,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
         resetForm();
         onClose();
       } else {
-        const response = await axios.post("/api/doctor/add-doctor", formData, {
+        const response = await apiClient.post("/doctor/add-doctor", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },

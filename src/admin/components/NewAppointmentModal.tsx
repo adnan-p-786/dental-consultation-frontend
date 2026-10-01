@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
+import { useActiveTreatmentsQuery } from "@/api/Treatment/treatmentHooks";
+import { apiClient } from "@/api/Api";
 import {
   Dialog,
   DialogContent,
@@ -62,7 +62,8 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   const [activeTreatments, setActiveTreatments] = useState<string[]>([
     ...treatmentOptions,
   ]);
-  const [loadingTreatments, setLoadingTreatments] = useState(false);
+  const { data: dbActiveTreatments, isLoading: loadingTreatments } =
+    useActiveTreatmentsQuery({ enabled: isOpen });
   const [patientName, setPatientName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -83,41 +84,12 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isOpen) return;
-
-    let isMounted = true;
-    const fetchActiveTreatments = async () => {
-      try {
-        setLoadingTreatments(true);
-        const res = await axios.get("/api/treatment/active");
-        if (
-          res.data?.success &&
-          Array.isArray(res.data.data) &&
-          res.data.data.length > 0
-        ) {
-          const names: string[] = res.data.data.map(
-            (t: { name: string }) => t.name,
-          );
-          if (isMounted) {
-            setActiveTreatments(names);
-            setTreatment((prev) => (names.includes(prev) ? prev : names[0]));
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load active treatments in admin modal:", err);
-      } finally {
-        if (isMounted) {
-          setLoadingTreatments(false);
-        }
-      }
-    };
-
-    fetchActiveTreatments();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen]);
+    if (dbActiveTreatments && dbActiveTreatments.length > 0) {
+      const names: string[] = dbActiveTreatments.map((t) => t.name);
+      setActiveTreatments(names);
+      setTreatment((prev) => (names.includes(prev) ? prev : names[0]));
+    }
+  }, [dbActiveTreatments]);
 
   const handleClose = () => {
     setTreatment(activeTreatments[0] || "General Dental Consultation");
@@ -149,31 +121,26 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
     // Client-side validation matching Appointment.tsx
     if (!patientName.trim()) {
       setError("Please enter patient full name.");
-      toast.error("Please enter patient full name.");
       return;
     }
 
     if (!email.trim()) {
       setError("Please enter patient email address.");
-      toast.error("Please enter patient email address.");
       return;
     }
 
     if (!phone.trim()) {
       setError("Please enter patient phone number.");
-      toast.error("Please enter patient phone number.");
       return;
     }
 
     if (!requestedDate) {
       setError("Please select a preferred appointment date.");
-      toast.error("Please select a preferred appointment date.");
       return;
     }
 
     if (!requestedTime) {
       setError("Please pick a preferred appointment time.");
-      toast.error("Please pick a preferred appointment time.");
       return;
     }
 
@@ -203,8 +170,8 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
 
       data.append("sendAcknowledgmentEmail", "false");
 
-      const response = await axios.post(
-        "/api/appointment/create-appointment",
+      const response = await apiClient.post(
+        "/appointment/create-appointment",
         data,
         {
           headers: {
@@ -228,7 +195,6 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
         appointmentService.saveAppointments([mapped, ...all]);
 
         onCreateAppointment(mapped);
-        toast.success("Appointment created successfully in database!");
         handleClose();
       }
     } catch (err: any) {
@@ -239,7 +205,6 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
         err?.message ||
         "Failed to submit appointment request. Please make sure the backend server is running.";
       setError(serverMessage);
-      toast.error(serverMessage);
     } finally {
       setLoading(false);
     }

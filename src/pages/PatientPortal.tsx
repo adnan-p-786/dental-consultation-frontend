@@ -35,8 +35,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import axios from "axios";
-import { toast } from "react-toastify";
+import {
+  usePatientAppointmentsQuery,
+  useCancelAppointmentMutation,
+} from "@/api/Appointment/appointmentHooks";
 import Footer from "@/components/Footer";
 
 const SOW_STEPS: { status: AppointmentStatus; label: string; step: number }[] =
@@ -52,7 +54,23 @@ export const PatientPortal: React.FC = () => {
   const { user } = useAuth();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const cancelAppointmentMutation = useCancelAppointmentMutation();
+
+  const patientFilters = useMemo(
+    () => ({
+      email: user?.email,
+      phone: user?.phoneNumber,
+      name: user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : undefined,
+    }),
+    [user?.email, user?.phoneNumber, user?.firstName, user?.lastName]
+  );
+
+  const {
+    data: backendApts = [],
+    isLoading: loading,
+    refetch: refetchAppointments,
+  } = usePatientAppointmentsQuery(patientFilters, Boolean(user));
+
   const [activeFilter, setActiveFilter] = useState<
     "all" | "active" | "completed" | "cancelled"
   >("all");
@@ -66,95 +84,62 @@ export const PatientPortal: React.FC = () => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
-  // Load appointments for this patient
-  const fetchAppointments = async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-
-      // 1. Get from localStorage service
-      const localApts = appointmentService.getPatientAppointments({
-        email: user.email,
-        phone: user.phoneNumber,
-        name: `${user.firstName} ${user.lastName}`,
-      });
-
-      // 2. Fetch from backend database
-      let backendApts: Appointment[] = [];
-      try {
-        const params = new URLSearchParams();
-        if (user.email) params.append("email", user.email);
-        if (user.phoneNumber) params.append("phone", user.phoneNumber);
-        const fullName =
-          `${user.firstName || ""} ${user.lastName || ""}`.trim();
-        if (fullName) params.append("name", fullName);
-
-        const res = await axios.get(
-          `/api/appointment/get-appointments?${params.toString()}`,
-        );
-        if (res.data?.success && Array.isArray(res.data.data)) {
-          backendApts = res.data.data.map((b: any) =>
-            appointmentService.mapDbRecord(b),
-          );
-        }
-      } catch (backendErr) {
-        console.warn("Backend appointments fetch skipped:", backendErr);
-      }
-
-      // 3. Merge: Start with local appointments (mock/unpersisted), then overlay authoritative backend records
-      const map = new Map<string, Appointment>();
-
-      // First add local
-      localApts.forEach((apt) => map.set(apt.id, apt));
-
-      // Then overlay backend DB appointments (authoritative truth from DB)
-      backendApts.forEach((apt) => {
-        const local = map.get(apt.id);
-        if (local) {
-          map.set(apt.id, {
-            ...local,
-            ...apt,
-            assignedDoctor: apt.assignedDoctor || local.assignedDoctor,
-            assignedDoctorId: apt.assignedDoctorId || local.assignedDoctorId,
-            confirmedDate: apt.confirmedDate || local.confirmedDate,
-            confirmedTime: apt.confirmedTime || local.confirmedTime,
-            meetingLink: apt.meetingLink || local.meetingLink,
-            meetingPlatform: apt.meetingPlatform || local.meetingPlatform,
-            consultationNotes: apt.consultationNotes || local.consultationNotes,
-            documents:
-              apt.documents && apt.documents.length > 0
-                ? apt.documents
-                : local.documents,
-          });
-        } else {
-          map.set(apt.id, apt);
-        }
-      });
-
-      const merged = Array.from(map.values()).sort((a, b) => {
-        return Number(b.id) - Number(a.id);
-      });
-
-      setAppointments(merged);
-    } catch (err) {
-      console.error("Error loading patient appointments:", err);
-    } finally {
-      setLoading(false);
+  // Sync and merge local cached appointments with live query results
+  useEffect(() => {
+    if (!user) {
+      setAppointments([]);
+      return;
     }
-  };
+
+    const localApts = appointmentService.getPatientAppointments({
+      email: user.email,
+      phone: user.phoneNumber,
+      name: `${user.firstName} ${user.lastName}`,
+    });
+
+    const map = new Map<string, Appointment>();
+    localApts.forEach((apt) => map.set(apt.id, apt));
+
+    backendApts.forEach((apt) => {
+      const local = map.get(apt.id);
+      if (local) {
+        map.set(apt.id, {
+          ...local,
+          ...apt,
+          assignedDoctor: apt.assignedDoctor || local.assignedDoctor,
+          assignedDoctorId: apt.assignedDoctorId || local.assignedDoctorId,
+          confirmedDate: apt.confirmedDate || local.confirmedDate,
+          confirmedTime: apt.confirmedTime || local.confirmedTime,
+          meetingLink: apt.meetingLink || local.meetingLink,
+          meetingPlatform: apt.meetingPlatform || local.meetingPlatform,
+          consultationNotes: apt.consultationNotes || local.consultationNotes,
+          documents:
+            apt.documents && apt.documents.length > 0
+              ? apt.documents
+              : local.documents,
+        });
+      } else {
+        map.set(apt.id, apt);
+      }
+    });
+
+    const merged = Array.from(map.values()).sort((a, b) => {
+      return Number(b.id) - Number(a.id);
+    });
+
+    setAppointments(merged);
+  }, [user, backendApts]);
 
   useEffect(() => {
-    fetchAppointments();
-
     const handleUpdate = () => {
-      fetchAppointments();
+      refetchAppointments();
     };
 
     window.addEventListener("dental_appointments_updated", handleUpdate);
     return () => {
       window.removeEventListener("dental_appointments_updated", handleUpdate);
     };
-  }, [user?.email, user?.phoneNumber, user?.firstName, user?.lastName]);
+  }, [refetchAppointments]);
 
   // Filtering
   const filteredAppointments = useMemo(() => {
@@ -210,7 +195,6 @@ export const PatientPortal: React.FC = () => {
   const handleCopyMeetingLink = (link: string) => {
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
-    toast.success("Meeting link copied to clipboard!");
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
@@ -222,10 +206,8 @@ export const PatientPortal: React.FC = () => {
 
       // Sync with backend if numeric ID
       if (!isNaN(Number(appointmentToCancel.id))) {
-        await axios
-          .patch(
-            `/api/appointment/cancel-appointment/${appointmentToCancel.id}`,
-          )
+        await cancelAppointmentMutation
+          .mutateAsync(appointmentToCancel.id)
           .catch((e) => console.warn("Backend cancel error:", e));
       }
 
@@ -236,16 +218,14 @@ export const PatientPortal: React.FC = () => {
         `${user?.firstName} ${user?.lastName} (Patient)`,
       );
 
-      toast.info("Appointment has been cancelled.");
       setIsCancelConfirmOpen(false);
       setAppointmentToCancel(null);
       if (selectedAppointment?.id === appointmentToCancel.id) {
         setIsDetailOpen(false);
       }
-      fetchAppointments();
+      refetchAppointments();
     } catch (err) {
       console.error("Failed to cancel appointment:", err);
-      toast.error("Failed to cancel appointment. Please try again.");
     } finally {
       setIsCancelling(false);
     }

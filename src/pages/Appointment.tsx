@@ -15,9 +15,12 @@ import {
   User,
   XCircle,
 } from "lucide-react";
-import axios from "axios";
 import { appointmentService } from "@/lib/appointmentService";
-import { toast } from "react-toastify";
+import { useActiveTreatmentsQuery } from "@/api/Treatment/treatmentHooks";
+import {
+  useCreateAppointmentMutation,
+  useCancelAppointmentMutation,
+} from "@/api/Appointment/appointmentHooks";
 import {
   Dialog,
   DialogContent,
@@ -70,10 +73,13 @@ export default function Appointment() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading } = useAuth();
 
+  const { data: dbTreatments, isLoading: loadingTreatments } = useActiveTreatmentsQuery();
+  const createAppointmentMutation = useCreateAppointmentMutation();
+  const cancelAppointmentMutation = useCancelAppointmentMutation();
+
   const [activeTreatments, setActiveTreatments] = useState<string[]>([
     ...documentTreatmentCategories,
   ]);
-  const [loadingTreatments, setLoadingTreatments] = useState(false);
 
   const [selectedTreatment, setSelectedTreatment] = useState<TreatmentCategory>(
     "General Dental Consultation",
@@ -103,60 +109,29 @@ export default function Appointment() {
     supportingFile: null as File | null,
   });
 
-  // Fetch active treatments from backend
+  // Sync active treatments from query cache
   useEffect(() => {
-    let isMounted = true;
-    const fetchActiveTreatments = async () => {
-      try {
-        setLoadingTreatments(true);
-        const res = await axios.get("/api/treatment/active");
-        if (
-          res.data?.success &&
-          Array.isArray(res.data.data) &&
-          res.data.data.length > 0
-        ) {
-          const names: string[] = res.data.data.map(
-            (t: { name: string }) => t.name,
-          );
-          if (isMounted) {
-            setActiveTreatments(names);
+    if (dbTreatments && Array.isArray(dbTreatments) && dbTreatments.length > 0) {
+      const names = dbTreatments.map((t) => t.name);
+      setActiveTreatments(names);
 
-            const params = new URLSearchParams(window.location.search);
-            const treatmentParam = params.get("treatment");
-            if (treatmentParam) {
-              const match = names.find(
-                (t) =>
-                  t.toLowerCase() === treatmentParam.toLowerCase() ||
-                  t
-                    .toLowerCase()
-                    .includes(treatmentParam.toLowerCase().replace(/_/g, " ")),
-              );
-              if (match) {
-                setSelectedTreatment(match);
-                return;
-              }
-            }
-
-            setSelectedTreatment((prev) =>
-              names.includes(prev) ? prev : names[0],
-            );
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load active treatments:", err);
-      } finally {
-        if (isMounted) {
-          setLoadingTreatments(false);
+      const params = new URLSearchParams(window.location.search);
+      const treatmentParam = params.get("treatment");
+      if (treatmentParam) {
+        const match = names.find(
+          (t) =>
+            t.toLowerCase() === treatmentParam.toLowerCase() ||
+            t.toLowerCase().includes(treatmentParam.toLowerCase().replace(/_/g, " ")),
+        );
+        if (match) {
+          setSelectedTreatment(match);
+          return;
         }
       }
-    };
 
-    fetchActiveTreatments();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+      setSelectedTreatment((prev) => (names.includes(prev) ? prev : names[0]));
+    }
+  }, [dbTreatments]);
 
   // Automatically pre-fill logged-in patient's information
   useEffect(() => {
@@ -223,31 +198,26 @@ export default function Appointment() {
     // Client-side validation
     if (!formData.patientName.trim()) {
       setError("Please enter your full name.");
-      toast.error("Please enter your full name.");
       return;
     }
 
     if (!formData.email.trim()) {
       setError("Please enter your email address.");
-      toast.error("Please enter your email address.");
       return;
     }
 
     if (!formData.phone.trim()) {
       setError("Please enter your phone number.");
-      toast.error("Please enter your phone number.");
       return;
     }
 
     if (!formData.preferredDate) {
       setError("Please select a preferred appointment date.");
-      toast.error("Please select a preferred appointment date.");
       return;
     }
 
     if (!formData.preferredTime) {
       setError("Please pick a preferred appointment time.");
-      toast.error("Please pick a preferred appointment time.");
       return;
     }
 
@@ -286,17 +256,9 @@ export default function Appointment() {
 
       data.append("sendAcknowledgmentEmail", "true");
 
-      const response = await axios.post(
-        "/api/appointment/create-appointment",
-        data,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
+      const response = await createAppointmentMutation.mutateAsync(data);
 
-      const serverAppointment = response.data?.data;
+      const serverAppointment = response?.data;
       const aptId = serverAppointment?.id;
       const refNo = aptId
         ? `APT-2026-${String(aptId).padStart(4, "0")}`
@@ -326,9 +288,6 @@ export default function Appointment() {
       setAppointmentStatus("pending");
       setShowConfirmModal(false);
       setSubmitted(true);
-      toast.success(
-        "Appointment booked successfully with Initial Status: Pending",
-      );
     } catch (err: any) {
       console.error("Appointment submission error:", err);
       const serverMessage =
@@ -337,7 +296,6 @@ export default function Appointment() {
         err?.message ||
         "Failed to submit appointment request. Please make sure the backend server is running and try again.";
       setError(serverMessage);
-      toast.error(serverMessage);
     } finally {
       setLoading(false);
     }
@@ -350,8 +308,8 @@ export default function Appointment() {
     try {
       setCancelling(true);
       if (createdAppointmentId) {
-        await axios
-          .patch(`/api/appointment/cancel-appointment/${createdAppointmentId}`)
+        await cancelAppointmentMutation
+          .mutateAsync(createdAppointmentId)
           .catch((err) => {
             console.warn("Backend cancel endpoint note:", err);
           });
@@ -378,10 +336,8 @@ export default function Appointment() {
       }
 
       setAppointmentStatus("cancelled");
-      toast.info("Appointment request has been cancelled.");
     } catch (err: any) {
       console.error("Cancel appointment error:", err);
-      toast.error("Failed to cancel appointment. Please contact support.");
     } finally {
       setCancelling(false);
     }

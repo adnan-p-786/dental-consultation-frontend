@@ -39,6 +39,9 @@ import type {
   AppointmentStatus,
   Doctor,
 } from "../types";
+import { useDoctorsQuery } from "@/api/Doctor/doctorHooks";
+import { useSendReminderMutation } from "@/api/Appointment/appointmentHooks";
+
 
 interface AppointmentDetailModalProps {
   appointment: Appointment | null;
@@ -110,9 +113,14 @@ export const AppointmentDetailModal: React.FC<
     }
   }, [isOpen, initialTab]);
 
+  const { data: dbDoctors } = useDoctorsQuery();
+  const sendReminderMutation = useSendReminderMutation();
+
   useEffect(() => {
     if (doctors && doctors.length > 0) {
       setLocalDoctors(doctors);
+    } else if (dbDoctors && dbDoctors.length > 0) {
+      setLocalDoctors(dbDoctors);
     } else {
       try {
         const saved = localStorage.getItem("dental_doctors_v1");
@@ -120,34 +128,13 @@ export const AppointmentDetailModal: React.FC<
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setLocalDoctors(parsed);
-            return;
           }
         }
       } catch (e) {}
-
-      fetch("/api/doctor/get-doctors")
-        .then((r) => r.json())
-        .then((res) => {
-          if (res.success && Array.isArray(res.data)) {
-            const tableDocs: Doctor[] = res.data.map((d: any) => ({
-              id: String(d.id),
-              name: d.doctorName,
-              avatar: d.doctorPhoto || "",
-              specialization: d.specialization,
-              email: d.doctorEmail,
-              phone: d.phoneNumber,
-              workingHours: d.workingHours,
-              status: d.status || "available",
-              activeAppointments: 0,
-            }));
-            setLocalDoctors(tableDocs);
-          }
-        })
-        .catch(() => {});
     }
-  }, [doctors]);
+  }, [doctors, dbDoctors]);
 
-  const availableDoctors = localDoctors.length > 0 ? localDoctors : doctors;
+  const availableDoctors = localDoctors.length > 0 ? localDoctors : (dbDoctors && dbDoctors.length > 0 ? dbDoctors : doctors);
 
   const [selectedDoctorId, setSelectedDoctorId] = useState(
     appointment.assignedDoctorId ? String(appointment.assignedDoctorId) : ""
@@ -180,24 +167,22 @@ export const AppointmentDetailModal: React.FC<
   const handleSendReminder = async (type: "24_hour" | "1_hour") => {
     setSendingReminder(type);
     try {
-      const res = await fetch(`/api/appointment/send-reminder/${appointment.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await sendReminderMutation.mutateAsync({
+        id: appointment.id,
+        payload: {
           reminderType: type,
           assignedDoctorName: appointment.assignedDoctor?.name,
           meetingLink: appointment.meetingLink,
-        }),
+        },
       });
-      const data = await res.json();
-      if (data.success) {
+      if (data?.success) {
         setReminderFeedback(
           type === "24_hour"
             ? "24-hour reminder email sent!"
             : "1-hour urgent reminder email sent!"
         );
       } else {
-        setReminderFeedback(data.message || "Failed to send reminder");
+        setReminderFeedback(data?.message || "Failed to send reminder");
       }
     } catch {
       setReminderFeedback("Network error sending reminder");

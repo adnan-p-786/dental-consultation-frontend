@@ -6,6 +6,7 @@ import type {
   TreatmentType,
 } from "@/admin/types";
 import { consultationService } from "./consultationService";
+import { apiClient } from "@/api/Api";
 
 const STORAGE_KEY = "dental_appointments_v1";
 
@@ -245,11 +246,8 @@ export const appointmentService = {
    */
   async fetchAppointments(): Promise<Appointment[]> {
     try {
-      const res = await fetch("/api/appointment/get-all-appointment");
-      if (!res.ok) {
-        throw new Error(`Failed to fetch appointments: ${res.statusText}`);
-      }
-      const json = await res.json();
+      const res = await apiClient.get<{ success: boolean; data: any[] }>("/appointment/get-all-appointment");
+      const json = res.data;
       if (json.success && Array.isArray(json.data)) {
         const localApts = this.getAppointments();
         const localMap = new Map<string, Appointment>();
@@ -261,8 +259,8 @@ export const appointmentService = {
           return this.mapDbRecord(dbRecord, existingLocal);
         });
 
-        // Save fresh DB appointments to localStorage cache
-        this.saveAppointments(dbMapped);
+        // Save fresh DB appointments to localStorage cache without firing notification loop
+        this.saveAppointments(dbMapped, false);
         return dbMapped;
       }
     } catch (err) {
@@ -380,11 +378,13 @@ export const appointmentService = {
     return this.getAppointments().find((a) => a.id === id);
   },
 
-  saveAppointments(appointments: Appointment[]): void {
+  saveAppointments(appointments: Appointment[], emitEvent = false): void {
     if (typeof window === "undefined") return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appointments));
-      notifyChange();
+      if (emitEvent) {
+        notifyChange();
+      }
     } catch (err) {
       console.error("Failed to save appointments:", err);
     }
@@ -432,7 +432,7 @@ export const appointmentService = {
       createdAt: new Date().toISOString(),
     };
 
-    this.saveAppointments([newAppointment, ...existing]);
+    this.saveAppointments([newAppointment, ...existing], true);
     return newAppointment;
   },
 
@@ -468,7 +468,7 @@ export const appointmentService = {
     };
 
     all[aptIndex] = updatedObj;
-    this.saveAppointments(all);
+    this.saveAppointments(all, true);
 
     // Also sync to backend database if this is a DB appointment
     if (!isNaN(Number(id))) {
@@ -497,13 +497,11 @@ export const appointmentService = {
         payload.meetingPlatform = updatedObj.meetingPlatform;
       if (updates.patientMessage) payload.note = updates.patientMessage;
 
-      fetch(`/api/appointment/update-appointment/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }).catch((err) =>
-        console.error("Failed to sync appointment update to DB:", err),
-      );
+      apiClient
+        .patch(`/appointment/update-appointment/${id}`, payload)
+        .catch((err) =>
+          console.error("Failed to sync appointment update to DB:", err),
+        );
     }
 
     return updatedObj;
@@ -547,7 +545,7 @@ export const appointmentService = {
     });
 
     if (updatedObj) {
-      this.saveAppointments(newAppointments);
+      this.saveAppointments(newAppointments, true);
 
       if (!isNaN(Number(id))) {
         consultationService
@@ -606,7 +604,7 @@ export const appointmentService = {
     });
 
     if (updatedObj) {
-      this.saveAppointments(newAppointments);
+      this.saveAppointments(newAppointments, true);
 
       if (!isNaN(Number(id))) {
         consultationService
@@ -619,15 +617,21 @@ export const appointmentService = {
             console.error("Failed to sync completed consultation to DB:", err),
           );
 
-        fetch(`/api/appointment/update-appointment/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "completed" }),
-        }).catch((err) =>
-          console.error("Failed to sync completed status to DB:", err),
-        );
+        apiClient
+          .patch(`/appointment/update-appointment/${id}`, {
+            status: "completed",
+          })
+          .catch((err) =>
+            console.error("Failed to sync completed status to DB:", err),
+          );
       }
     }
     return updatedObj;
+  },
+
+  deleteAppointment(id: string): void {
+    const all = this.getAppointments();
+    const filtered = all.filter((apt) => String(apt.id) !== String(id));
+    this.saveAppointments(filtered, true);
   },
 };

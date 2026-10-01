@@ -10,9 +10,9 @@ import DashboardAdmin from "./admin/pages/Dashboard.tsx";
 import PatientPortal from "./pages/PatientPortal.tsx";
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import { ProtectedRoute } from "./auth/ProtectedRoute.tsx";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import Appointment from "./pages/Appointment.tsx";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
 
 const router = createBrowserRouter([
   {
@@ -76,19 +76,10 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <AuthProvider>
-      <RouterProvider router={router} />
-      <ToastContainer
-        position="top-center"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-    </AuthProvider>
-  </StrictMode>,
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </QueryClientProvider>
+  </StrictMode>
 );
