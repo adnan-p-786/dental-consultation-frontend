@@ -39,10 +39,7 @@ import {
   useDeleteReportSnapshotMutation,
 } from "@/api/Report/reportHooks";
 
-import {
-  reportsApi,
-  type AnalyticsMetrics,
-} from "@/api/Report/reportApi";
+import { reportsApi, type AnalyticsMetrics } from "@/api/Report/reportApi";
 
 interface ReportsViewProps {
   appointments: Appointment[];
@@ -68,9 +65,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   // Data States
   // ------------------------------------------------------------------
   const [metrics, setMetrics] = useState<AnalyticsMetrics | null>(null);
-  const [filteredAppointments, setFilteredAppointments] = useState<any[]>(
-    initialAppointments,
-  );
+  const [filteredAppointments, setFilteredAppointments] =
+    useState<any[]>(initialAppointments);
 
   // Saved reports snapshots state
   const [isSavedReportsOpen, setIsSavedReportsOpen] = useState(false);
@@ -91,7 +87,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       startDate: startDate || undefined,
       endDate: endDate || undefined,
     }),
-    [search, selectedDoctor, selectedTreatment, selectedStatus, startDate, endDate],
+    [
+      search,
+      selectedDoctor,
+      selectedTreatment,
+      selectedStatus,
+      startDate,
+      endDate,
+    ],
   );
 
   // ------------------------------------------------------------------
@@ -103,10 +106,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     refetch: refetchAnalytics,
   } = useReportAnalyticsQuery(filterParams);
 
-  const {
-    data: savedReports = [],
-    isLoading: loadingSavedReports,
-  } = useSavedReportsQuery({ enabled: isSavedReportsOpen });
+  const { data: savedReports = [], isLoading: loadingSavedReports } =
+    useSavedReportsQuery({ enabled: isSavedReportsOpen });
 
   const saveSnapshotMutation = useSaveReportSnapshotMutation();
   const deleteSnapshotMutation = useDeleteReportSnapshotMutation();
@@ -409,8 +410,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             </Badge>
           </div>
           <p className="text-xs text-ink-soft mt-1">
-            Real-time appointment statistics, doctor workloads, treatment breakdowns,
-            and exportable clinical audits.
+            Real-time appointment statistics, doctor workloads, treatment
+            breakdowns, and exportable clinical audits.
           </p>
         </div>
 
@@ -673,49 +674,51 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       </div>
 
       {/* APPOINTMENTS BY MONTH (PDF Section 11) */}
-      {metrics?.appointmentsByMonth && metrics.appointmentsByMonth.length > 0 && (
-        <Card className="border-line shadow-xs bg-white">
-          <CardHeader className="pb-3 border-b border-line flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-semibold text-ink flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-teal-deep" />
-                Appointments by Month (Timeline Trend)
-              </CardTitle>
-              <p className="text-xs text-ink-soft mt-0.5">
-                Monthly volume breakdown and consultation completion trajectory.
-              </p>
-            </div>
-            <span className="text-xs text-ink-soft font-mono">
-              {metrics.appointmentsByMonth.length} months recorded
-            </span>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              {metrics.appointmentsByMonth.map((m) => (
-                <div
-                  key={m.month}
-                  className="p-3 rounded-xl border border-line bg-[#FAF7F6] text-center space-y-1 hover:border-mint-deep transition-colors"
-                >
-                  <span className="text-xs font-bold text-ink block">
-                    {m.label}
-                  </span>
-                  <span className="text-xl font-bold text-teal-deep block">
-                    {m.total}
-                  </span>
-                  <div className="text-[10px] text-ink-soft flex items-center justify-center gap-2 pt-1 border-t border-line/40">
-                    <span className="text-emerald-700 font-medium">
-                      ✓ {m.completed}
+      {metrics?.appointmentsByMonth &&
+        metrics.appointmentsByMonth.length > 0 && (
+          <Card className="border-line shadow-xs bg-white">
+            <CardHeader className="pb-3 border-b border-line flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold text-ink flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-teal-deep" />
+                  Appointments by Month (Timeline Trend)
+                </CardTitle>
+                <p className="text-xs text-ink-soft mt-0.5">
+                  Monthly volume breakdown and consultation completion
+                  trajectory.
+                </p>
+              </div>
+              <span className="text-xs text-ink-soft font-mono">
+                {metrics.appointmentsByMonth.length} months recorded
+              </span>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                {metrics.appointmentsByMonth.map((m) => (
+                  <div
+                    key={m.month}
+                    className="p-3 rounded-xl border border-line bg-[#FAF7F6] text-center space-y-1 hover:border-mint-deep transition-colors"
+                  >
+                    <span className="text-xs font-bold text-ink block">
+                      {m.label}
                     </span>
-                    <span className="text-rose-600 font-medium">
-                      ✕ {m.cancelled}
+                    <span className="text-xl font-bold text-teal-deep block">
+                      {m.total}
                     </span>
+                    <div className="text-[10px] text-ink-soft flex items-center justify-center gap-2 pt-1 border-t border-line/40">
+                      <span className="text-emerald-700 font-medium">
+                        ✓ {m.completed}
+                      </span>
+                      <span className="text-rose-600 font-medium">
+                        ✕ {m.cancelled}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
       {/* Distribution Grids (Treatment & Doctor Allocation) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -829,7 +832,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               Filtered Consultation Records ({filteredAppointments.length})
             </CardTitle>
             <p className="text-xs text-ink-soft mt-0.5">
-              Live audit dataset generated from active search and criteria filters.
+              Live audit dataset generated from active search and criteria
+              filters.
             </p>
           </div>
           <Button
@@ -840,9 +844,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             disabled={loading}
             className="text-xs h-8 border-line text-ink cursor-pointer gap-1"
           >
-            <RefreshCw
-              className={`w-3 h-3 ${loading ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
         </CardHeader>
@@ -857,7 +859,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <FileText className="w-8 h-8 text-ink-soft mx-auto mb-2 opacity-40" />
               <h4 className="text-xs font-bold text-ink">No Records Found</h4>
               <p className="text-[11px] text-ink-soft mt-1">
-                No appointments matched the specified search or filter parameters.
+                No appointments matched the specified search or filter
+                parameters.
               </p>
               <Button
                 type="button"
@@ -899,7 +902,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                       </td>
                       <td className="py-2.5 px-3">
                         <span className="font-medium text-ink">
-                          {apt.treatment || apt.tratmentType || "General Consultation"}
+                          {apt.treatment ||
+                            apt.tratmentType ||
+                            "General Consultation"}
                         </span>
                       </td>
                       <td className="py-2.5 px-3">
@@ -943,7 +948,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                           </a>
                         ) : (
                           <span className="text-[11px] text-ink-soft inline-flex items-center gap-1">
-                            <Video className="w-3 h-3 text-ink-soft/50" /> Online (Pending)
+                            <Video className="w-3 h-3 text-ink-soft/50" />{" "}
+                            Online (Pending)
                           </span>
                         )}
                       </td>
@@ -954,8 +960,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
               {filteredAppointments.length > 25 && (
                 <div className="p-3 text-center text-xs text-ink-soft border-t border-line bg-[#FAF7F6]/40">
-                  Showing first 25 of {filteredAppointments.length} records. Click
-                  Export CSV to download the complete dataset.
+                  Showing first 25 of {filteredAppointments.length} records.
+                  Click Export CSV to download the complete dataset.
                 </div>
               )}
             </div>
@@ -972,8 +978,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               Save Report Snapshot
             </DialogTitle>
             <DialogDescription className="text-xs text-ink-soft">
-              Persist the current filtered metrics and analytics to the database as an
-              audit record.
+              Persist the current filtered metrics and analytics to the database
+              as an audit record.
             </DialogDescription>
           </DialogHeader>
 
@@ -1005,7 +1011,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             </div>
 
             <div className="p-3 rounded-xl border border-line bg-[#FAF7F6] text-xs space-y-1">
-              <span className="font-semibold text-ink block">Snapshot Contents:</span>
+              <span className="font-semibold text-ink block">
+                Snapshot Contents:
+              </span>
               <span className="text-ink-soft block">
                 • {total} total appointments matching active filters
               </span>
@@ -1057,7 +1065,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               </div>
             ) : savedReports.length === 0 ? (
               <div className="py-8 text-center text-xs text-ink-soft">
-                No saved report snapshots found. Click &quot;Save Snapshot&quot; above to create one.
+                No saved report snapshots found. Click &quot;Save Snapshot&quot;
+                above to create one.
               </div>
             ) : (
               savedReports.map((item) => (
@@ -1070,7 +1079,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                       {item.title}
                     </span>
                     {item.description && (
-                      <p className="text-[11px] text-ink-soft">{item.description}</p>
+                      <p className="text-[11px] text-ink-soft">
+                        {item.description}
+                      </p>
                     )}
                     <div className="flex items-center gap-3 text-[10px] text-ink-soft">
                       <span>

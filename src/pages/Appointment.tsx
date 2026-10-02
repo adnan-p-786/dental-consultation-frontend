@@ -73,7 +73,8 @@ export default function Appointment() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading } = useAuth();
 
-  const { data: dbTreatments, isLoading: loadingTreatments } = useActiveTreatmentsQuery();
+  const { data: dbTreatments, isLoading: loadingTreatments } =
+    useActiveTreatmentsQuery();
   const createAppointmentMutation = useCreateAppointmentMutation();
   const cancelAppointmentMutation = useCancelAppointmentMutation();
 
@@ -111,7 +112,11 @@ export default function Appointment() {
 
   // Sync active treatments from query cache
   useEffect(() => {
-    if (dbTreatments && Array.isArray(dbTreatments) && dbTreatments.length > 0) {
+    if (
+      dbTreatments &&
+      Array.isArray(dbTreatments) &&
+      dbTreatments.length > 0
+    ) {
       const names = dbTreatments.map((t) => t.name);
       setActiveTreatments(names);
 
@@ -121,7 +126,9 @@ export default function Appointment() {
         const match = names.find(
           (t) =>
             t.toLowerCase() === treatmentParam.toLowerCase() ||
-            t.toLowerCase().includes(treatmentParam.toLowerCase().replace(/_/g, " ")),
+            t
+              .toLowerCase()
+              .includes(treatmentParam.toLowerCase().replace(/_/g, " ")),
         );
         if (match) {
           setSelectedTreatment(match);
@@ -368,7 +375,7 @@ export default function Appointment() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F6] text-ink flex flex-col selection:bg-[#5E3E3B]/20 selection:text-[#5E3E3B]">
+    <div className="min-h-screen bg-[#FAF7F6] text-ink flex flex-col">
       <Header />
 
       {/* Hero Header */}

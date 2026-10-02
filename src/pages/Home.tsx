@@ -150,7 +150,7 @@ export default function Home() {
     : "/auth/login?redirect=/appointment";
 
   return (
-    <div className="min-h-screen bg-[#FAF7F6] flex flex-col font-sans text-ink selection:bg-[#5E3E3B]/20 selection:text-[#5E3E3B]">
+    <div className="min-h-screen bg-[#FAF7F6] flex flex-col font-sans text-ink">
       <Header />
       <section className="relative overflow-hidden bg-teal-deep text-paper pt-16 pb-24 md:pt-24 md:pb-32 px-4 sm:px-6 lg:px-8 border-b border-white/10">
         <div

@@ -145,7 +145,10 @@ export const AppointmentCalendarView: React.FC<
             <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-line">
               {/* Dynamic leading blank slots */}
               {leadingSlots.map((_, idx) => (
-                <div key={`lead-${idx}`} className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
+                <div
+                  key={`lead-${idx}`}
+                  className="min-h-26.25 p-2 bg-[#FAFBFB]/50"
+                />
               ))}
 
               {daysArray.map(({ dayNum, dateString, dayAppointments }) => {
@@ -183,7 +186,8 @@ export const AppointmentCalendarView: React.FC<
                           className={`p-1.5 rounded-md text-[11px] font-medium border transition-all cursor-pointer truncate shadow-2xs hover:scale-[1.01] ${
                             apt.status === "approved"
                               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                              : apt.status === "requested" || apt.status === "pending"
+                              : apt.status === "requested" ||
+                                  apt.status === "pending"
                                 ? "bg-amber-50 text-amber-800 border-amber-200"
                                 : apt.status === "completed"
                                   ? "bg-teal-50 text-teal-800 border-teal-200"
@@ -212,7 +216,10 @@ export const AppointmentCalendarView: React.FC<
 
               {/* Dynamic trailing blank slots */}
               {trailingSlots.map((_, idx) => (
-                <div key={`trail-${idx}`} className="min-h-26.25 p-2 bg-[#FAFBFB]/50" />
+                <div
+                  key={`trail-${idx}`}
+                  className="min-h-26.25 p-2 bg-[#FAFBFB]/50"
+                />
               ))}
             </div>
           </div>

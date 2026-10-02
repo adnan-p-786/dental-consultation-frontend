@@ -35,9 +35,7 @@ import {
   useToggleTreatmentStatusMutation,
   useDeleteTreatmentMutation,
 } from "@/api/Treatment/treatmentHooks";
-import {
-  type TreatmentItem as Treatment,
-} from "@/api/Treatment/treatmentApi";
+import { type TreatmentItem as Treatment } from "@/api/Treatment/treatmentApi";
 import {
   useSettingsQuery,
   useUpdateSettingsMutation,
@@ -112,14 +110,16 @@ export const SettingsView: React.FC = () => {
   // ------------------------------------------------------------------
   // TanStack Query: Clinic & Reminder Settings
   // ------------------------------------------------------------------
-  const { data: serverSettings, isLoading: loadingSettings } = useSettingsQuery();
+  const { data: serverSettings, isLoading: loadingSettings } =
+    useSettingsQuery();
   const updateSettingsMutation = useUpdateSettingsMutation();
   const triggerRemindersMutation = useTriggerRemindersMutation();
 
   useEffect(() => {
     if (serverSettings) {
       setSettings({
-        clinicName: serverSettings.clinicName || defaultClinicSettings.clinicName,
+        clinicName:
+          serverSettings.clinicName || defaultClinicSettings.clinicName,
         supportEmail: serverSettings.supportEmail || "",
         clinicPhone: serverSettings.clinicPhone || "",
         defaultDuration: serverSettings.defaultDuration || 30,
@@ -141,14 +141,17 @@ export const SettingsView: React.FC = () => {
   // ------------------------------------------------------------------
   // TanStack Query: Treatment Management
   // ------------------------------------------------------------------
-  const { data: treatments = [], isLoading: loadingTreatments } = useTreatmentsQuery();
+  const { data: treatments = [], isLoading: loadingTreatments } =
+    useTreatmentsQuery();
   const createTreatmentMutation = useCreateTreatmentMutation();
   const updateTreatmentMutation = useUpdateTreatmentMutation();
   const toggleTreatmentMutation = useToggleTreatmentStatusMutation();
   const deleteTreatmentMutation = useDeleteTreatmentMutation();
 
   const [isTreatmentModalOpen, setIsTreatmentModalOpen] = useState(false);
-  const [editingTreatment, setEditingTreatment] = useState<Treatment | null>(null);
+  const [editingTreatment, setEditingTreatment] = useState<Treatment | null>(
+    null,
+  );
   const [treatmentForm, setTreatmentForm] = useState({
     name: "",
     description: "",
@@ -248,8 +251,14 @@ export const SettingsView: React.FC = () => {
       setTimeout(() => setSaved(false), 2500);
 
       try {
-        localStorage.setItem("dental_clinic_settings", JSON.stringify(settings));
-        localStorage.setItem("dental_reminder_settings", JSON.stringify(reminders));
+        localStorage.setItem(
+          "dental_clinic_settings",
+          JSON.stringify(settings),
+        );
+        localStorage.setItem(
+          "dental_reminder_settings",
+          JSON.stringify(reminders),
+        );
       } catch {
         // Ignore local storage error
       }
@@ -311,7 +320,11 @@ export const SettingsView: React.FC = () => {
               ) : (
                 <Save className="w-3.5 h-3.5" />
               )}
-              {saved ? "Changes Saved!" : isSaving ? "Saving..." : "Save Settings"}
+              {saved
+                ? "Changes Saved!"
+                : isSaving
+                  ? "Saving..."
+                  : "Save Settings"}
             </Button>
           </div>
         </div>
@@ -407,7 +420,8 @@ export const SettingsView: React.FC = () => {
                 Clinical Treatments & Procedures
               </CardTitle>
               <p className="text-xs text-ink-soft mt-0.5">
-                Manage dental procedures and case options stored in the database for consultations.
+                Manage dental procedures and case options stored in the database
+                for consultations.
               </p>
             </div>
 
@@ -431,7 +445,9 @@ export const SettingsView: React.FC = () => {
             ) : treatments.length === 0 ? (
               <div className="text-center py-8 px-4 rounded-xl border border-dashed border-line bg-[#FAF7F6]">
                 <Stethoscope className="w-7 h-7 text-ink-soft mx-auto mb-2 opacity-40" />
-                <h4 className="text-xs font-bold text-ink">No Treatments Added Yet</h4>
+                <h4 className="text-xs font-bold text-ink">
+                  No Treatments Added Yet
+                </h4>
                 <p className="text-[11px] text-ink-soft mt-1">
                   Click below to add your first clinical dental procedure.
                 </p>
@@ -448,9 +464,13 @@ export const SettingsView: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-[11px] text-ink-soft pb-1">
-                  <span>{treatments.length} total treatment{treatments.length !== 1 ? "s" : ""}</span>
+                  <span>
+                    {treatments.length} total treatment
+                    {treatments.length !== 1 ? "s" : ""}
+                  </span>
                   <span className="font-semibold text-teal-deep">
-                    {treatments.filter((t) => t.isActive).length} active for booking
+                    {treatments.filter((t) => t.isActive).length} active for
+                    booking
                   </span>
                 </div>
 
@@ -466,7 +486,9 @@ export const SettingsView: React.FC = () => {
                             {treatment.name}
                           </span>
                           <Badge
-                            variant={treatment.isActive ? "approved" : "no_show"}
+                            variant={
+                              treatment.isActive ? "approved" : "no_show"
+                            }
                             className="text-[10px] py-0 px-2 h-4"
                           >
                             {treatment.isActive ? "Active" : "Disabled"}
@@ -485,7 +507,11 @@ export const SettingsView: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleToggleTreatment(treatment.id)}
-                          title={treatment.isActive ? "Click to deactivate" : "Click to activate"}
+                          title={
+                            treatment.isActive
+                              ? "Click to deactivate"
+                              : "Click to activate"
+                          }
                           className={`text-[11px] h-7 px-2 gap-1 cursor-pointer ${
                             treatment.isActive
                               ? "text-emerald-700 hover:bg-emerald-50"
@@ -524,7 +550,9 @@ export const SettingsView: React.FC = () => {
                               size="sm"
                               variant="destructive"
                               disabled={deletingId === treatment.id}
-                              onClick={() => handleDeleteTreatment(treatment.id)}
+                              onClick={() =>
+                                handleDeleteTreatment(treatment.id)
+                              }
                               className="text-[10px] h-7 px-2 cursor-pointer"
                             >
                               {deletingId === treatment.id ? (
@@ -574,7 +602,8 @@ export const SettingsView: React.FC = () => {
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
             <p className="text-xs text-ink-soft">
-              Choose the primary video consultation platform for remote patient assessments.
+              Choose the primary video consultation platform for remote patient
+              assessments.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -643,7 +672,10 @@ export const SettingsView: React.FC = () => {
                   placeholder="e.g. https://meet.google.com/abc-defg-hij or https://zoom.us/j/..."
                   value={settings.manualMeetingLink || ""}
                   onChange={(e) =>
-                    setSettings({ ...settings, manualMeetingLink: e.target.value })
+                    setSettings({
+                      ...settings,
+                      manualMeetingLink: e.target.value,
+                    })
                   }
                   className="text-xs"
                 />
@@ -677,8 +709,8 @@ export const SettingsView: React.FC = () => {
                   </span>
                   <span className="text-[11px] text-emerald-800">
                     Reminders run continuously on schedule without requiring
-                    button clicks. The server automatically scans appointments and
-                    dispatches emails at the intervals configured below.
+                    button clicks. The server automatically scans appointments
+                    and dispatches emails at the intervals configured below.
                   </span>
                 </div>
               </div>
@@ -914,12 +946,17 @@ export const SettingsView: React.FC = () => {
       </form>
 
       {/* Add / Edit Treatment Modal */}
-      <Dialog open={isTreatmentModalOpen} onOpenChange={setIsTreatmentModalOpen}>
+      <Dialog
+        open={isTreatmentModalOpen}
+        onOpenChange={setIsTreatmentModalOpen}
+      >
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-ink flex items-center gap-2">
               <Stethoscope className="w-4 h-4 text-teal-deep" />
-              {editingTreatment ? "Edit Clinical Treatment" : "Add Clinical Treatment"}
+              {editingTreatment
+                ? "Edit Clinical Treatment"
+                : "Add Clinical Treatment"}
             </DialogTitle>
             <DialogDescription className="text-xs text-ink-soft">
               {editingTreatment
@@ -931,7 +968,8 @@ export const SettingsView: React.FC = () => {
           <form onSubmit={handleSaveTreatment} className="space-y-4 py-2">
             <div className="space-y-1">
               <label className="text-xs font-semibold text-ink">
-                Treatment / Procedure Name <span className="text-rose-500">*</span>
+                Treatment / Procedure Name{" "}
+                <span className="text-rose-500">*</span>
               </label>
               <Input
                 value={treatmentForm.name}
@@ -952,7 +990,10 @@ export const SettingsView: React.FC = () => {
               <textarea
                 value={treatmentForm.description}
                 onChange={(e) =>
-                  setTreatmentForm({ ...treatmentForm, description: e.target.value })
+                  setTreatmentForm({
+                    ...treatmentForm,
+                    description: e.target.value,
+                  })
                 }
                 placeholder="Brief summary of procedure, conditions treated, or patient prep..."
                 rows={3}
@@ -966,7 +1007,8 @@ export const SettingsView: React.FC = () => {
                   Active for Online Booking
                 </span>
                 <span className="text-[11px] text-ink-soft">
-                  When enabled, patients can select this treatment when requesting consultations.
+                  When enabled, patients can select this treatment when
+                  requesting consultations.
                 </span>
               </div>
               <button
@@ -1001,7 +1043,9 @@ export const SettingsView: React.FC = () => {
                 disabled={savingTreatment || !treatmentForm.name.trim()}
                 className="text-xs h-8 gap-1.5 bg-[#5E3E3B] text-white hover:bg-[#262525] shadow-xs cursor-pointer"
               >
-                {savingTreatment && <Loader2 className="w-3 h-3 animate-spin" />}
+                {savingTreatment && (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                )}
                 {editingTreatment ? "Update Treatment" : "Save Treatment"}
               </Button>
             </DialogFooter>

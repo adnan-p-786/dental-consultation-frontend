@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useLoginMutation } from "@/api/User/userHooks";
 import {
   AlertCircle,
@@ -11,7 +11,6 @@ import {
   Loader2,
   ShieldCheck,
   Stethoscope,
-  ArrowLeft,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -25,21 +24,18 @@ const staffRoles = [
     label: "Doctor",
     icon: Stethoscope,
     desc: "Care provider",
-    badge: "Medical",
   },
   {
     id: "Admin" as AdminStaffRole,
     label: "Admin",
     icon: ShieldCheck,
     desc: "Clinic manager",
-    badge: "Management",
   },
   {
     id: "Superadmin" as AdminStaffRole,
     label: "Super Admin",
     icon: Crown,
     desc: "System admin",
-    badge: "Full Access",
   },
 ];
 
@@ -76,7 +72,11 @@ function AdminLogin() {
         navigate("/admin/dashboard", { replace: true });
       } else if (userRole === "doctor") {
         navigate("/doctor/dashboard", { replace: true });
-      } else if (redirectPath && !redirectPath.startsWith("/auth") && !redirectPath.startsWith("/admin/login")) {
+      } else if (
+        redirectPath &&
+        !redirectPath.startsWith("/auth") &&
+        !redirectPath.startsWith("/admin/login")
+      ) {
         navigate(redirectPath, { replace: true });
       } else {
         navigate("/", { replace: true });
@@ -140,7 +140,11 @@ function AdminLogin() {
           navigate("/admin/dashboard", { replace: true });
         } else if (resolvedRole === "doctor") {
           navigate("/doctor/dashboard", { replace: true });
-        } else if (redirectPath && !redirectPath.startsWith("/auth") && !redirectPath.startsWith("/admin/login")) {
+        } else if (
+          redirectPath &&
+          !redirectPath.startsWith("/auth") &&
+          !redirectPath.startsWith("/admin/login")
+        ) {
           navigate(redirectPath, { replace: true });
         } else {
           navigate("/", { replace: true });
@@ -156,8 +160,6 @@ function AdminLogin() {
       setLoading(false);
     }
   };
-
-  const currentRoleConfig = staffRoles.find((r) => r.id === userType);
 
   return (
     <>
@@ -189,8 +191,9 @@ function AdminLogin() {
               Dedicated portal for providers & clinic managers.
             </h1>
             <p className="text-[15px] leading-relaxed text-[#EBD8D5] mb-7">
-              Authorized access for Doctors, Clinic Admins, and Super Administrators
-              to orchestrate patient appointments, consultations, and staff governance.
+              Authorized access for Doctors, Clinic Admins, and Super
+              Administrators to orchestrate patient appointments, consultations,
+              and staff governance.
             </p>
 
             <ul className="flex flex-col gap-3.5">
@@ -228,9 +231,6 @@ function AdminLogin() {
                 <h2 className="font-display font-medium text-[27px] text-ink">
                   Staff & Admin Login
                 </h2>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[#FAF2F0] text-teal-deep border border-teal-deep/15">
-                  {currentRoleConfig?.badge}
-                </span>
               </div>
             </div>
 
@@ -339,7 +339,9 @@ function AdminLogin() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink cursor-pointer p-0.5 transition-colors focus:outline-none"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />

@@ -8,7 +8,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertTriangle, Trash2, Loader2, Stethoscope, Clock} from "lucide-react";
+import {
+  AlertTriangle,
+  Trash2,
+  Loader2,
+  Stethoscope,
+  Clock,
+} from "lucide-react";
 import type { Doctor } from "../types";
 
 interface DeleteDoctorModalProps {
@@ -41,7 +47,10 @@ export const DeleteDoctorModal: React.FC<DeleteDoctorModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && !isDeleting && onClose()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && !isDeleting && onClose()}
+    >
       <DialogContent className="sm:max-w-[480px] p-6 gap-5 rounded-2xl border-line">
         <DialogHeader className="space-y-2 text-left">
           <div className="flex items-center gap-3">

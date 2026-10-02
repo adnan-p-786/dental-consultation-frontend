@@ -3,6 +3,16 @@
 
 @config "../tailwind.config.ts";
 
+::selection {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+::-moz-selection {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
 :root {
   --font-baskerville: "Libre Baskerville", Georgia, serif;
   --font-fraunces: "Libre Baskerville", Georgia, serif;

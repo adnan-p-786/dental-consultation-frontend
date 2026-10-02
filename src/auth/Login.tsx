@@ -8,7 +8,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  User,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -27,8 +26,6 @@ function Login() {
   const redirectPath = searchParams.get("redirect");
   const { login, isAuthenticated, user } = useAuth();
 
-  // Default role is strictly patient
-  const userType = "patient";
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -99,8 +96,7 @@ function Login() {
 
       setSuccess(response.message || "Login successful!");
 
-      const resolvedRole =
-        response.data?.role?.toLowerCase() || "patient";
+      const resolvedRole = response.data?.role?.toLowerCase() || "patient";
 
       setTimeout(() => {
         if (resolvedRole === "superadmin" || resolvedRole === "admin") {

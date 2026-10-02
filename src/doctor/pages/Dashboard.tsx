@@ -28,7 +28,8 @@ type ScheduleTab = "today" | "upcoming" | "completed" | "all";
 
 export default function DoctorDashboard() {
   const { user, logout } = useAuth();
-  const { data: dbAppointments = [], refetch: refetchAppointments } = useAppointmentsQuery();
+  const { data: dbAppointments = [], refetch: refetchAppointments } =
+    useAppointmentsQuery();
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     const all = appointmentService.getAppointments();
     return all.length > 0 ? all : initialAppointments;
@@ -173,8 +174,7 @@ export default function DoctorDashboard() {
   }, [activeWorkspaceApt, appointments]);
 
   return (
-    <div className="min-h-screen bg-[#FAF7F6] text-ink flex flex-col font-sans selection:bg-[#5E3E3B]/20 selection:text-[#5E3E3B]">
-
+    <div className="min-h-screen bg-[#FAF7F6] text-ink flex flex-col font-sans">
       {/* Top Doctor App Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-line px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
@@ -190,9 +190,7 @@ export default function DoctorDashboard() {
                 Doctor Portal
               </span>
             </div>
-            <p className="text-xs text-ink-soft">
-              Consultation Workspace
-            </p>
+            <p className="text-xs text-ink-soft">Consultation Workspace</p>
           </div>
         </div>
 

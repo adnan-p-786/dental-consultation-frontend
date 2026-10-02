@@ -21,27 +21,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import type {
-  Appointment,
-  AppointmentStatus,
-  Doctor,
-} from "../types";
+import type { Appointment, AppointmentStatus, Doctor } from "../types";
 import { useDoctorsQuery } from "@/api/Doctor/doctorHooks";
 import { useSendReminderMutation } from "@/api/Appointment/appointmentHooks";
-
 
 interface AppointmentDetailModalProps {
   appointment: Appointment | null;
@@ -53,36 +39,31 @@ interface AppointmentDetailModalProps {
   onUpdateStatus: (
     id: string,
     newStatus: AppointmentStatus,
-    note?: string
+    note?: string,
   ) => void;
 
-  onAssignDoctor: (
-    id: string,
-    doctorId: string
-  ) => void;
+  onAssignDoctor: (id: string, doctorId: string) => void;
 
   onUpdateSchedule: (
     id: string,
     date: string,
     time: string,
-    note?: string
+    note?: string,
   ) => void;
 
   onUpdateMeetingLink: (
     id: string,
     platform: "google_meet" | "zoom" | "teams",
-    link: string
+    link: string,
   ) => void;
 
   onSaveClinicalNotes: (
     id: string,
-    notes: Appointment["consultationNotes"]
+    notes: Appointment["consultationNotes"],
   ) => void;
 }
 
-export const AppointmentDetailModal: React.FC<
-  AppointmentDetailModalProps
-> = ({
+export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   appointment,
   isOpen,
   onClose,
@@ -101,7 +82,7 @@ export const AppointmentDetailModal: React.FC<
   // --------------------------------------------------
 
   const [activeTab, setActiveTab] = useState<"details" | "scheduling">(
-    initialTab || "details"
+    initialTab || "details",
   );
 
   const [localDoctors, setLocalDoctors] = useState<Doctor[]>(doctors || []);
@@ -134,31 +115,35 @@ export const AppointmentDetailModal: React.FC<
     }
   }, [doctors, dbDoctors]);
 
-  const availableDoctors = localDoctors.length > 0 ? localDoctors : (dbDoctors && dbDoctors.length > 0 ? dbDoctors : doctors);
+  const availableDoctors =
+    localDoctors.length > 0
+      ? localDoctors
+      : dbDoctors && dbDoctors.length > 0
+        ? dbDoctors
+        : doctors;
 
   const [selectedDoctorId, setSelectedDoctorId] = useState(
-    appointment.assignedDoctorId ? String(appointment.assignedDoctorId) : ""
+    appointment.assignedDoctorId ? String(appointment.assignedDoctorId) : "",
   );
 
   const [rescheduleDate, setRescheduleDate] = useState(
-    appointment.confirmedDate || appointment.requestedDate
+    appointment.confirmedDate || appointment.requestedDate,
   );
 
   const [rescheduleTime, setRescheduleTime] = useState(
-    appointment.confirmedTime || appointment.requestedTime
+    appointment.confirmedTime || appointment.requestedTime,
   );
 
   const [actionNote, setActionNote] = useState("");
 
   // Selected video platform
-  const [activeMeetingPlatform, setActiveMeetingPlatform] =
-    useState<"google_meet" | "zoom" | "teams">(
-      appointment.meetingPlatform || "google_meet"
-    );
+  const [activeMeetingPlatform, setActiveMeetingPlatform] = useState<
+    "google_meet" | "zoom" | "teams"
+  >(appointment.meetingPlatform || "google_meet");
 
   // Manually entered video link
   const [manualMeetingLink, setManualMeetingLink] = useState(
-    appointment.meetingLink || ""
+    appointment.meetingLink || "",
   );
 
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
@@ -179,7 +164,7 @@ export const AppointmentDetailModal: React.FC<
         setReminderFeedback(
           type === "24_hour"
             ? "24-hour reminder email sent!"
-            : "1-hour urgent reminder email sent!"
+            : "1-hour urgent reminder email sent!",
         );
       } else {
         setReminderFeedback(data?.message || "Failed to send reminder");
@@ -202,11 +187,9 @@ export const AppointmentDetailModal: React.FC<
       appointment.patientMessage ||
       "",
 
-    findings:
-      appointment.consultationNotes?.findings || "",
+    findings: appointment.consultationNotes?.findings || "",
 
-    diagnosis:
-      appointment.consultationNotes?.diagnosis || "",
+    diagnosis: appointment.consultationNotes?.diagnosis || "",
 
     recommendedTreatment:
       appointment.consultationNotes?.recommendedTreatment || "",
@@ -217,14 +200,13 @@ export const AppointmentDetailModal: React.FC<
     followUpRequirements:
       appointment.consultationNotes?.followUpRequirements || "",
 
-    internalNotes:
-      appointment.consultationNotes?.internalNotes || "",
+    internalNotes: appointment.consultationNotes?.internalNotes || "",
   });
 
   // Keep modal fields in sync whenever the selected appointment updates
   useEffect(() => {
     setSelectedDoctorId(
-      appointment.assignedDoctorId ? String(appointment.assignedDoctorId) : ""
+      appointment.assignedDoctorId ? String(appointment.assignedDoctorId) : "",
     );
     setRescheduleDate(appointment.confirmedDate || appointment.requestedDate);
     setRescheduleTime(appointment.confirmedTime || appointment.requestedTime);
@@ -260,11 +242,7 @@ export const AppointmentDetailModal: React.FC<
       return;
     }
 
-    onUpdateMeetingLink(
-      appointment.id,
-      activeMeetingPlatform,
-      link
-    );
+    onUpdateMeetingLink(appointment.id, activeMeetingPlatform, link);
   };
 
   // --------------------------------------------------
@@ -275,7 +253,7 @@ export const AppointmentDetailModal: React.FC<
     onUpdateStatus(
       appointment.id,
       "approved",
-      "Approved requested date and time."
+      "Approved requested date and time.",
     );
   };
 
@@ -289,7 +267,7 @@ export const AppointmentDetailModal: React.FC<
       rescheduleDate,
       rescheduleTime,
       actionNote ||
-        `Suggested alternative time slot: ${rescheduleDate} at ${rescheduleTime}`
+        `Suggested alternative time slot: ${rescheduleDate} at ${rescheduleTime}`,
     );
 
     setActionNote("");
@@ -306,14 +284,11 @@ export const AppointmentDetailModal: React.FC<
     setAssignedFeedback(
       targetDoc?.name
         ? `Doctor ${targetDoc.name} assigned!`
-        : "Doctor assigned successfully!"
+        : "Doctor assigned successfully!",
     );
     setTimeout(() => setAssignedFeedback(null), 3500);
 
-    onAssignDoctor(
-      appointment.id,
-      idStr
-    );
+    onAssignDoctor(appointment.id, idStr);
   };
 
   // --------------------------------------------------
@@ -321,19 +296,14 @@ export const AppointmentDetailModal: React.FC<
   // --------------------------------------------------
 
   const handleSaveNotes = () => {
-    onSaveClinicalNotes(
-      appointment.id,
-      clinicalNotes
-    );
+    onSaveClinicalNotes(appointment.id, clinicalNotes);
   };
 
   // --------------------------------------------------
   // Platform label
   // --------------------------------------------------
 
-  const getPlatformLabel = (
-    platform: "google_meet" | "zoom" | "teams"
-  ) => {
+  const getPlatformLabel = (platform: "google_meet" | "zoom" | "teams") => {
     switch (platform) {
       case "google_meet":
         return "Google Meet";
@@ -354,10 +324,7 @@ export const AppointmentDetailModal: React.FC<
   // --------------------------------------------------
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => !open && onClose()}
-    >
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         className="
           max-w-3xl
@@ -425,13 +392,18 @@ export const AppointmentDetailModal: React.FC<
                 >
                   <Avatar className="w-4 h-4 border border-white/40 shrink-0">
                     {appointment.assignedDoctor.avatar && (
-                      <AvatarImage src={appointment.assignedDoctor.avatar} alt={appointment.assignedDoctor.name} />
+                      <AvatarImage
+                        src={appointment.assignedDoctor.avatar}
+                        alt={appointment.assignedDoctor.name}
+                      />
                     )}
                     <AvatarFallback className="text-[8px] bg-teal-800 text-white">
                       Dr
                     </AvatarFallback>
                   </Avatar>
-                  <span className="truncate max-w-[120px] sm:max-w-none">{appointment.assignedDoctor.name}</span>
+                  <span className="truncate max-w-[120px] sm:max-w-none">
+                    {appointment.assignedDoctor.name}
+                  </span>
                 </button>
               ) : (
                 <button
@@ -449,8 +421,7 @@ export const AppointmentDetailModal: React.FC<
               <span>Requested:</span>
 
               <span className="font-semibold text-white">
-                {appointment.requestedDate} at{" "}
-                {appointment.requestedTime}
+                {appointment.requestedDate} at {appointment.requestedTime}
               </span>
             </div>
           </div>
@@ -510,31 +481,20 @@ export const AppointmentDetailModal: React.FC<
               gap-1
             "
           >
-            <TabsTrigger
-              value="details"
-              className="py-2 text-xs"
-            >
+            <TabsTrigger value="details" className="py-2 text-xs">
               Case Details
             </TabsTrigger>
 
-            <TabsTrigger
-              value="scheduling"
-              className="py-2 text-xs"
-            >
+            <TabsTrigger value="scheduling" className="py-2 text-xs">
               Schedule & Doctor
             </TabsTrigger>
-
-            
           </TabsList>
 
           {/* ========================================
               TAB 1 - CASE DETAILS
           ======================================== */}
 
-          <TabsContent
-            value="details"
-            className="space-y-4 pt-2"
-          >
+          <TabsContent value="details" className="space-y-4 pt-2">
             {/* Patient profile */}
 
             <div
@@ -564,9 +524,7 @@ export const AppointmentDetailModal: React.FC<
                 </Avatar>
 
                 <div className="min-w-0">
-                  <div className="text-xs text-ink-soft">
-                    Patient Name
-                  </div>
+                  <div className="text-xs text-ink-soft">Patient Name</div>
 
                   <div className="font-semibold text-sm text-ink truncate">
                     {appointment.patient.name}
@@ -604,8 +562,7 @@ export const AppointmentDetailModal: React.FC<
                 </a>
 
                 <div className="text-[11px] text-ink-soft">
-                  Prefers:{" "}
-                  {appointment.patient.preferredContact}
+                  Prefers: {appointment.patient.preferredContact}
                 </div>
               </div>
 
@@ -724,7 +681,8 @@ export const AppointmentDetailModal: React.FC<
                       No doctor assigned to this consultation yet
                     </p>
                     <p className="text-[11px] text-amber-700 mt-0.5">
-                      Select a doctor below to assign them immediately to this appointment.
+                      Select a doctor below to assign them immediately to this
+                      appointment.
                     </p>
                   </div>
                   <Button
@@ -793,7 +751,8 @@ export const AppointmentDetailModal: React.FC<
                               </span>
                               {isSelected ? (
                                 <span className="text-[10px] text-teal-deep font-bold flex items-center gap-0.5 bg-teal-100/80 px-1.5 py-0.5 rounded">
-                                  <Check className="w-3 h-3 text-teal-deep" /> Assigned
+                                  <Check className="w-3 h-3 text-teal-deep" />{" "}
+                                  Assigned
                                 </span>
                               ) : (
                                 <span className="text-[10px] text-teal-deep font-semibold hover:underline bg-white px-1.5 py-0.5 rounded border border-line">
@@ -824,7 +783,6 @@ export const AppointmentDetailModal: React.FC<
                 space-y-2
               "
             >
-
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">
                   Treatment
@@ -843,11 +801,9 @@ export const AppointmentDetailModal: React.FC<
                   border-line-soft
                 "
               >
-                {appointment.treatment ||
-                  "No treatment mentioned."}
+                {appointment.treatment || "No treatment mentioned."}
               </p>
             </div>
-            
 
             {/* Patient message */}
 
@@ -862,7 +818,6 @@ export const AppointmentDetailModal: React.FC<
                 space-y-2
               "
             >
-
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">
                   Patient Case Description / Symptoms
@@ -905,13 +860,11 @@ export const AppointmentDetailModal: React.FC<
                 </span>
 
                 <span className="text-xs text-ink-soft">
-                  {appointment.documents?.length || 0} file(s)
-                  attached
+                  {appointment.documents?.length || 0} file(s) attached
                 </span>
               </div>
 
-              {appointment.documents &&
-              appointment.documents.length > 0 ? (
+              {appointment.documents && appointment.documents.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {appointment.documents.map((doc) => (
                     <div
@@ -956,10 +909,7 @@ export const AppointmentDetailModal: React.FC<
                         "
                         onClick={() => {
                           if (doc.url) {
-                            window.open(
-                              doc.url,
-                              "_blank"
-                            );
+                            window.open(doc.url, "_blank");
                           }
                         }}
                       >
@@ -982,8 +932,7 @@ export const AppointmentDetailModal: React.FC<
                     border-line
                   "
                 >
-                  No scan files or photos attached to this
-                  request.
+                  No scan files or photos attached to this request.
                 </div>
               )}
             </div>
@@ -993,10 +942,7 @@ export const AppointmentDetailModal: React.FC<
               TAB 2 - SCHEDULING
           ======================================== */}
 
-          <TabsContent
-            value="scheduling"
-            className="space-y-4 pt-2"
-          >
+          <TabsContent value="scheduling" className="space-y-4 pt-2">
             {/* Doctor assignment */}
 
             <div
@@ -1017,8 +963,8 @@ export const AppointmentDetailModal: React.FC<
                   </h4>
 
                   <p className="text-xs text-ink-soft">
-                    Assign a doctor matching the required
-                    treatment specialization.
+                    Assign a doctor matching the required treatment
+                    specialization.
                   </p>
                 </div>
 
@@ -1113,8 +1059,8 @@ export const AppointmentDetailModal: React.FC<
                                 doc.status === "available"
                                   ? "bg-emerald-500"
                                   : doc.status === "busy"
-                                  ? "bg-amber-500"
-                                  : "bg-zinc-400"
+                                    ? "bg-amber-500"
+                                    : "bg-zinc-400"
                               }
                             `}
                           />
@@ -1135,7 +1081,8 @@ export const AppointmentDetailModal: React.FC<
                     No registered doctors available.
                   </p>
                   <p className="text-[11px] text-zinc-500">
-                    Add doctors in the Doctors tab to assign them to consultations.
+                    Add doctors in the Doctors tab to assign them to
+                    consultations.
                   </p>
                 </div>
               )}
@@ -1148,7 +1095,7 @@ export const AppointmentDetailModal: React.FC<
                       Selected Doctor:{" "}
                       <strong>
                         {availableDoctors.find(
-                          (d) => String(d.id) === String(selectedDoctorId)
+                          (d) => String(d.id) === String(selectedDoctorId),
                         )?.name || "Doctor"}
                       </strong>
                     </span>
@@ -1183,8 +1130,8 @@ export const AppointmentDetailModal: React.FC<
               </h4>
 
               <p className="text-xs text-ink-soft">
-                Accept requested time or suggest an
-                alternative slot to the patient.
+                Accept requested time or suggest an alternative slot to the
+                patient.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1196,9 +1143,7 @@ export const AppointmentDetailModal: React.FC<
                   <Input
                     type="date"
                     value={rescheduleDate}
-                    onChange={(e) =>
-                      setRescheduleDate(e.target.value)
-                    }
+                    onChange={(e) => setRescheduleDate(e.target.value)}
                     className="text-xs"
                   />
                 </div>
@@ -1211,9 +1156,7 @@ export const AppointmentDetailModal: React.FC<
                   <Input
                     type="text"
                     value={rescheduleTime}
-                    onChange={(e) =>
-                      setRescheduleTime(e.target.value)
-                    }
+                    onChange={(e) => setRescheduleTime(e.target.value)}
                     placeholder="e.g. 10:30 AM"
                     className="text-xs"
                   />
@@ -1248,17 +1191,14 @@ export const AppointmentDetailModal: React.FC<
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-ink">
-                  Reason / Message to Patient
-                  (Optional for Reschedule)
+                  Reason / Message to Patient (Optional for Reschedule)
                 </label>
 
                 <Input
                   type="text"
                   placeholder="e.g. Morning schedule is booked; offering afternoon consultation slot."
                   value={actionNote}
-                  onChange={(e) =>
-                    setActionNote(e.target.value)
-                  }
+                  onChange={(e) => setActionNote(e.target.value)}
                   className="text-xs"
                 />
               </div>
@@ -1277,7 +1217,6 @@ export const AppointmentDetailModal: React.FC<
                   "
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-
                   Propose This New Time & Notify Patient
                 </Button>
 
@@ -1295,7 +1234,6 @@ export const AppointmentDetailModal: React.FC<
                     "
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-
                     Approve Current Requested Slot
                   </Button>
                 ) : (
@@ -1306,7 +1244,9 @@ export const AppointmentDetailModal: React.FC<
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                       </span>
                       <span>
-                        <strong>Automatic Reminders Active:</strong> 24h & 1h consultation reminders will be emailed automatically by system.
+                        <strong>Automatic Reminders Active:</strong> 24h & 1h
+                        consultation reminders will be emailed automatically by
+                        system.
                       </span>
                     </div>
 
@@ -1320,7 +1260,9 @@ export const AppointmentDetailModal: React.FC<
                       title="Send an immediate preview of the 24h reminder email"
                     >
                       <Bell className="w-3 h-3 mr-1" />
-                      {sendingReminder === "24_hour" ? "Sending..." : "Test Ping Now"}
+                      {sendingReminder === "24_hour"
+                        ? "Sending..."
+                        : "Test Ping Now"}
                     </Button>
                   </div>
                 )}
@@ -1352,22 +1294,13 @@ export const AppointmentDetailModal: React.FC<
                 </h4>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  {(
-                    [
-                      "google_meet",
-                      "zoom",
-                      "teams",
-                    ] as const
-                  ).map((platform) => (
-                    <button
-                      key={platform}
-                      type="button"
-                      onClick={() =>
-                        setActiveMeetingPlatform(
-                          platform
-                        )
-                      }
-                      className={`
+                  {(["google_meet", "zoom", "teams"] as const).map(
+                    (platform) => (
+                      <button
+                        key={platform}
+                        type="button"
+                        onClick={() => setActiveMeetingPlatform(platform)}
+                        className={`
                         px-3
                         py-1.5
                         rounded-lg
@@ -1377,16 +1310,16 @@ export const AppointmentDetailModal: React.FC<
                         transition-all
                         cursor-pointer
                         ${
-                          activeMeetingPlatform ===
-                          platform
+                          activeMeetingPlatform === platform
                             ? "border-teal-deep bg-teal-deep text-white shadow-xs"
                             : "border-line bg-white text-ink-soft hover:border-mint-deep"
                         }
                       `}
-                    >
-                      {getPlatformLabel(platform)}
-                    </button>
-                  ))}
+                      >
+                        {getPlatformLabel(platform)}
+                      </button>
+                    ),
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1398,11 +1331,7 @@ export const AppointmentDetailModal: React.FC<
                     <Input
                       type="url"
                       value={manualMeetingLink}
-                      onChange={(e) =>
-                        setManualMeetingLink(
-                          e.target.value
-                        )
-                      }
+                      onChange={(e) => setManualMeetingLink(e.target.value)}
                       placeholder="Paste meeting link"
                       className="text-xs flex-1"
                     />
@@ -1411,9 +1340,7 @@ export const AppointmentDetailModal: React.FC<
                       type="button"
                       size="sm"
                       onClick={handleSaveMeetingLink}
-                      disabled={
-                        !manualMeetingLink.trim()
-                      }
+                      disabled={!manualMeetingLink.trim()}
                       className="
                         bg-[#5E3E3B]
                         hover:bg-[#262525]
@@ -1434,10 +1361,7 @@ export const AppointmentDetailModal: React.FC<
               TAB 3 - CLINICAL NOTES
           ======================================== */}
 
-          <TabsContent
-            value="workspace"
-            className="space-y-4 pt-2"
-          >
+          <TabsContent value="workspace" className="space-y-4 pt-2">
             <div
               className="
                 p-4
@@ -1456,8 +1380,8 @@ export const AppointmentDetailModal: React.FC<
                   </h4>
 
                   <p className="text-xs text-ink-soft">
-                    Clinical findings, diagnosis, and
-                    post-consultation recommendations.
+                    Clinical findings, diagnosis, and post-consultation
+                    recommendations.
                   </p>
                 </div>
 
@@ -1493,8 +1417,7 @@ export const AppointmentDetailModal: React.FC<
                     onChange={(e) =>
                       setClinicalNotes({
                         ...clinicalNotes,
-                        chiefComplaint:
-                          e.target.value,
+                        chiefComplaint: e.target.value,
                       })
                     }
                     className="
@@ -1592,14 +1515,11 @@ export const AppointmentDetailModal: React.FC<
 
                   <textarea
                     rows={2}
-                    value={
-                      clinicalNotes.recommendedTreatment
-                    }
+                    value={clinicalNotes.recommendedTreatment}
                     onChange={(e) =>
                       setClinicalNotes({
                         ...clinicalNotes,
-                        recommendedTreatment:
-                          e.target.value,
+                        recommendedTreatment: e.target.value,
                       })
                     }
                     className="
@@ -1630,14 +1550,11 @@ export const AppointmentDetailModal: React.FC<
 
                     <textarea
                       rows={2}
-                      value={
-                        clinicalNotes.additionalInstructions
-                      }
+                      value={clinicalNotes.additionalInstructions}
                       onChange={(e) =>
                         setClinicalNotes({
                           ...clinicalNotes,
-                          additionalInstructions:
-                            e.target.value,
+                          additionalInstructions: e.target.value,
                         })
                       }
                       className="
@@ -1665,14 +1582,11 @@ export const AppointmentDetailModal: React.FC<
 
                     <textarea
                       rows={2}
-                      value={
-                        clinicalNotes.followUpRequirements
-                      }
+                      value={clinicalNotes.followUpRequirements}
                       onChange={(e) =>
                         setClinicalNotes({
                           ...clinicalNotes,
-                          followUpRequirements:
-                            e.target.value,
+                          followUpRequirements: e.target.value,
                         })
                       }
                       className="
@@ -1707,8 +1621,7 @@ export const AppointmentDetailModal: React.FC<
                     onChange={(e) =>
                       setClinicalNotes({
                         ...clinicalNotes,
-                        internalNotes:
-                          e.target.value,
+                        internalNotes: e.target.value,
                       })
                     }
                     className="
@@ -1736,10 +1649,7 @@ export const AppointmentDetailModal: React.FC<
               TAB 4 - HISTORY
           ======================================== */}
 
-          <TabsContent
-            value="history"
-            className="space-y-3 pt-2"
-          >
+          <TabsContent value="history" className="space-y-3 pt-2">
             <div
               className="
                 p-4
@@ -1768,10 +1678,7 @@ export const AppointmentDetailModal: React.FC<
                 "
               >
                 {appointment.timeline.map((log) => (
-                  <div
-                    key={log.id}
-                    className="relative"
-                  >
+                  <div key={log.id} className="relative">
                     <span
                       className="
                         absolute
@@ -1852,7 +1759,7 @@ export const AppointmentDetailModal: React.FC<
                   onUpdateStatus(
                     appointment.id,
                     "completed",
-                    "Marked completed by admin."
+                    "Marked completed by admin.",
                   )
                 }
                 className="
@@ -1877,7 +1784,7 @@ export const AppointmentDetailModal: React.FC<
                     onUpdateStatus(
                       appointment.id,
                       "no_show",
-                      "Patient was absent."
+                      "Patient was absent.",
                     )
                   }
                   className="
@@ -1902,7 +1809,7 @@ export const AppointmentDetailModal: React.FC<
                     onUpdateStatus(
                       appointment.id,
                       "rejected",
-                      "Appointment request rejected by clinic administration."
+                      "Appointment request rejected by clinic administration.",
                     )
                   }
                   className="
@@ -1926,7 +1833,8 @@ export const AppointmentDetailModal: React.FC<
                   onUpdateStatus(
                     appointment.id,
                     "cancelled",
-                    actionNote || "Appointment cancelled by clinic administration."
+                    actionNote ||
+                      "Appointment cancelled by clinic administration.",
                   )
                 }
                 className="

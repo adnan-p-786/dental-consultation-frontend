@@ -60,9 +60,11 @@ export const PatientPortal: React.FC = () => {
     () => ({
       email: user?.email,
       phone: user?.phoneNumber,
-      name: user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : undefined,
+      name: user
+        ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+        : undefined,
     }),
-    [user?.email, user?.phoneNumber, user?.firstName, user?.lastName]
+    [user?.email, user?.phoneNumber, user?.firstName, user?.lastName],
   );
 
   const {
@@ -332,7 +334,6 @@ export const PatientPortal: React.FC = () => {
               <Clock className="w-3.5 h-3.5 text-mint" />
               <span>Mon–Sat: 8:00 AM – 7:00 PM</span>
             </div>
-            <span className="w-1 h-1 rounded-full bg-mint/50" />
             <a
               href="tel:+918085478598"
               className="flex items-center gap-1.5 text-white hover:text-mint transition-colors font-medium"
@@ -921,7 +922,8 @@ export const PatientPortal: React.FC = () => {
                   {selectedAppointment.treatment}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-ink-soft">
-                  Requested on {selectedAppointment.requestedDate} &bull; Online Video Consultation
+                  Requested on {selectedAppointment.requestedDate} &bull; Online
+                  Video Consultation
                 </DialogDescription>
               </DialogHeader>
 
