@@ -8,7 +8,6 @@ import {
   Check,
   FileSpreadsheet,
   Bell,
-  UserCheck,
 } from "lucide-react";
 
 import {
@@ -25,7 +24,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import type { Appointment, AppointmentStatus, Doctor } from "../types";
+import type {
+  Appointment,
+  AppointmentStatus,
+  Doctor,
+  MeetingPlatform,
+} from "../types";
 import { useDoctorsQuery } from "@/api/Doctor/doctorHooks";
 import { useSendReminderMutation } from "@/api/Appointment/appointmentHooks";
 
@@ -57,6 +61,18 @@ interface AppointmentDetailModalProps {
     link: string,
   ) => void;
 
+  onConfirmAppointment?: (
+    id: string,
+    data: {
+      doctorId?: string;
+      meetingPlatform?: MeetingPlatform;
+      meetingLink?: string;
+      date: string;
+      time: string;
+      note?: string;
+    },
+  ) => void;
+
   onSaveClinicalNotes: (
     id: string,
     notes: Appointment["consultationNotes"],
@@ -73,6 +89,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   onAssignDoctor,
   onUpdateSchedule,
   onUpdateMeetingLink,
+  onConfirmAppointment,
   onSaveClinicalNotes,
 }) => {
   if (!appointment) return null;
@@ -235,7 +252,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   // Save manually entered meeting link
   // --------------------------------------------------
 
-  const handleSaveMeetingLink = () => {
+  const handleSaveMeetingLink = (showFeedback?: boolean | React.MouseEvent) => {
     const link = manualMeetingLink.trim();
 
     if (!link) {
@@ -243,18 +260,72 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
     }
 
     onUpdateMeetingLink(appointment.id, activeMeetingPlatform, link);
+
+    if (showFeedback !== false) {
+      setAssignedFeedback(
+        `Meeting link (${getPlatformLabel(activeMeetingPlatform)}) saved successfully!`,
+      );
+      setTimeout(() => setAssignedFeedback(null), 3000);
+    }
   };
 
   // --------------------------------------------------
-  // Approve appointment
+  // Confirm appointment (Doctor, Meeting Link, and Schedule Time)
   // --------------------------------------------------
 
-  const handleApproveCurrent = () => {
-    onUpdateStatus(
-      appointment.id,
-      "approved",
-      "Approved requested date and time.",
+  const handleConfirmAll = () => {
+    const docId =
+      selectedDoctorId ||
+      (appointment.assignedDoctorId
+        ? String(appointment.assignedDoctorId)
+        : "");
+    const date =
+      rescheduleDate || appointment.confirmedDate || appointment.requestedDate;
+    const time =
+      rescheduleTime || appointment.confirmedTime || appointment.requestedTime;
+    const platform =
+      activeMeetingPlatform || appointment.meetingPlatform || "google_meet";
+    const link = manualMeetingLink.trim();
+
+    // Execute save link function whenever a link is provided
+    if (link) {
+      handleSaveMeetingLink(false);
+    }
+
+    if (onConfirmAppointment) {
+      onConfirmAppointment(appointment.id, {
+        doctorId: docId || undefined,
+        meetingPlatform: platform,
+        meetingLink: link || undefined,
+        date,
+        time,
+        note: actionNote || undefined,
+      });
+    } else {
+      if (docId) onAssignDoctor(appointment.id, docId);
+      if (link) onUpdateMeetingLink(appointment.id, platform, link);
+      onUpdateSchedule(appointment.id, date, time, actionNote);
+      onUpdateStatus(
+        appointment.id,
+        "approved",
+        actionNote ||
+          "Appointment confirmed with doctor, meeting link, and schedule.",
+      );
+    }
+
+    onClose();
+
+    const assignedDoc = availableDoctors.find(
+      (d) => String(d.id) === String(docId),
     );
+    const docLabel = assignedDoc?.name
+      ? `with Dr. ${assignedDoc.name.replace(/^Dr\.\s*/i, "")}`
+      : "";
+    const linkNote = link ? ` & video link saved` : "";
+    setAssignedFeedback(
+      `Appointment confirmed ${docLabel} for ${date} at ${time}${linkNote}!`.trim(),
+    );
+    setTimeout(() => setAssignedFeedback(null), 4000);
   };
 
   // --------------------------------------------------
@@ -274,21 +345,19 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   };
 
   // --------------------------------------------------
-  // Assign doctor
+  // Select doctor
   // --------------------------------------------------
 
-  const handleAssign = (docId: string) => {
+  const handleSelectDoctor = (docId: string) => {
     const idStr = String(docId);
     setSelectedDoctorId(idStr);
     const targetDoc = availableDoctors.find((d) => String(d.id) === idStr);
     setAssignedFeedback(
       targetDoc?.name
-        ? `Doctor ${targetDoc.name} assigned!`
-        : "Doctor assigned successfully!",
+        ? `Selected Dr. ${targetDoc.name.replace(/^Dr\.\s*/i, "")}`
+        : "Doctor selected",
     );
-    setTimeout(() => setAssignedFeedback(null), 3500);
-
-    onAssignDoctor(appointment.id, idStr);
+    setTimeout(() => setAssignedFeedback(null), 2500);
   };
 
   // --------------------------------------------------
@@ -383,7 +452,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 {appointment.status.replace("_", " ")}
               </Badge>
 
-              {appointment.assignedDoctor ? (
+              {appointment.assignedDoctor && (
                 <button
                   type="button"
                   onClick={() => setActiveTab("scheduling")}
@@ -404,15 +473,6 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   <span className="truncate max-w-[120px] sm:max-w-none">
                     {appointment.assignedDoctor.name}
                   </span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("scheduling")}
-                  className="flex items-center gap-1 px-2.5 py-0.5 sm:py-1 rounded-md bg-amber-400/30 hover:bg-amber-400/40 text-amber-100 hover:text-white text-[11px] sm:text-xs font-semibold cursor-pointer transition-colors border border-amber-300/40"
-                >
-                  <UserCheck className="w-3.5 h-3.5" />
-                  <span>Assign Doctor</span>
                 </button>
               )}
             </div>
@@ -594,182 +654,6 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Assigned Dental Specialist (Directly accessible on Case Details tab) */}
-            <div
-              className="
-                p-4
-                rounded-xl
-                border
-                border-line
-                bg-white
-                shadow-xs
-                space-y-3
-              "
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-teal-deep" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-ink">
-                    Assigned Dental Specialist
-                  </span>
-                </div>
-                {appointment.assignedDoctor ? (
-                  <Badge
-                    variant="outline"
-                    className="text-xs text-teal-deep border-teal-200 bg-teal-50 font-semibold"
-                  >
-                    ✓ Currently Assigned
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="text-xs text-amber-700 border-amber-300 bg-amber-50 font-semibold"
-                  >
-                    ⚠️ Unassigned
-                  </Badge>
-                )}
-              </div>
-
-              {appointment.assignedDoctor ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-teal-200 bg-teal-50/40">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-12 h-12 border-2 border-teal-200 shrink-0">
-                      {appointment.assignedDoctor.avatar && (
-                        <AvatarImage
-                          src={appointment.assignedDoctor.avatar}
-                          alt={appointment.assignedDoctor.name}
-                          className="object-cover"
-                        />
-                      )}
-                      <AvatarFallback className="bg-teal-100 text-teal-deep font-bold text-sm">
-                        {appointment.assignedDoctor.name
-                          .replace(/^Dr\.\s*/i, "")
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <div className="font-bold text-sm text-ink truncate">
-                        {appointment.assignedDoctor.name}
-                      </div>
-                      <div className="text-xs text-teal-deep font-semibold truncate">
-                        {appointment.assignedDoctor.specialization}
-                      </div>
-                      <div className="text-[11px] text-ink-soft mt-0.5">
-                        {appointment.assignedDoctor.email ||
-                          appointment.assignedDoctor.phone ||
-                          "Available for consultation"}
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setActiveTab("scheduling")}
-                    className="text-xs text-teal-deep border-teal-300 hover:bg-teal-100 shrink-0 cursor-pointer"
-                  >
-                    Change Specialist
-                  </Button>
-                </div>
-              ) : (
-                <div className="p-3.5 rounded-xl border border-dashed border-amber-300 bg-amber-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold text-amber-900">
-                      No doctor assigned to this consultation yet
-                    </p>
-                    <p className="text-[11px] text-amber-700 mt-0.5">
-                      Select a doctor below to assign them immediately to this
-                      appointment.
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => setActiveTab("scheduling")}
-                    className="bg-teal-deep hover:bg-teal-mid text-white text-xs font-semibold shrink-0 cursor-pointer shadow-xs"
-                  >
-                    View All Doctors
-                  </Button>
-                </div>
-              )}
-
-              {/* Quick Doctor Selection */}
-              {availableDoctors.length > 0 && (
-                <div className="pt-2 border-t border-line-soft">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-semibold text-ink-soft">
-                      Quick Doctor Assignment (click any doctor to assign):
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("scheduling")}
-                      className="text-[11px] text-teal-deep font-semibold hover:underline cursor-pointer"
-                    >
-                      See schedule & slots →
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {availableDoctors.map((doc) => {
-                      const isSelected =
-                        String(selectedDoctorId) === String(doc.id);
-                      return (
-                        <button
-                          type="button"
-                          key={`quick-${doc.id}`}
-                          onClick={() => handleAssign(String(doc.id))}
-                          className={`
-                            p-2.5 rounded-lg border text-left flex items-center gap-2.5 transition-all cursor-pointer select-none
-                            ${
-                              isSelected
-                                ? "border-teal-deep bg-teal-50 ring-2 ring-teal-deep/30 shadow-xs"
-                                : "border-line bg-zinc-50/60 hover:bg-white hover:border-teal-300"
-                            }
-                          `}
-                        >
-                          <Avatar className="w-8 h-8 border border-line shrink-0">
-                            {doc.avatar && (
-                              <AvatarImage
-                                src={doc.avatar}
-                                alt={doc.name}
-                                className="object-cover"
-                              />
-                            )}
-                            <AvatarFallback className="text-[10px] font-bold bg-teal-50 text-teal-deep">
-                              {doc.name
-                                .replace(/^Dr\.\s*/i, "")
-                                .slice(0, 2)
-                                .toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-ink truncate">
-                                {doc.name}
-                              </span>
-                              {isSelected ? (
-                                <span className="text-[10px] text-teal-deep font-bold flex items-center gap-0.5 bg-teal-100/80 px-1.5 py-0.5 rounded">
-                                  <Check className="w-3 h-3 text-teal-deep" />{" "}
-                                  Assigned
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-teal-deep font-semibold hover:underline bg-white px-1.5 py-0.5 rounded border border-line">
-                                  Assign
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[10px] text-ink-soft truncate block">
-                              {doc.specialization}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
 
             <div
@@ -959,13 +843,8 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-semibold text-ink">
-                    Assigned Dental Specialist
+                    Assign Doctor
                   </h4>
-
-                  <p className="text-xs text-ink-soft">
-                    Assign a doctor matching the required treatment
-                    specialization.
-                  </p>
                 </div>
 
                 {appointment.assignedDoctor && (
@@ -992,7 +871,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                     <button
                       type="button"
                       key={doc.id}
-                      onClick={() => handleAssign(String(doc.id))}
+                      onClick={() => handleSelectDoctor(String(doc.id))}
                       className={`
                         w-full
                         text-left
@@ -1036,11 +915,14 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                           {isSelected ? (
                             <span className="text-[10px] font-bold text-teal-deep bg-teal-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                               <Check className="w-3 h-3 text-teal-deep" />
-                              Assigned
+                              {String(appointment.assignedDoctorId) ===
+                              String(doc.id)
+                                ? "Assigned"
+                                : "Selected"}
                             </span>
                           ) : (
                             <span className="text-[10px] text-teal-deep bg-teal-50 border border-teal-200 hover:bg-teal-100 font-semibold shrink-0 px-2.5 py-0.5 rounded-full">
-                              Assign
+                              Select
                             </span>
                           )}
                         </div>
@@ -1090,7 +972,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
               {selectedDoctorId && (
                 <div className="flex items-center justify-between p-3 rounded-xl bg-teal-50/80 border border-teal-200 mt-2">
                   <div className="text-xs text-teal-900 font-medium flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-teal-deep" />
+                    <CheckCircle2 className="w-4 h-4 text-teal-deep shrink-0" />
                     <span>
                       Selected Doctor:{" "}
                       <strong>
@@ -1100,17 +982,78 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                       </strong>
                     </span>
                   </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => handleAssign(selectedDoctorId)}
-                    className="bg-teal-deep hover:bg-teal-mid text-white text-xs font-semibold px-3 py-1 h-8 cursor-pointer shadow-xs"
-                  >
-                    Confirm Doctor Assignment
-                  </Button>
+                  <span className="text-[11px] text-teal-800 bg-teal-100/70 border border-teal-200 px-2.5 py-0.5 rounded-md font-medium">
+                    {String(appointment.assignedDoctorId) ===
+                    String(selectedDoctorId)
+                      ? "Assigned to appointment"
+                      : "Selected (will confirm with appointment)"}
+                  </span>
                 </div>
               )}
             </div>
+
+            {/* Video provider */}
+
+            {appointment.consultationType === "video" && (
+              <div
+                className="
+                  p-4
+                  rounded-xl
+                  border
+                  border-line
+                  bg-white
+                  shadow-xs
+                  space-y-3
+                "
+              >
+                <h4 className="text-sm font-semibold text-ink">
+                  Add consultation link
+                </h4>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {(["google_meet", "zoom", "teams"] as const).map(
+                    (platform) => (
+                      <button
+                        key={platform}
+                        type="button"
+                        onClick={() => setActiveMeetingPlatform(platform)}
+                        className={`
+                        px-3
+                        py-1.5
+                        rounded-lg
+                        border
+                        text-xs
+                        font-semibold
+                        transition-all
+                        cursor-pointer
+                        ${
+                          activeMeetingPlatform === platform
+                            ? "border-teal-deep bg-teal-deep text-white shadow-xs"
+                            : "border-line bg-white text-ink-soft hover:border-mint-deep"
+                        }
+                      `}
+                      >
+                        {getPlatformLabel(platform)}
+                      </button>
+                    ),
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-ink">
+                    Add Link
+                  </label>
+
+                  <Input
+                    type="url"
+                    value={manualMeetingLink}
+                    onChange={(e) => setManualMeetingLink(e.target.value)}
+                    placeholder="Paste meeting link"
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Schedule */}
 
@@ -1220,23 +1163,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   Propose This New Time & Notify Patient
                 </Button>
 
-                {appointment.status !== "approved" ? (
-                  <Button
-                    size="sm"
-                    onClick={handleApproveCurrent}
-                    className="
-                      bg-emerald-700
-                      hover:bg-emerald-800
-                      text-white
-                      text-xs
-                      h-9
-                      gap-1.5
-                    "
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Approve Current Requested Slot
-                  </Button>
-                ) : (
+                {appointment.status === "approved" && (
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
                       <span className="relative flex h-2 w-2">
@@ -1274,87 +1201,6 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 )}
               </div>
             </div>
-
-            {/* Video provider */}
-
-            {appointment.consultationType === "video" && (
-              <div
-                className="
-                  p-4
-                  rounded-xl
-                  border
-                  border-line
-                  bg-white
-                  shadow-xs
-                  space-y-3
-                "
-              >
-                <h4 className="text-sm font-semibold text-ink">
-                  Video Consultation Provider
-                </h4>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {(["google_meet", "zoom", "teams"] as const).map(
-                    (platform) => (
-                      <button
-                        key={platform}
-                        type="button"
-                        onClick={() => setActiveMeetingPlatform(platform)}
-                        className={`
-                        px-3
-                        py-1.5
-                        rounded-lg
-                        border
-                        text-xs
-                        font-semibold
-                        transition-all
-                        cursor-pointer
-                        ${
-                          activeMeetingPlatform === platform
-                            ? "border-teal-deep bg-teal-deep text-white shadow-xs"
-                            : "border-line bg-white text-ink-soft hover:border-mint-deep"
-                        }
-                      `}
-                      >
-                        {getPlatformLabel(platform)}
-                      </button>
-                    ),
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-ink">
-                    Meeting Link
-                  </label>
-
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
-                      type="url"
-                      value={manualMeetingLink}
-                      onChange={(e) => setManualMeetingLink(e.target.value)}
-                      placeholder="Paste meeting link"
-                      className="text-xs flex-1"
-                    />
-
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleSaveMeetingLink}
-                      disabled={!manualMeetingLink.trim()}
-                      className="
-                        bg-[#5E3E3B]
-                        hover:bg-[#262525]
-                        text-white
-                        text-xs
-                        h-9
-                      "
-                    >
-                      Save Link
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
           </TabsContent>
 
           {/* ========================================
@@ -1748,121 +1594,34 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
             gap-2
           "
         >
-          <div className="flex items-center gap-2">
-            {/* Completed */}
-
-            {appointment.status !== "completed" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  onUpdateStatus(
-                    appointment.id,
-                    "completed",
-                    "Marked completed by admin.",
-                  )
-                }
-                className="
-                  text-xs
-                  text-teal-deep
-                  border-teal-200
-                  hover:bg-teal-50
-                "
-              >
-                Mark Completed
-              </Button>
-            )}
-
-            {/* No show */}
-
-            {appointment.status !== "no_show" &&
-              appointment.status !== "completed" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    onUpdateStatus(
-                      appointment.id,
-                      "no_show",
-                      "Patient was absent.",
-                    )
-                  }
-                  className="
-                    text-xs
-                    text-zinc-700
-                    hover:bg-zinc-100
-                  "
-                >
-                  Mark No-Show
-                </Button>
-              )}
-
-            {/* Reject */}
-
-            {appointment.status !== "rejected" &&
-              appointment.status !== "completed" &&
-              appointment.status !== "cancelled" && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    onUpdateStatus(
-                      appointment.id,
-                      "rejected",
-                      "Appointment request rejected by clinic administration.",
-                    )
-                  }
-                  className="
-                    text-xs
-                    text-rose-600
-                    hover:bg-rose-50
-                    hover:text-rose-700
-                  "
-                >
-                  Reject Request
-                </Button>
-              )}
-
-            {/* Cancel */}
-
-            {appointment.status !== "cancelled" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() =>
-                  onUpdateStatus(
-                    appointment.id,
-                    "cancelled",
-                    actionNote ||
-                      "Appointment cancelled by clinic administration.",
-                  )
-                }
-                className="
-                  text-xs
-                  text-red-600
-                  hover:bg-red-50
-                  hover:text-red-700
-                "
-              >
-                Cancel Appointment
-              </Button>
-            )}
-          </div>
-
-          {/* Done */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onClose}
+            className=""
+          >
+            Close
+          </Button>
 
           <Button
-            variant="default"
             size="sm"
-            onClick={onClose}
+            onClick={handleConfirmAll}
             className="
-              bg-[#5E3E3B]
-              text-white
-              hover:bg-[#262525]
-              cursor-pointer
-            "
+                    bg-emerald-700
+                    hover:bg-emerald-800
+                    text-white
+                    text-xs
+                    h-9
+                    gap-1.5
+                    font-semibold
+                    shadow-xs
+                  "
+            title="Confirm doctor assignment, meeting link, and scheduled time"
           >
-            Done
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            {appointment.status === "approved"
+              ? "Confirm Appointment"
+              : "Confirm Appointment (Doctor, Time & Link)"}
           </Button>
         </DialogFooter>
       </DialogContent>

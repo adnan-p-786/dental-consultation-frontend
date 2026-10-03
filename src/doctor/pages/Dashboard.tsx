@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { appointmentService } from "@/lib/appointmentService";
 import { useAppointmentsQuery } from "@/api/Appointment/appointmentHooks";
@@ -27,6 +28,7 @@ import {
 type ScheduleTab = "today" | "upcoming" | "completed" | "all";
 
 export default function DoctorDashboard() {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { data: dbAppointments = [], refetch: refetchAppointments } =
     useAppointmentsQuery();
@@ -227,7 +229,11 @@ export default function DoctorDashboard() {
               </span>
             </div>
             <button
-              onClick={() => logout()}
+              type="button"
+              onClick={() => {
+                logout();
+                navigate("/auth/admin/login", { replace: true });
+              }}
               className="ml-2 flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
               title="Sign Out"
             >

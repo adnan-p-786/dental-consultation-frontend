@@ -8,7 +8,6 @@ import {
   AlertCircle,
   Eye,
   CalendarCheck,
-  Check,
   UserCheck,
   Trash2,
 } from "lucide-react";
@@ -52,6 +51,8 @@ import type {
   AppointmentStatus,
   Doctor,
   TreatmentType,
+  AuditLog,
+  MeetingPlatform,
 } from "../types";
 import { appointmentService } from "@/lib/appointmentService";
 import { useAuth } from "@/auth/AuthContext";
@@ -489,6 +490,118 @@ function Dashboard() {
         });
       } catch (err) {
         console.error("Failed to sync schedule to DB:", err);
+      }
+    }
+  };
+
+  const handleConfirmAppointment = async (
+    id: string,
+    data: {
+      doctorId?: string;
+      meetingPlatform?: MeetingPlatform;
+      meetingLink?: string;
+      date: string;
+      time: string;
+      note?: string;
+    },
+  ) => {
+    let doctorObj = data.doctorId
+      ? doctors.find((d) => String(d.id) === String(data.doctorId))
+      : undefined;
+
+    if (data.doctorId && !doctorObj) {
+      try {
+        const saved = localStorage.getItem("dental_doctors_v1");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          doctorObj = parsed.find(
+            (d: any) => String(d.id) === String(data.doctorId),
+          );
+        }
+      } catch (e) {}
+    }
+
+    const targetApt = appointments.find((a) => String(a.id) === String(id));
+    const finalDoc = doctorObj || targetApt?.assignedDoctor;
+    const finalDocId = data.doctorId || targetApt?.assignedDoctorId;
+    const finalPlatform =
+      data.meetingPlatform || targetApt?.meetingPlatform || "google_meet";
+    const finalLink =
+      data.meetingLink !== undefined
+        ? data.meetingLink
+        : targetApt?.meetingLink || "";
+    const finalDate =
+      data.date || targetApt?.confirmedDate || targetApt?.requestedDate;
+    const finalTime =
+      data.time || targetApt?.confirmedTime || targetApt?.requestedTime;
+
+    const timelineEntry: AuditLog = {
+      id: `tl-${Date.now()}`,
+      timestamp: new Date().toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      action: `Appointment Confirmed & Approved (${finalDate} at ${finalTime})`,
+      actor: currentActor,
+      details: [
+        finalDoc?.name ? `Doctor: ${finalDoc.name}` : null,
+        finalLink ? `Meeting: ${finalLink}` : null,
+        data.note ? `Note: ${data.note}` : null,
+      ]
+        .filter(Boolean)
+        .join(" | "),
+    };
+
+    const updatedApt: Appointment = {
+      ...(targetApt || ({} as Appointment)),
+      id: String(id),
+      status: "approved",
+      assignedDoctorId: finalDocId ? String(finalDocId) : undefined,
+      assignedDoctor: finalDoc,
+      meetingPlatform: finalPlatform,
+      meetingLink: finalLink,
+      confirmedDate: finalDate,
+      confirmedTime: finalTime,
+      timeline: [timelineEntry, ...(targetApt?.timeline || [])],
+    };
+
+    setSelectedAppointment(updatedApt);
+    setAppointments((prev) =>
+      prev.map((apt) => (String(apt.id) === String(id) ? updatedApt : apt)),
+    );
+
+    appointmentService.updateAppointment(String(id), {
+      status: "approved",
+      assignedDoctorId: finalDocId ? String(finalDocId) : undefined,
+      assignedDoctor: finalDoc,
+      meetingPlatform: finalPlatform,
+      meetingLink: finalLink,
+      confirmedDate: finalDate,
+      confirmedTime: finalTime,
+    });
+
+    if (!isNaN(Number(id))) {
+      try {
+        await updateAppointmentMutation.mutateAsync({
+          id,
+          payload: {
+            status: "approved",
+            assignedDoctorId: finalDocId ? String(finalDocId) : undefined,
+            assignedDoctorName: finalDoc?.name,
+            meetingPlatform: finalPlatform,
+            meetingLink: finalLink,
+            confirmedDate: finalDate,
+            confirmedTime: finalTime,
+            preferredDate: finalDate,
+            preferredTime: finalTime,
+            note:
+              data.note || "Appointment confirmed by clinic administration.",
+          },
+        });
+      } catch (err) {
+        console.error("Failed to sync appointment confirmation to DB:", err);
       }
     }
   };
@@ -985,11 +1098,11 @@ function Dashboard() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleOpenDetail(apt)}
-                              className="text-xs h-8"
+                              className="bg-emerald-700 hover:bg-black hover:text-white text-white text-xs h-8 gap-1"
                             >
                               Review & Assign
                             </Button>
-                            <Button
+                            {/* <Button
                               size="sm"
                               onClick={() =>
                                 handleUpdateStatus(
@@ -1002,7 +1115,7 @@ function Dashboard() {
                             >
                               <Check className="w-3.5 h-3.5" />
                               Approve
-                            </Button>
+                            </Button> */}
                           </div>
                         </div>
                       ))}
@@ -1488,6 +1601,7 @@ function Dashboard() {
         onAssignDoctor={handleAssignDoctor}
         onUpdateSchedule={handleUpdateSchedule}
         onUpdateMeetingLink={handleUpdateMeetingLink}
+        onConfirmAppointment={handleConfirmAppointment}
         onSaveClinicalNotes={handleSaveClinicalNotes}
       />
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   CalendarCheck2,
@@ -44,6 +44,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   mobileOpen = false,
   onCloseMobile,
 }) => {
+  const navigate = useNavigate();
   const { user, logout, isSuperAdmin } = useAuth();
   const isSuper = isSuperAdmin || user?.role === "superadmin";
   const adminName = user
@@ -350,7 +351,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
           {/* Sign out button */}
           <button
-            onClick={() => logout()}
+            type="button"
+            onClick={() => {
+              if (onCloseMobile) onCloseMobile();
+              logout();
+              navigate("/auth/admin/login", { replace: true });
+            }}
             className={cn(
               "flex items-center text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer rounded-xl",
               collapsed && !mobileOpen

@@ -30,6 +30,7 @@ const router = createBrowserRouter([
   { path: "/auth/login", element: <Login /> },
   { path: "/auth/register", element: <Register /> },
   { path: "/auth/admin/login", element: <AdminLogin /> },
+  { path: "/admin/login", element: <AdminLogin /> },
   {
     path: "/appointment",
     element: (
@@ -49,7 +50,7 @@ const router = createBrowserRouter([
   {
     path: "/doctor/dashboard",
     element: (
-      <ProtectedRoute allowedRoles={["doctor"]} redirectTo="/admin/login">
+      <ProtectedRoute allowedRoles={["doctor"]} redirectTo="/auth/admin/login">
         <DashboardDoctor />
       </ProtectedRoute>
     ),
@@ -57,7 +58,10 @@ const router = createBrowserRouter([
   {
     path: "/admin/dashboard",
     element: (
-      <ProtectedRoute allowedRoles={["admin", "superadmin"]} redirectTo="/admin/login">
+      <ProtectedRoute
+        allowedRoles={["admin", "superadmin"]}
+        redirectTo="/auth/admin/login"
+      >
         <DashboardAdmin />
       </ProtectedRoute>
     ),
@@ -78,6 +82,7 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
+  { path: "*", element: <Navigate to="/" replace /> },
 ]);
 
 createRoot(document.getElementById("root")!).render(
