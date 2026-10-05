@@ -43,6 +43,7 @@ import { NewAppointmentModal } from "../components/NewAppointmentModal";
 import { DeleteAppointmentModal } from "../components/DeleteAppointmentModal";
 import { AppointmentCalendarView } from "../components/AppointmentCalendarView";
 import { DoctorManagementView } from "../components/DoctorManagementView";
+import { PatientManagementView } from "../components/PatientManagementView";
 import { ReportsView } from "../components/ReportsView";
 import { SettingsView } from "../components/SettingsView";
 import { initialDoctors } from "../data/mockData";
@@ -1606,6 +1607,9 @@ function Dashboard() {
               onDeleteDoctor={isSuper ? handleDeleteDoctor : undefined}
             />
           )}
+
+          {/* TAB 4: PATIENT DIRECTORY */}
+          {activeTab === "patients" && <PatientManagementView />}
 
           {/* TAB 4: REPORTS & ANALYTICS (PDF Section 11) */}
           {activeTab === "reports" && (

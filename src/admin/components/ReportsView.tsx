@@ -17,12 +17,20 @@ import {
   BookmarkPlus,
   BarChart3,
   CalendarDays,
+  Calendar,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -32,12 +40,26 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import type { Appointment, Doctor } from "../types";
+
+const STATUS_FILTER_OPTIONS: { id: string; label: string; dotColor: string }[] = [
+  { id: "all", label: "All Statuses", dotColor: "bg-slate-400" },
+  { id: "pending", label: "Pending", dotColor: "bg-amber-400" },
+  { id: "under_review", label: "Under Review", dotColor: "bg-teal-500" },
+  { id: "proposed", label: "Proposed", dotColor: "bg-purple-500" },
+  { id: "approved", label: "Approved", dotColor: "bg-emerald-500" },
+  { id: "completed", label: "Completed", dotColor: "bg-blue-500" },
+  { id: "reschedule_requested", label: "Reschedule Requested", dotColor: "bg-orange-500" },
+  { id: "cancelled", label: "Cancelled", dotColor: "bg-rose-500" },
+  { id: "no_show", label: "No Show", dotColor: "bg-zinc-400" },
+];
 import {
   useReportAnalyticsQuery,
   useSavedReportsQuery,
   useSaveReportSnapshotMutation,
   useDeleteReportSnapshotMutation,
 } from "@/api/Report/reportHooks";
+import { useTreatmentsQuery } from "@/api/Treatment/treatmentHooks";
+import { useDoctorsQuery } from "@/api/Doctor/doctorHooks";
 
 import { reportsApi, type AnalyticsMetrics } from "@/api/Report/reportApi";
 
@@ -100,6 +122,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   // ------------------------------------------------------------------
   // TanStack Query Hooks: Real-time Analytics & Saved Reports
   // ------------------------------------------------------------------
+  const { data: dbTreatments = [] } = useTreatmentsQuery();
+  const { data: dbDoctors = [] } = useDoctorsQuery();
+
   const {
     data: analyticsData,
     isLoading: loading,
@@ -370,21 +395,58 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     }
   };
 
-  // Unique list of treatments and doctors for filter dropdowns
+  // Unique list of all treatments from DB and appointments for filter dropdown
   const treatmentFilterOptions = useMemo(() => {
     const set = new Set<string>();
-    initialAppointments.forEach((a) => {
-      if (a.treatment) set.add(a.treatment);
-    });
-    return Array.from(set);
-  }, [initialAppointments]);
+
+    // 1. Prioritize all treatments configured in the database
+    if (Array.isArray(dbTreatments)) {
+      dbTreatments.forEach((t) => {
+        if (t.name) set.add(t.name.trim());
+      });
+    }
+
+    // 2. Also include any treatment names on existing appointments (in case historical/custom)
+    if (Array.isArray(initialAppointments)) {
+      initialAppointments.forEach((a) => {
+        if (a.treatment) set.add(a.treatment.trim());
+      });
+    }
+
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [dbTreatments, initialAppointments]);
 
   const doctorFilterOptions = useMemo(() => {
-    return doctors.map((d) => ({
-      id: String(d.id),
-      name: d.name,
-    }));
-  }, [doctors]);
+    const docMap = new Map<string, string>();
+
+    // 1. Add doctors from database
+    if (Array.isArray(dbDoctors)) {
+      dbDoctors.forEach((d) => {
+        if (d.name) docMap.set(d.name.trim(), String(d.id));
+      });
+    }
+
+    // 2. Add doctors passed via props
+    if (Array.isArray(doctors)) {
+      doctors.forEach((d) => {
+        if (d.name) docMap.set(d.name.trim(), String(d.id));
+      });
+    }
+
+    // 3. Add any assigned doctor names from appointments
+    if (Array.isArray(initialAppointments)) {
+      initialAppointments.forEach((a) => {
+        const name = a.assignedDoctor?.name || a.assignedDoctorName;
+        if (name && !docMap.has(name.trim())) {
+          docMap.set(name.trim(), String(a.assignedDoctorId || name));
+        }
+      });
+    }
+
+    return Array.from(docMap.entries())
+      .map(([name, id]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [dbDoctors, doctors, initialAppointments]);
 
   // Summary Metrics calculations
   const total = metrics?.totalAppointments ?? filteredAppointments.length;
@@ -464,12 +526,21 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       </div>
 
       {/* SEARCH & FILTERS SECTION (PDF Section 11) */}
-      <Card className="border-line shadow-xs bg-white">
-        <CardHeader className="pb-3 border-b border-line flex flex-row items-center justify-between">
-          <CardTitle className="text-sm font-semibold text-ink flex items-center gap-2">
-            <Filter className="w-4 h-4 text-teal-deep" />
-            Search & Advanced Filters
-          </CardTitle>
+      <Card className="border-line shadow-xs bg-white rounded-2xl overflow-hidden">
+        <CardHeader className="pb-3 border-b border-line/80 flex flex-row items-center justify-between bg-[#FAF7F6]/40">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-[#FAF2F0] text-[#5E3E3B] flex items-center justify-center">
+              <Filter className="w-3.5 h-3.5" />
+            </div>
+            <CardTitle className="text-sm font-semibold text-ink flex items-center gap-2">
+              Search & Advanced Filters
+            </CardTitle>
+            {(search.trim() || selectedDoctor !== "all" || selectedTreatment !== "all" || selectedStatus !== "all" || startDate || endDate) && (
+              <Badge className="bg-[#5E3E3B] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                Filters Active
+              </Badge>
+            )}
+          </div>
 
           <div className="flex items-center gap-2">
             <Button
@@ -477,7 +548,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               variant="ghost"
               size="sm"
               onClick={handleResetFilters}
-              className="text-[11px] h-7 px-2 text-ink-soft hover:text-ink cursor-pointer gap-1"
+              className="text-[11px] h-7 px-2.5 text-ink-soft hover:text-ink hover:bg-[#FAF2F0] cursor-pointer gap-1 transition-colors"
             >
               <RefreshCw className="w-3 h-3" />
               Reset Filters
@@ -488,84 +559,106 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         <CardContent className="pt-4 space-y-4">
           {/* Universal Search Bar */}
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-ink-soft" />
+            <Search className="w-4 h-4 absolute left-3.5 top-3 text-ink-soft" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by patient name, email address, phone number, treatment, or appointment ID..."
-              className="pl-9 text-xs h-9 bg-[#FAF7F6]/60 border-line"
+              className="pl-10 text-xs h-10 rounded-xl bg-[#FAF7F6]/50 border-line/80 focus:bg-white focus:border-[#5E3E3B] focus:ring-2 focus:ring-[#5E3E3B]/15 transition-all"
             />
           </div>
 
           {/* Filter Dropdowns Grid (Doctor, Treatment, Status) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             {/* 1. Doctor Filter */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-ink flex items-center gap-1">
-                <User className="w-3 h-3 text-mint-deep" />
-                Assigned Doctor
+            <div className="space-y-1.5">
+              <label className="text-[11.5px] font-semibold text-ink flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-[#5E3E3B]" />
+                <span>Assigned Doctor</span>
               </label>
-              <select
-                value={selectedDoctor}
-                onChange={(e) => setSelectedDoctor(e.target.value)}
-                className="w-full text-xs h-9 rounded-md border border-line bg-white px-2.5 py-1 text-ink focus:outline-none focus:ring-1 focus:ring-teal-deep"
-              >
-                <option value="all">All Doctors</option>
-                {doctorFilterOptions.map((doc) => (
-                  <option key={doc.id} value={doc.name}>
-                    {doc.name}
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedDoctor} onValueChange={(val) => setSelectedDoctor(val)}>
+                <SelectTrigger className="h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-medium text-ink shadow-2xs hover:border-[#E8CDC9] hover:bg-[#FAF7F6]/40 focus:ring-2 focus:ring-[#5E3E3B]/15 focus:border-[#5E3E3B] transition-all">
+                  <SelectValue placeholder="All Doctors" />
+                </SelectTrigger>
+                <SelectContent className="max-h-64 rounded-xl shadow-lg border border-line bg-white">
+                  <SelectItem value="all" className="text-xs cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <User className="w-3.5 h-3.5 text-ink-soft" />
+                      <span className="font-semibold text-ink">All Doctors</span>
+                    </div>
+                  </SelectItem>
+                  {doctorFilterOptions.map((doc) => (
+                    <SelectItem key={doc.id} value={doc.name} className="text-xs cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <span className="w-4 h-4 rounded-full bg-[#FAF2F0] text-[#5E3E3B] text-[10px] font-bold flex items-center justify-center shrink-0">
+                          {doc.name.replace("Dr. ", "").slice(0, 1)}
+                        </span>
+                        <span className="font-medium text-ink truncate">{doc.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* 2. Treatment Filter */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-ink flex items-center gap-1">
-                <Stethoscope className="w-3 h-3 text-mint-deep" />
-                Treatment Type
+            <div className="space-y-1.5">
+              <label className="text-[11.5px] font-semibold text-ink flex items-center gap-1.5">
+                <Stethoscope className="w-3.5 h-3.5 text-[#5E3E3B]" />
+                <span>Treatment Type</span>
               </label>
-              <select
-                value={selectedTreatment}
-                onChange={(e) => setSelectedTreatment(e.target.value)}
-                className="w-full text-xs h-9 rounded-md border border-line bg-white px-2.5 py-1 text-ink focus:outline-none focus:ring-1 focus:ring-teal-deep"
-              >
-                <option value="all">All Treatments</option>
-                {treatmentFilterOptions.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedTreatment} onValueChange={(val) => setSelectedTreatment(val)}>
+                <SelectTrigger className="h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-medium text-ink shadow-2xs hover:border-[#E8CDC9] hover:bg-[#FAF7F6]/40 focus:ring-2 focus:ring-[#5E3E3B]/15 focus:border-[#5E3E3B] transition-all">
+                  <SelectValue placeholder="All Treatments" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72 w-[var(--radix-select-trigger-width)] min-w-[280px] rounded-xl shadow-xl border border-line bg-white p-1">
+                  <SelectItem value="all" className="text-xs cursor-pointer py-2">
+                    <div className="flex items-center gap-2">
+                      <Stethoscope className="w-3.5 h-3.5 text-ink-soft shrink-0" />
+                      <span className="font-semibold text-ink">All Treatments</span>
+                    </div>
+                  </SelectItem>
+                  {treatmentFilterOptions.map((t) => (
+                    <SelectItem key={t} value={t} className="text-xs cursor-pointer py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#5E3E3B] shrink-0" />
+                        <span className="font-medium text-ink leading-snug">{t}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* 3. Status Filter */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-ink flex items-center gap-1">
-                <Clock className="w-3 h-3 text-mint-deep" />
-                Status
+            <div className="space-y-1.5">
+              <label className="text-[11.5px] font-semibold text-ink flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-[#5E3E3B]" />
+                <span>Appointment Status</span>
               </label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full text-xs h-9 rounded-md border border-line bg-white px-2.5 py-1 text-ink focus:outline-none focus:ring-1 focus:ring-teal-deep"
-              >
-                <option value="all">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="no_show">No Show</option>
-                <option value="under_review">Under Review</option>
-              </select>
+              <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val)}>
+                <SelectTrigger className="h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-medium text-ink shadow-2xs hover:border-[#E8CDC9] hover:bg-[#FAF7F6]/40 focus:ring-2 focus:ring-[#5E3E3B]/15 focus:border-[#5E3E3B] transition-all">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent className="max-h-64 rounded-xl shadow-lg border border-line bg-white">
+                  {STATUS_FILTER_OPTIONS.map((st) => (
+                    <SelectItem key={st.id} value={st.id} className="text-xs cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${st.dotColor} shrink-0`} />
+                        <span className="font-medium text-ink">{st.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {/* Date Range & Quick Preset Chips */}
-          <div className="pt-2 border-t border-line/60 flex flex-wrap items-center justify-between gap-3">
+          <div className="pt-3 border-t border-line/60 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-[11px] font-semibold text-ink-soft mr-1 flex items-center gap-1">
-                <CalendarDays className="w-3 h-3" />
+                <CalendarDays className="w-3.5 h-3.5 text-[#5E3E3B]" />
                 Preset:
               </span>
               {[
@@ -580,10 +673,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   key={p.id}
                   type="button"
                   onClick={() => handlePresetSelect(p.id)}
-                  className={`text-[11px] px-2.5 py-1 rounded-md border transition-all cursor-pointer font-medium ${
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all cursor-pointer font-medium ${
                     datePreset === p.id
-                      ? "bg-[#5E3E3B] text-white border-[#5E3E3B]"
-                      : "bg-[#FAF7F6] text-ink-soft border-line hover:border-mint-deep hover:text-ink"
+                      ? "bg-[#5E3E3B] text-white border-[#5E3E3B] shadow-2xs font-semibold"
+                      : "bg-[#FAF7F6] text-ink-soft border-line hover:border-[#E8CDC9] hover:text-ink"
                   }`}
                 >
                   {p.label}
@@ -591,9 +684,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               ))}
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 text-[11px]">
-                <span className="text-ink-soft">From:</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line/80 bg-white shadow-2xs text-xs">
+                <Calendar className="w-3.5 h-3.5 text-ink-soft shrink-0" />
+                <span className="text-[11px] font-semibold text-ink-soft">From:</span>
                 <input
                   type="date"
                   value={startDate}
@@ -601,12 +695,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                     setStartDate(e.target.value);
                     setDatePreset("custom");
                   }}
-                  className="text-xs h-7 px-2 border border-line rounded bg-white text-ink"
+                  className="text-xs bg-transparent text-ink font-medium focus:outline-none cursor-pointer"
                 />
               </div>
 
-              <div className="flex items-center gap-1 text-[11px]">
-                <span className="text-ink-soft">To:</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line/80 bg-white shadow-2xs text-xs">
+                <Calendar className="w-3.5 h-3.5 text-ink-soft shrink-0" />
+                <span className="text-[11px] font-semibold text-ink-soft">To:</span>
                 <input
                   type="date"
                   value={endDate}
@@ -614,7 +709,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                     setEndDate(e.target.value);
                     setDatePreset("custom");
                   }}
-                  className="text-xs h-7 px-2 border border-line rounded bg-white text-ink"
+                  className="text-xs bg-transparent text-ink font-medium focus:outline-none cursor-pointer"
                 />
               </div>
             </div>

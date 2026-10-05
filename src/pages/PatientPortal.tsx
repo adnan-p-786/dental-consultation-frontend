@@ -558,7 +558,7 @@ export const PatientPortal: React.FC = () => {
                     variant="outline"
                     className="text-xs text-ink-soft bg-white"
                   >
-                    Meeting link generating...
+                    Link not available yet
                   </Button>
                 )}
 

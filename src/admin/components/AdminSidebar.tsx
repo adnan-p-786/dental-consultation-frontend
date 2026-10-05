@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   CalendarCheck2,
   Stethoscope,
+  Users,
   BarChart3,
   Settings,
   ShieldCheck,
@@ -22,6 +23,7 @@ export type AdminTab =
   | "overview"
   | "appointments"
   | "doctors"
+  | "patients"
   | "reports"
   | "settings";
 
@@ -82,6 +84,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: "Doctors & Availability",
       shortLabel: "Doctors",
       icon: Stethoscope,
+      badge: null,
+      superOnly: false,
+    },
+    {
+      id: "patients" as AdminTab,
+      label: "Patients Directory",
+      shortLabel: "Patients",
+      icon: Users,
       badge: null,
       superOnly: false,
     },

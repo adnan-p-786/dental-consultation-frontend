@@ -9,10 +9,6 @@ import {
   FileSpreadsheet,
   Bell,
   Video,
-  ExternalLink,
-  Copy,
-  Sparkles,
-  Trash2,
   Link as LinkIcon,
 } from "lucide-react";
 
@@ -170,7 +166,6 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
       ? appointment.meetingLink
       : "",
   );
-  const [copiedLink, setCopiedLink] = useState(false);
 
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [reminderFeedback, setReminderFeedback] = useState<string | null>(null);
@@ -259,19 +254,6 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
     });
   }, [appointment]);
 
-  // --------------------------------------------------
-  // Copy meeting link
-  // --------------------------------------------------
-  // Save manually entered meeting link
-  // --------------------------------------------------
-
-  const handleCopyLink = (textToCopy: string) => {
-    if (!textToCopy) return;
-    navigator.clipboard.writeText(textToCopy);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
-  };
-
   const handleSaveMeetingLink = (targetLink?: string) => {
     const link = (
       targetLink !== undefined ? targetLink : manualMeetingLink
@@ -285,22 +267,6 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
         : "Meeting link cleared.",
     );
     setTimeout(() => setAssignedFeedback(null), 3500);
-  };
-
-  const handleGenerateGoogleMeet = () => {
-    setActiveMeetingPlatform("google_meet");
-    const safeRef = (appointment.referenceNo || `apt-${appointment.id}`)
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "");
-    const randPart = Math.random().toString(36).substring(2, 6);
-    const generated = `https://meet.google.com/${safeRef.slice(0, 3) || "doc"}-${safeRef.slice(3, 7) || "room"}-${randPart}`;
-    setManualMeetingLink(generated);
-    handleSaveMeetingLink(generated);
-  };
-
-  const handleClearMeetingLink = () => {
-    setManualMeetingLink("");
-    handleSaveMeetingLink("");
   };
 
   // --------------------------------------------------

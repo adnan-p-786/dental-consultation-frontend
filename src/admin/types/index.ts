@@ -85,6 +85,7 @@ export interface Appointment {
   confirmedTime?: string;
   assignedDoctorId?: string;
   assignedDoctor?: Doctor;
+  assignedDoctorName?: string;
   meetingPlatform?: MeetingPlatform;
   meetingLink?: string;
   patientMessage?: string;
@@ -105,3 +106,5 @@ export interface ClinicKPIs {
   noShowAppointments: number;
   totalAppointments: number;
 }
+
+export type { PatientRecord } from "@/api/User/userApi";

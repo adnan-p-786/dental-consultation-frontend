@@ -32,5 +32,6 @@ export const queryKeys = {
   },
   users: {
     profile: ["users", "profile"] as const,
+    patients: ["users", "patients"] as const,
   },
 } as const;

@@ -56,6 +56,9 @@ function Register() {
     phone: "",
     password: "",
     confirmPassword: "",
+    age: "",
+    gender: "",
+    address: "",
     terms: false,
   });
 
@@ -63,8 +66,9 @@ function Register() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFormData((prev) => ({
       ...prev,
       [id]: type === "checkbox" ? checked : value,
@@ -86,15 +90,24 @@ function Register() {
     setError(null);
     setSuccess(null);
 
-    // Required fields validation
+    // Required fields validation (all compulsory)
     if (
       !formData.firstName.trim() ||
       !formData.lastName.trim() ||
       !formData.email.trim() ||
       !formData.phone.trim() ||
-      !formData.password
+      !formData.password ||
+      !formData.age.trim() ||
+      !formData.gender.trim() ||
+      !formData.address.trim()
     ) {
-      setError("All fields are required.");
+      setError("All fields, including age, gender, and residential address, are required.");
+      return;
+    }
+
+    const numAge = parseInt(formData.age, 10);
+    if (isNaN(numAge) || numAge < 1 || numAge > 120) {
+      setError("Please enter a valid age between 1 and 120.");
       return;
     }
 
@@ -137,6 +150,9 @@ function Register() {
         phoneNumber: cleanPhone,
         password: formData.password,
         role: userType.toLowerCase(),
+        age: formData.age ? Number(formData.age) : undefined,
+        gender: formData.gender.trim() || undefined,
+        address: formData.address.trim() || undefined,
       });
 
       if (response.token && response.data) {
@@ -389,6 +405,52 @@ function Register() {
                   </div>
                 </Field>
               </div>
+
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3 mb-3">
+                  <Field label="Age" htmlFor="age">
+                    <input
+                      id="age"
+                      type="number"
+                      min="1"
+                      max="120"
+                      required
+                      disabled={loading}
+                      value={formData.age}
+                      onChange={handleChange}
+                      placeholder="age"
+                      className="input placeholder:text-xs disabled:opacity-60"
+                    />
+                  </Field>
+
+                  <Field label="Gender" htmlFor="gender">
+                    <select
+                      id="gender"
+                      required
+                      disabled={loading}
+                      value={formData.gender}
+                      onChange={handleChange}
+                      className="input placeholder:text-xs disabled:opacity-60 text-xs bg-white cursor-pointer"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                    </select>
+                  </Field>
+                </div>
+
+                <Field label="Residential Address" htmlFor="address">
+                  <input
+                    id="address"
+                    type="text"
+                    required
+                    disabled={loading}
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Street address, City, Area"
+                    className="input placeholder:text-xs disabled:opacity-60"
+                  />
+                </Field>
+            
 
               <div className="flex items-start gap-2.5 mt-0.5">
                 <input

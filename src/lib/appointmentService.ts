@@ -158,6 +158,7 @@ export const appointmentService = {
         dbApt.preferredTime ||
         "Morning",
       assignedDoctorId: resolvedDoctorId ? String(resolvedDoctorId) : undefined,
+      assignedDoctorName: resolvedDoctorName || undefined,
       assignedDoctor: resolvedDoctorName || resolvedDoctorId
         ? {
             id: resolvedDoctorId ? String(resolvedDoctorId) : "1",
