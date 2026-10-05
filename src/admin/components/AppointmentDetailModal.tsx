@@ -8,6 +8,12 @@ import {
   Check,
   FileSpreadsheet,
   Bell,
+  Video,
+  ExternalLink,
+  Copy,
+  Sparkles,
+  Trash2,
+  Link as LinkIcon,
 } from "lucide-react";
 
 import {
@@ -160,8 +166,11 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 
   // Manually entered video link
   const [manualMeetingLink, setManualMeetingLink] = useState(
-    appointment.meetingLink || "",
+    appointment.meetingLink && !appointment.meetingLink.includes("/cdr-")
+      ? appointment.meetingLink
+      : "",
   );
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [reminderFeedback, setReminderFeedback] = useState<string | null>(null);
@@ -228,7 +237,11 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
     setRescheduleDate(appointment.confirmedDate || appointment.requestedDate);
     setRescheduleTime(appointment.confirmedTime || appointment.requestedTime);
     setActiveMeetingPlatform(appointment.meetingPlatform || "google_meet");
-    setManualMeetingLink(appointment.meetingLink || "");
+    setManualMeetingLink(
+      appointment.meetingLink && !appointment.meetingLink.includes("/cdr-")
+        ? appointment.meetingLink
+        : "",
+    );
     setClinicalNotes({
       chiefComplaint:
         appointment.consultationNotes?.chiefComplaint ||
@@ -252,21 +265,42 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   // Save manually entered meeting link
   // --------------------------------------------------
 
-  const handleSaveMeetingLink = (showFeedback?: boolean | React.MouseEvent) => {
-    const link = manualMeetingLink.trim();
+  const handleCopyLink = (textToCopy: string) => {
+    if (!textToCopy) return;
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
-    if (!link) {
-      return;
-    }
+  const handleSaveMeetingLink = (targetLink?: string) => {
+    const link = (
+      targetLink !== undefined ? targetLink : manualMeetingLink
+    ).trim();
 
     onUpdateMeetingLink(appointment.id, activeMeetingPlatform, link);
 
-    if (showFeedback !== false) {
-      setAssignedFeedback(
-        `Meeting link (${getPlatformLabel(activeMeetingPlatform)}) saved successfully!`,
-      );
-      setTimeout(() => setAssignedFeedback(null), 3000);
-    }
+    setAssignedFeedback(
+      link
+        ? `Meeting link (${getPlatformLabel(activeMeetingPlatform)}) saved & assigned successfully!`
+        : "Meeting link cleared.",
+    );
+    setTimeout(() => setAssignedFeedback(null), 3500);
+  };
+
+  const handleGenerateGoogleMeet = () => {
+    setActiveMeetingPlatform("google_meet");
+    const safeRef = (appointment.referenceNo || `apt-${appointment.id}`)
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    const randPart = Math.random().toString(36).substring(2, 6);
+    const generated = `https://meet.google.com/${safeRef.slice(0, 3) || "doc"}-${safeRef.slice(3, 7) || "room"}-${randPart}`;
+    setManualMeetingLink(generated);
+    handleSaveMeetingLink(generated);
+  };
+
+  const handleClearMeetingLink = () => {
+    setManualMeetingLink("");
+    handleSaveMeetingLink("");
   };
 
   // --------------------------------------------------
@@ -289,7 +323,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 
     // Execute save link function whenever a link is provided
     if (link) {
-      handleSaveMeetingLink(false);
+      handleSaveMeetingLink(link);
     }
 
     if (onConfirmAppointment) {
@@ -340,7 +374,6 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
       actionNote ||
         `Suggested alternative time slot: ${rescheduleDate} at ${rescheduleTime}`,
     );
-
     setActionNote("");
   };
 
@@ -992,24 +1025,43 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
               )}
             </div>
 
-            {/* Video provider */}
+            {/* Video provider & Meeting Link Assignment */}
+            {(!appointment.consultationType ||
+              appointment.consultationType === "video") && (
+              <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-deep flex items-center justify-center">
+                      <Video className="w-4 h-4 text-teal-deep" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-ink">
+                        Video Consultation Meeting Link
+                      </h4>
+                      <p className="text-[11px] text-ink-soft">
+                        Assign or generate a video room URL for this
+                        consultation.
+                      </p>
+                    </div>
+                  </div>
 
-            {appointment.consultationType === "video" && (
-              <div
-                className="
-                  p-4
-                  rounded-xl
-                  border
-                  border-line
-                  bg-white
-                  shadow-xs
-                  space-y-3
-                "
-              >
-                <h4 className="text-sm font-semibold text-ink">
-                  Add consultation link
-                </h4>
+                  {manualMeetingLink.trim() &&
+                  !manualMeetingLink.includes("/cdr-") ? (
+                    <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-300 text-[11px] font-semibold gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      Active Link Assigned
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-amber-800 bg-amber-50 border-amber-300 text-[11px]"
+                    >
+                      No Link Assigned
+                    </Badge>
+                  )}
+                </div>
 
+                {/* Platform Selector Buttons */}
                 <div className="flex flex-wrap items-center gap-2">
                   {(["google_meet", "zoom", "teams"] as const).map(
                     (platform) => (
@@ -1017,21 +1069,11 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                         key={platform}
                         type="button"
                         onClick={() => setActiveMeetingPlatform(platform)}
-                        className={`
-                        px-3
-                        py-1.5
-                        rounded-lg
-                        border
-                        text-xs
-                        font-semibold
-                        transition-all
-                        cursor-pointer
-                        ${
+                        className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
                           activeMeetingPlatform === platform
                             ? "border-teal-deep bg-teal-deep text-white shadow-xs"
-                            : "border-line bg-white text-ink-soft hover:border-mint-deep"
-                        }
-                      `}
+                            : "border-line bg-white text-ink-soft hover:border-mint-deep hover:text-ink"
+                        }`}
                       >
                         {getPlatformLabel(platform)}
                       </button>
@@ -1039,18 +1081,46 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   )}
                 </div>
 
+                {/* Link Input & Quick Generation */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-ink">
-                    Add Link
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-ink flex items-center gap-1.5">
+                      <LinkIcon className="w-3.5 h-3.5 text-teal-deep" />
+                      Meeting Link URL
+                    </label>
+                  </div>
 
-                  <Input
-                    type="url"
-                    value={manualMeetingLink}
-                    onChange={(e) => setManualMeetingLink(e.target.value)}
-                    placeholder="Paste meeting link"
-                    className="text-xs"
-                  />
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type="url"
+                        value={manualMeetingLink}
+                        onChange={(e) => setManualMeetingLink(e.target.value)}
+                        placeholder="e.g. https://meet.google.com/abc-defg-hij or https://zoom.us/j/..."
+                        className="text-xs pr-8"
+                      />
+                      {manualMeetingLink && (
+                        <button
+                          type="button"
+                          onClick={() => setManualMeetingLink("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink text-xs cursor-pointer p-0.5"
+                          title="Clear input"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => handleSaveMeetingLink()}
+                      className="bg-teal-deep hover:bg-teal-800 text-white text-xs h-9 px-3.5 font-semibold gap-1.5 shrink-0 shadow-xs cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      Save Link
+                    </Button> */}
+                  </div>
                 </div>
               </div>
             )}
@@ -1594,35 +1664,32 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
             gap-2
           "
         >
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onClose}
-            className=""
-          >
+          <Button size="sm" variant="outline" onClick={onClose} className="">
             Close
           </Button>
 
-          <Button
-            size="sm"
-            onClick={handleConfirmAll}
-            className="
-                    bg-emerald-700
-                    hover:bg-emerald-800
-                    text-white
-                    text-xs
-                    h-9
-                    gap-1.5
-                    font-semibold
-                    shadow-xs
-                  "
-            title="Confirm doctor assignment, meeting link, and scheduled time"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            {appointment.status === "approved"
-              ? "Confirm Appointment"
-              : "Confirm Appointment (Doctor, Time & Link)"}
-          </Button>
+          {appointment.status !== "completed" && (
+            <Button
+              size="sm"
+              onClick={handleConfirmAll}
+              className="
+                      bg-emerald-700
+                      hover:bg-emerald-800
+                      text-white
+                      text-xs
+                      h-9
+                      gap-1.5
+                      font-semibold
+                      shadow-xs
+                    "
+              title="Confirm doctor assignment, meeting link, and scheduled time"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {appointment.status === "approved"
+                ? "Confirm Appointment"
+                : "Confirm Appointment"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -15,6 +15,7 @@ import {
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "./AuthContext";
+import { toast } from "@/components/ui/sonner";
 
 type AdminStaffRole = "Doctor" | "Admin" | "Superadmin";
 
@@ -131,6 +132,9 @@ function AdminLogin() {
       }
 
       setSuccess(response.message || "Login successful!");
+      toast.success("Login successful", {
+        duration: 2500,
+      });
 
       const resolvedRole =
         response.data?.role?.toLowerCase() || userType.toLowerCase();
@@ -156,6 +160,9 @@ function AdminLogin() {
         err?.response?.data?.message ||
         "Login failed. Please verify your credentials and selected role.";
       setError(serverError);
+      toast.error(serverError, {
+        duration: 3000,
+      });
     } finally {
       setLoading(false);
     }

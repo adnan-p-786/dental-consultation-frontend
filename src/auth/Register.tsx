@@ -13,6 +13,7 @@ import {
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "./AuthContext";
+import { toast } from "@/components/ui/sonner";
 
 const benefits = [
   "Request appointments without calling the clinic",
@@ -143,6 +144,9 @@ function Register() {
       }
 
       setSuccess(response.message || "Account created successfully!");
+      toast.success("Account created successfully!", {
+        duration: 2500,
+      });
 
       setTimeout(() => {
         const registeredRole = userType.toLowerCase();
@@ -162,6 +166,9 @@ function Register() {
         err?.response?.data?.message ||
         "Registration failed. Please check your details and try again.";
       setError(serverError);
+      toast.error(serverError, {
+        duration: 3000,
+      });
     } finally {
       setLoading(false);
     }

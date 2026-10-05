@@ -45,6 +45,7 @@ export const useUpdateAppointmentMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.appointments.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
     },
   });
 };

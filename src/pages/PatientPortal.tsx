@@ -104,6 +104,13 @@ export const PatientPortal: React.FC = () => {
 
     backendApts.forEach((apt) => {
       const local = map.get(apt.id);
+      const cleanMeetingLink =
+        apt.meetingLink && !apt.meetingLink.includes("/cdr-")
+          ? apt.meetingLink
+          : local?.meetingLink && !local.meetingLink.includes("/cdr-")
+            ? local.meetingLink
+            : undefined;
+
       if (local) {
         map.set(apt.id, {
           ...local,
@@ -112,7 +119,7 @@ export const PatientPortal: React.FC = () => {
           assignedDoctorId: apt.assignedDoctorId || local.assignedDoctorId,
           confirmedDate: apt.confirmedDate || local.confirmedDate,
           confirmedTime: apt.confirmedTime || local.confirmedTime,
-          meetingLink: apt.meetingLink || local.meetingLink,
+          meetingLink: cleanMeetingLink,
           meetingPlatform: apt.meetingPlatform || local.meetingPlatform,
           consultationNotes: apt.consultationNotes || local.consultationNotes,
           documents:
@@ -121,7 +128,10 @@ export const PatientPortal: React.FC = () => {
               : local.documents,
         });
       } else {
-        map.set(apt.id, apt);
+        map.set(apt.id, {
+          ...apt,
+          meetingLink: cleanMeetingLink,
+        });
       }
     });
 
@@ -928,19 +938,23 @@ export const PatientPortal: React.FC = () => {
               </DialogHeader>
 
               {/* Online Video Meeting Section */}
-              {selectedAppointment.meetingLink && (
+              {selectedAppointment.meetingLink &&
+              !selectedAppointment.meetingLink.includes("/cdr-") &&
+              (selectedAppointment.status === "approved" ||
+                selectedAppointment.status === "completed" ||
+                selectedAppointment.status === "proposed") ? (
                 <div className="p-4 rounded-2xl bg-[#FAF3F2] border border-[#E8CDC9] space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-[#5E3E3B] flex items-center gap-1.5">
                       <Video className="w-4 h-4 text-[#5E3E3B]" />
                       Consultation Meeting Access
                     </span>
-                    <Badge className="bg-[#5E3E3B] text-white text-[10px]">
-                      {selectedAppointment.meetingPlatform || "Google Meet"}
+                    <Badge className="bg-[#5E3E3B] text-white text-[10px] capitalize">
+                      {selectedAppointment.meetingPlatform?.replace("_", " ") || "Google Meet"}
                     </Badge>
                   </div>
                   <p className="text-xs text-ink leading-relaxed">
-                    Your dentist has confirmed this slot. Click below to join
+                    Your dentist has confirmed this consultation slot. Click below to join
                     the secure video consultation room.
                   </p>
                   <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -968,7 +982,30 @@ export const PatientPortal: React.FC = () => {
                     </Button>
                   </div>
                 </div>
-              )}
+              ) : selectedAppointment.status === "pending" ||
+                selectedAppointment.status === "under_review" ||
+                selectedAppointment.status === "requested" ? (
+                <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-1.5">
+                  <div className="flex items-center gap-2 text-amber-900 font-semibold text-xs">
+                    <Clock className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span>Meeting Access Pending Clinic Review</span>
+                  </div>
+                  <p className="text-xs text-amber-800/90 leading-relaxed">
+                    Your appointment request is currently under review by our clinical team. Once confirmed and approved, your assigned dentist and secure video room access link will appear here.
+                  </p>
+                </div>
+              ) : selectedAppointment.status === "approved" &&
+                !selectedAppointment.meetingLink ? (
+                <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-1.5">
+                  <div className="flex items-center gap-2 text-emerald-900 font-semibold text-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>Appointment Approved &bull; Video Room Being Prepared</span>
+                  </div>
+                  <p className="text-xs text-emerald-800/90 leading-relaxed">
+                    Your consultation has been confirmed. The clinic administration will attach your video consultation meeting link shortly before your scheduled appointment time.
+                  </p>
+                </div>
+              ) : null}
 
               {/* Schedule & Dentist Details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">

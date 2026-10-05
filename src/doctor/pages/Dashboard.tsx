@@ -24,6 +24,7 @@ import {
   X,
   AlertCircle,
 } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
 
 type ScheduleTab = "today" | "upcoming" | "completed" | "all";
 
@@ -148,6 +149,10 @@ export default function DoctorDashboard() {
 
     setActiveWorkspaceApt(null);
     loadDoctorAppointments();
+
+    toast.success("Consultation Marked as Completed", {
+      duration: 2500,
+    });
   };
 
   // Save consultation notes in progress without marking completed
@@ -159,8 +164,12 @@ export default function DoctorDashboard() {
       workspaceNotes,
       doctorName,
     );
-
+    setActiveWorkspaceApt(null);
     loadDoctorAppointments();
+
+    toast.success("Draft Notes Saved", {
+      duration: 2500,
+    });
   };
 
   // Previous patient consultation history (SOW Section 8)
@@ -579,9 +588,8 @@ export default function DoctorDashboard() {
                         {/* Access Online Consultation Link (SOW Section 5 & 7) */}
                         {apt.consultationType === "video" && (
                           <a
-                            href={
-                              apt.meetingLink || `https://meet.google.com/new`
-                            }
+                            href={apt.meetingLink}
+                            onClick={() => console.log(apt.meetingLink)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
@@ -678,7 +686,7 @@ export default function DoctorDashboard() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-[#5E3E3B] text-white text-xs font-semibold hover:bg-[#262525] transition-all shrink-0"
                   >
-                    <span>Launch Meeting</span>
+                    <span>Join Meeting</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>

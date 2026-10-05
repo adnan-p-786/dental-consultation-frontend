@@ -528,8 +528,10 @@ function Dashboard() {
       data.meetingPlatform || targetApt?.meetingPlatform || "google_meet";
     const finalLink =
       data.meetingLink !== undefined
-        ? data.meetingLink
-        : targetApt?.meetingLink || "";
+        ? data.meetingLink.trim()
+        : targetApt?.meetingLink && !targetApt.meetingLink.includes("/cdr-")
+          ? targetApt.meetingLink
+          : "";
     const finalDate =
       data.date || targetApt?.confirmedDate || targetApt?.requestedDate;
     const finalTime =
@@ -611,13 +613,14 @@ function Dashboard() {
     platform: "google_meet" | "zoom" | "teams",
     link: string,
   ) => {
+    const cleanLink = link.trim();
     setAppointments((prev) =>
       prev.map((apt) => {
-        if (apt.id === id) {
+        if (String(apt.id) === String(id)) {
           const updated: Appointment = {
             ...apt,
             meetingPlatform: platform,
-            meetingLink: link,
+            meetingLink: cleanLink || undefined,
             timeline: [
               {
                 id: `tl-${Date.now()}`,
@@ -627,14 +630,16 @@ function Dashboard() {
                   hour: "2-digit",
                   minute: "2-digit",
                 }),
-                action: `Video Meeting Link Generated (${platform.replace("_", " ")})`,
+                action: cleanLink
+                  ? `Video Meeting Link Assigned (${platform.replace("_", " ")})`
+                  : "Video Meeting Link Removed",
                 actor: currentActor,
-                details: link,
+                details: cleanLink || "Link removed",
               },
               ...apt.timeline,
             ],
           };
-          if (selectedAppointment?.id === id) {
+          if (selectedAppointment && String(selectedAppointment.id) === String(id)) {
             setSelectedAppointment(updated);
           }
           return updated;
@@ -643,19 +648,31 @@ function Dashboard() {
       }),
     );
 
+    // Sync to appointmentService (localStorage & local notification)
+    appointmentService.updateAppointment(
+      String(id),
+      {
+        meetingPlatform: platform,
+        meetingLink: cleanLink || undefined,
+      },
+      currentActor,
+    );
+
     if (!isNaN(Number(id))) {
       try {
         await updateAppointmentMutation.mutateAsync({
           id,
           payload: {
             meetingPlatform: platform,
-            meetingLink: link,
+            meetingLink: cleanLink,
           },
         });
       } catch (err) {
         console.error("Failed to sync meeting link to DB:", err);
       }
     }
+
+    refetchAppointments();
   };
 
   const handleSaveClinicalNotes = async (
@@ -1433,7 +1450,7 @@ function Dashboard() {
 
                           {/* Meeting link */}
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                            {apt.meetingLink ? (
+                            {apt.meetingLink && !apt.meetingLink.includes("/cdr-") ? (
                               <a
                                 href={apt.meetingLink}
                                 target="_blank"
@@ -1447,8 +1464,8 @@ function Dashboard() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleOpenDetail(apt)}
-                                className="text-[11px] h-7 text-ink-soft hover:text-teal-deep p-1"
+                                onClick={() => handleOpenDetail(apt, "scheduling")}
+                                className="text-[11px] h-7 text-ink-soft hover:text-teal-deep p-1 cursor-pointer"
                               >
                                 + Add Link
                               </Button>
@@ -1477,55 +1494,65 @@ function Dashboard() {
                                   <Eye className="w-3.5 h-3.5 mr-2" /> Inspect
                                   Details
                                 </DropdownMenuItem>
-                                {apt.status !== "approved" && (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateStatus(
-                                        apt.id,
-                                        "approved",
-                                        "Approved by admin.",
-                                      )
-                                    }
-                                  >
-                                    <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-600" />
-                                    Approve Slot
-                                  </DropdownMenuItem>
+
+                                {apt.status !== "completed" && (
+                                  <>
+                                    {/* {apt.status !== "approved" && (
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          handleUpdateStatus(
+                                            apt.id,
+                                            "approved",
+                                            "Approved by admin.",
+                                          )
+                                        }
+                                      >
+                                        <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-600" />
+                                        Approve Slot
+                                      </DropdownMenuItem>
+                                    )} */}
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleOpenDetail(apt, "scheduling")
+                                      }
+                                    >
+                                      <RotateCcw className="w-3.5 h-3.5 mr-2 text-blue-600" />{" "}
+                                      Reschedule
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    {apt.status !== "rejected" && (
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          handleUpdateStatus(
+                                            apt.id,
+                                            "rejected",
+                                            "Appointment request rejected by admin.",
+                                          )
+                                        }
+                                        className="text-rose-600"
+                                      >
+                                        <XCircle className="w-3.5 h-3.5 mr-2" />{" "}
+                                        Reject Request
+                                      </DropdownMenuItem>
+                                    )}
+                                    {apt.status !== "cancelled" && (
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          handleUpdateStatus(
+                                            apt.id,
+                                            "cancelled",
+                                            "Cancelled by admin.",
+                                          )
+                                        }
+                                        className="text-red-600"
+                                      >
+                                        <XCircle className="w-3.5 h-3.5 mr-2" />{" "}
+                                        Cancel Booking
+                                      </DropdownMenuItem>
+                                    )}
+                                  </>
                                 )}
-                                <DropdownMenuItem
-                                  onClick={() => handleOpenDetail(apt)}
-                                >
-                                  <RotateCcw className="w-3.5 h-3.5 mr-2 text-blue-600" />{" "}
-                                  Reschedule
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                {apt.status !== "rejected" && (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateStatus(
-                                        apt.id,
-                                        "rejected",
-                                        "Appointment request rejected by admin.",
-                                      )
-                                    }
-                                    className="text-rose-600"
-                                  >
-                                    <XCircle className="w-3.5 h-3.5 mr-2" />{" "}
-                                    Reject Request
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleUpdateStatus(
-                                      apt.id,
-                                      "cancelled",
-                                      "Cancelled by admin.",
-                                    )
-                                  }
-                                  className="text-red-600"
-                                >
-                                  <XCircle className="w-3.5 h-3.5 mr-2" />{" "}
-                                  Cancel Booking
-                                </DropdownMenuItem>
+
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => {

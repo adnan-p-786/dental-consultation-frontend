@@ -259,7 +259,7 @@ export default function Footer() {
                   href="mailto:care@32storiesdental.com"
                   className="hover:text-mint transition-colors"
                 >
-                  care@32 storiesdental.com
+                  care@32storiesdental.com
                 </a>
               </div>
               <div className="pt-2 border-t border-dotted border-white/20 mt-2">

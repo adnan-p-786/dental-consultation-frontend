@@ -18,6 +18,7 @@ import { ProtectedRoute } from "./auth/ProtectedRoute.tsx";
 import Appointment from "./pages/Appointment.tsx";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
+import { Toaster } from "./components/ui/sonner";
 
 const router = createBrowserRouter([
   {
@@ -90,6 +91,7 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RouterProvider router={router} />
+        <Toaster position="top-center" duration={2500} />
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,

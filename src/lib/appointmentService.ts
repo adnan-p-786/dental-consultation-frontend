@@ -188,10 +188,14 @@ export const appointmentService = {
         dbApt.meetingPlatform ||
         existingLocal?.meetingPlatform ||
         "google_meet",
-      meetingLink:
-        dbApt.meetingLink ||
-        existingLocal?.meetingLink ||
-        `https://meet.google.com/cdr-${String(dbApt.id).padStart(3, "0")}-apt`,
+      meetingLink: (() => {
+        const link = dbApt.meetingLink || existingLocal?.meetingLink;
+        // Strip legacy auto-generated fake link pattern meet.google.com/cdr-...
+        if (link && typeof link === "string" && !link.includes("/cdr-")) {
+          return link.trim();
+        }
+        return undefined;
+      })(),
       patientMessage:
         dbApt.additionalDescription || existingLocal?.patientMessage || "",
       documents,
@@ -277,7 +281,15 @@ export const appointmentService = {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
-      return JSON.parse(raw) as Appointment[];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      // Clean up any legacy fabricated meeting links
+      return parsed.map((apt: Appointment) => {
+        if (apt.meetingLink && typeof apt.meetingLink === "string" && apt.meetingLink.includes("/cdr-")) {
+          return { ...apt, meetingLink: undefined };
+        }
+        return apt;
+      });
     } catch (err) {
       console.error("Failed to load appointments:", err);
       return [];
@@ -491,10 +503,16 @@ export const appointmentService = {
         payload.assignedDoctorId = updatedObj.assignedDoctorId;
       if (updatedObj.assignedDoctor?.name)
         payload.assignedDoctorName = updatedObj.assignedDoctor.name;
-      if (updatedObj.meetingLink)
+      if ("meetingLink" in updates) {
+        payload.meetingLink = updates.meetingLink || null;
+      } else if (updatedObj.meetingLink !== undefined) {
         payload.meetingLink = updatedObj.meetingLink;
-      if (updatedObj.meetingPlatform)
+      }
+      if ("meetingPlatform" in updates) {
+        payload.meetingPlatform = updates.meetingPlatform || null;
+      } else if (updatedObj.meetingPlatform !== undefined) {
         payload.meetingPlatform = updatedObj.meetingPlatform;
+      }
       if (updates.patientMessage) payload.note = updates.patientMessage;
 
       apiClient

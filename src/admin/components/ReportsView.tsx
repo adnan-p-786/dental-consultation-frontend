@@ -883,7 +883,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                     <th className="py-2.5 px-3">Assigned Doctor</th>
                     <th className="py-2.5 px-3">Date & Time</th>
                     <th className="py-2.5 px-3">Status</th>
-                    <th className="py-2.5 px-3">Meeting Access</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line/60">
@@ -935,23 +934,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                         >
                           {apt.status || "pending"}
                         </Badge>
-                      </td>
-                      <td className="py-2.5 px-3">
-                        {apt.meetingLink ? (
-                          <a
-                            href={apt.meetingLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-deep hover:underline"
-                          >
-                            <Video className="w-3 h-3" /> Join Call
-                          </a>
-                        ) : (
-                          <span className="text-[11px] text-ink-soft inline-flex items-center gap-1">
-                            <Video className="w-3 h-3 text-ink-soft/50" />{" "}
-                            Online (Pending)
-                          </span>
-                        )}
                       </td>
                     </tr>
                   ))}

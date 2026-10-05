@@ -12,6 +12,7 @@ import {
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "./AuthContext";
+import { toast } from "sonner";
 
 const benefits = [
   "Request appointments without calling the clinic",
@@ -96,6 +97,10 @@ function Login() {
 
       setSuccess(response.message || "Login successful!");
 
+      toast.success("Login successful", {
+        duration: 2500,
+      });
+
       const resolvedRole = response.data?.role?.toLowerCase() || "patient";
 
       setTimeout(() => {
@@ -115,6 +120,9 @@ function Login() {
         err?.response?.data?.message ||
         "Login failed. Please check your credentials and try again.";
       setError(serverError);
+      toast.error(serverError, {
+        duration: 3000,
+      });
     } finally {
       setLoading(false);
     }

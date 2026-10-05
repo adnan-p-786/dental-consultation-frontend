@@ -76,3 +76,49 @@ body {
     @apply bg-[#5E3E3B] text-white hover:bg-[#262525] transition-colors duration-150;
   }
 }
+
+/* 32Stories Brand Toast Styling */
+[data-sonner-toaster] [data-sonner-toast] {
+  font-family: var(--font-inter), sans-serif !important;
+  background-color: #FAF7F6 !important;
+  border-color: #E8DCD8 !important;
+  color: #261B1A !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] {
+  background-color: #FAF2F0 !important;
+  border-color: #E8CDC9 !important;
+  color: #5E3E3B !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] [data-icon] {
+  color: #5E3E3B !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] [data-title] {
+  color: #5E3E3B !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+  background-color: #FDF2F0 !important;
+  border-color: #F4D1CB !important;
+  color: #B4483A !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-icon] {
+  color: #B4483A !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-title] {
+  color: #B4483A !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="info"] {
+  background-color: #FAF2F0 !important;
+  border-color: #E8CDC9 !important;
+  color: #5E3E3B !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="info"] [data-icon] {
+  color: #5E3E3B !important;
+}

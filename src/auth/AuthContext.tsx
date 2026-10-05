@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { toast } from "@/components/ui/sonner";
 
 export type UserRole = "patient" | "doctor" | "superadmin" | "admin";
 
@@ -76,6 +77,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem(USER_KEY);
     setToken(null);
     setUser(null);
+    toast.success("Logged out successfully", {
+      duration: 2500,
+    });
   };
 
   const role = user?.role || null;

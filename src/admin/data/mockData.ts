@@ -28,6 +28,6 @@ export const defaultSettings = {
   defaultPlatform: "google_meet" as const,
   autoConfirmEmergency: false,
   requireUploadsForImplants: true,
-  supportEmail: "care@32 storiesdental.com",
+  supportEmail: "care@32storiesdental.com",
   clinicPhone: "+1 (555) 234-CARE",
 };
