@@ -127,9 +127,13 @@ function Dashboard() {
   useEffect(() => {
     if (dbDoctors && dbDoctors.length > 0) {
       setDoctors((prev) => {
-        const existingIds = new Set(dbDoctors.map((d) => d.id));
-        const customDoctors = prev.filter((d) => !existingIds.has(d.id));
-        return [...dbDoctors, ...customDoctors];
+        if (!prev || prev.length === 0) return dbDoctors;
+        const dbDoctorMap = new Map(dbDoctors.map((d) => [d.id, d]));
+        // Keep existing order intact and update properties
+        const updatedPrev = prev.map((d) => dbDoctorMap.get(d.id) || d);
+        const prevIds = new Set(prev.map((d) => d.id));
+        const brandNewDoctors = dbDoctors.filter((d) => !prevIds.has(d.id));
+        return [...updatedPrev, ...brandNewDoctors];
       });
     }
   }, [dbDoctors]);
@@ -884,7 +888,7 @@ function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#FAF7F6] text-ink font-sans antialiased">
+    <div className="dashboard-shell flex min-h-screen text-ink font-sans antialiased">
       {/* Sidebar */}
       <AdminSidebar
         activeTab={activeTab}
@@ -950,7 +954,7 @@ function Dashboard() {
               </div>
 
               {/* KPI Stat Cards (PDF Section 6: Dashboard Metrics) */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-3">
+              <div className="dashboard-stat-grid grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-8">
                 <div className="p-2.5 sm:p-3.5 rounded-xl border border-amber-200 bg-amber-50/70 shadow-xs flex flex-col justify-between">
                   <span className="text-[10.5px] sm:text-[11px] font-semibold text-amber-900 leading-tight">
                     New Requests
@@ -1451,7 +1455,11 @@ function Dashboard() {
 
                           {/* Meeting link */}
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                            {apt.meetingLink && !apt.meetingLink.includes("/cdr-") ? (
+                            {["cancelled", "completed", "rejected"].includes(
+                              (apt.status || "").toLowerCase(),
+                            ) ? (
+                              <span className="text-xs text-ink-light italic">—</span>
+                            ) : apt.meetingLink && !apt.meetingLink.includes("/cdr-") ? (
                               <a
                                 href={apt.meetingLink}
                                 target="_blank"

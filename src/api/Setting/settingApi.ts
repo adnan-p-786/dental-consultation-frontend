@@ -1,11 +1,71 @@
 import { apiClient } from "../Api";
 
+export interface DayWorkingHours {
+  day: string;
+  isOpen: boolean;
+  openTime: string;
+  closeTime: string;
+  hasBreak?: boolean;
+  breakStart?: string;
+  breakEnd?: string;
+}
+
+export interface DoctorAvailabilitySettings {
+  defaultStatus: "available" | "busy" | "offline";
+  maxParallelPerSlot: number;
+  assignmentMode: "manual" | "round_robin" | "least_busy";
+  autoBusyDuringCall: boolean;
+  allowEmergencyOverride: boolean;
+}
+
+export interface EmailTemplateConfig {
+  id: string;
+  name: string;
+  subject: string;
+  enabled: boolean;
+  bodySummary: string;
+  customFooterNote?: string;
+}
+
+export interface AppointmentStatusConfig {
+  key: string;
+  label: string;
+  color: string;
+  description: string;
+  patientCanCancel: boolean;
+  autoExpireHours?: number;
+  isActive: boolean;
+}
+
+export interface ConsultationTypeConfig {
+  id: string;
+  name: string;
+  description: string;
+  defaultDuration: number;
+  isActive: boolean;
+  requiresMeetingLink: boolean;
+  badgeText: string;
+}
+
+export interface GeneralAppointmentSettings {
+  minNoticeHours: number;
+  maxAdvanceDays: number;
+  allowSameDayBooking: boolean;
+  cancellationCutoffHours: number;
+  maxActivePerPatient: number;
+  allowDocumentUpload: boolean;
+  requireDocumentUpload: boolean;
+  autoConfirmExistingPatients: boolean;
+  bufferTimeMinutes?: number;
+}
+
 export interface ClinicSettings {
   id?: number;
   clinicName: string;
   supportEmail: string;
   clinicPhone: string;
   defaultDuration: number;
+  bufferTimeMinutes?: number;
   meetingProvider: string;
   manualMeetingLink: string;
   instantAckEnabled?: boolean;
@@ -15,6 +75,12 @@ export interface ClinicSettings {
   reminder1hMinutes?: number;
   emailEnabled?: boolean;
   smsEnabled?: boolean;
+  workingHours?: DayWorkingHours[];
+  doctorAvailability?: DoctorAvailabilitySettings;
+  emailTemplates?: EmailTemplateConfig[];
+  appointmentStatuses?: AppointmentStatusConfig[];
+  consultationTypes?: ConsultationTypeConfig[];
+  generalAppointmentSettings?: GeneralAppointmentSettings;
   updatedAt?: string;
 }
 

@@ -394,6 +394,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
+        hideCloseButton
         className="
           max-w-3xl
           w-[95vw]
@@ -405,6 +406,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
           flex
           flex-col
           bg-[#FCFDFD]
+          [&>button.absolute]:hidden
         "
       >
         {/* ==========================================
@@ -993,7 +995,10 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 
             {/* Video provider & Meeting Link Assignment */}
             {(!appointment.consultationType ||
-              appointment.consultationType === "video") && (
+              appointment.consultationType === "video") &&
+              !["cancelled", "completed", "rejected"].includes(
+                (appointment.status || "").toLowerCase(),
+              ) && (
               <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">

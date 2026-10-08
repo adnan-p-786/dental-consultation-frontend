@@ -19,8 +19,14 @@ function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const pathname = location.pathname;
-  const { user, isAuthenticated, logout, isAdmin, isSuperAdmin, isDoctor } =
-    useAuth();
+  const {
+    user,
+    isAuthenticated,
+    openSignOutModal,
+    isAdmin,
+    isSuperAdmin,
+    isDoctor,
+  } = useAuth();
   const isSuper = isSuperAdmin || user?.role === "superadmin";
   const isPatient = isAuthenticated && !isAdmin && !isDoctor;
 
@@ -161,7 +167,7 @@ function Header() {
                   </>
                 )}
                 <button
-                  onClick={() => logout()}
+                  onClick={() => openSignOutModal()}
                   className="flex items-center gap-1 text-[13px] font-medium text-ink-soft hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
                   title="Log out"
                 >
@@ -193,8 +199,8 @@ function Header() {
           <div className="flex md:hidden items-center gap-2">
             {isAuthenticated ? (
               <button
-                onClick={() => logout()}
-                className="p-1.5 rounded-lg text-ink-soft hover:text-red-600"
+                onClick={() => openSignOutModal()}
+                className="p-1.5 rounded-lg text-ink-soft hover:text-red-600 cursor-pointer"
                 title="Log out"
               >
                 <LogOut className="w-4 h-4" />
@@ -299,10 +305,10 @@ function Header() {
                 )}
                 <button
                   onClick={() => {
-                    logout();
                     setMobileMenuOpen(false);
+                    openSignOutModal();
                   }}
-                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-[14px] font-semibold"
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-[14px] font-semibold cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Log out ({user?.firstName})</span>

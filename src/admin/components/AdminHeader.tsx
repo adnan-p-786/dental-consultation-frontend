@@ -47,35 +47,37 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   });
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-line bg-white/90 px-3 sm:px-6 backdrop-blur-md gap-2 sm:gap-4">
+    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-line bg-white/90 px-3 shadow-[0_1px_0_rgb(94_62_59_/_4%)] backdrop-blur-md gap-2 sm:px-6 sm:gap-4">
       {/* Mobile Hamburger & Search Bar */}
-      <div className="flex items-center gap-2 flex-1 min-w-0 max-w-md">
+      <div className="flex min-w-0 max-w-md flex-1 items-center gap-2.5">
         {onOpenMobileMenu && (
           <button
             type="button"
             onClick={onOpenMobileMenu}
-            className="md:hidden p-2 rounded-xl border border-line bg-white text-ink-soft hover:text-teal-deep hover:bg-line-soft transition-colors shrink-0"
+            className="shrink-0 rounded-xl border border-line bg-white p-2 text-ink-soft transition-colors hover:bg-line-soft hover:text-teal-deep md:hidden"
             title="Open navigation menu"
+            aria-label="Open navigation menu"
           >
             <Menu className="h-5 w-5" />
           </button>
         )}
-        <div className="relative w-full max-w-sm hidden sm:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft" />
+        <div className="relative hidden w-full max-w-sm sm:block">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
           <Input
             type="text"
             placeholder="Search appointments, patients..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 h-9 text-xs rounded-xl bg-paper border-line"
+            aria-label="Search appointments and patients"
+            className="h-10 rounded-xl border-line bg-paper/70 pl-9 text-xs shadow-xs transition-shadow placeholder:text-ink-soft/70 focus:bg-white focus:shadow-sm"
           />
         </div>
       </div>
 
       {/* Right controls */}
-      <div className="flex items-center gap-3.5">
+      <div className="flex items-center gap-2.5 sm:gap-3.5">
         {/* Clinic Today Date & Status Chip */}
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-paper border border-line text-xs font-medium text-ink-soft">
+        <div className="hidden items-center gap-2 rounded-full border border-line bg-paper/80 px-3 py-1.5 text-xs font-medium text-ink-soft shadow-xs lg:flex">
           <Calendar className="w-3.5 h-3.5 text-mint-deep" />
           <span>{activeDate}</span>
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -88,8 +90,9 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             <Button
               variant="outline"
               size="icon"
-              className="relative h-10 w-10 rounded-xl border-line hover:bg-line-soft"
+              className="relative h-10 w-10 rounded-xl border-line bg-white shadow-xs hover:bg-line-soft"
               title="Notifications"
+              aria-label="Open appointment notifications"
             >
               <Bell className="h-4 w-4 text-ink-soft" />
               {pendingAppointments.length > 0 && (
@@ -99,7 +102,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 p-2">
+          <DropdownMenuContent align="end" className="w-80 rounded-xl border-line bg-white p-2 shadow-lg">
             <DropdownMenuLabel className="flex items-center justify-between py-2">
               <span className="font-semibold text-sm text-ink">
                 Appointment Requests

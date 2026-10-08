@@ -4,13 +4,38 @@
 @config "../tailwind.config.ts";
 
 ::selection {
-  background-color: #2563eb !important;
+  background-color: #C98A82 !important;
   color: #ffffff !important;
 }
 
 ::-moz-selection {
-  background-color: #2563eb !important;
+  background-color: #C98A82 !important;
   color: #ffffff !important;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-color: #C98A82 transparent;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D8B2AC;
+  border: 3px solid #FAF7F6;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C98A82;
 }
 
 :root {
@@ -56,7 +81,30 @@ body {
   font-family: var(--font-inter);
   color: #261B1A;
   background-color: #FAF7F6;
+  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+}
+
+:where(a, button, input, textarea, select, [role="button"]):focus-visible {
+  outline: 3px solid rgb(201 138 130 / 35%);
+  outline-offset: 2px;
+}
+
+.dashboard-shell {
+  background:
+    radial-gradient(circle at 88% 0%, rgb(201 138 130 / 10%), transparent 28rem),
+    #FAF7F6;
+}
+
+.dashboard-stat-grid > div {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+@media (hover: hover) {
+  .dashboard-stat-grid > div:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgb(94 62 59 / 8%);
+  }
 }
 
 @layer components {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   Phone,
   Mail,
@@ -37,14 +37,37 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
   const [doctorToDelete, setDoctorToDelete] = useState<Doctor | null>(null);
 
+  // Maintain a persistent, stable order of doctor IDs so changing status / availability never changes card positions
+  const doctorOrderRef = useRef<string[]>([]);
+
+  const orderedDoctors = useMemo(() => {
+    const currentOrder = doctorOrderRef.current;
+    const orderMap = new Map<string, number>();
+    currentOrder.forEach((id, idx) => orderMap.set(id, idx));
+
+    // Register any newly added doctors into the stable sequence
+    doctors.forEach((doc) => {
+      if (!orderMap.has(doc.id)) {
+        orderMap.set(doc.id, currentOrder.length);
+        currentOrder.push(doc.id);
+      }
+    });
+
+    return [...doctors].sort((a, b) => {
+      const idxA = orderMap.get(a.id) ?? 0;
+      const idxB = orderMap.get(b.id) ?? 0;
+      return idxA - idxB;
+    });
+  }, [doctors]);
+
   const specialties = [
     "all",
     ...Array.from(
-      new Set(doctors.map((d) => d.specialization.split("&")[0].trim())),
+      new Set(orderedDoctors.map((d) => d.specialization.split("&")[0].trim())),
     ),
   ];
 
-  const filteredDoctors = doctors.filter((doc) => {
+  const filteredDoctors = orderedDoctors.filter((doc) => {
     if (selectedSpecialty === "all") return true;
     return doc.specialization
       .toLowerCase()

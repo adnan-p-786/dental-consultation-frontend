@@ -14,6 +14,13 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "./AuthContext";
 import { toast } from "@/components/ui/sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const benefits = [
   "Request appointments without calling the clinic",
@@ -406,37 +413,66 @@ function Register() {
                 </Field>
               </div>
 
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3 mb-3">
-                  <Field label="Age" htmlFor="age">
-                    <input
-                      id="age"
-                      type="number"
-                      min="1"
-                      max="120"
-                      required
-                      disabled={loading}
-                      value={formData.age}
-                      onChange={handleChange}
-                      placeholder="age"
-                      className="input placeholder:text-xs disabled:opacity-60"
-                    />
-                  </Field>
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
+                <Field label="Age" htmlFor="age">
+                  <input
+                    id="age"
+                    type="number"
+                    min="1"
+                    max="120"
+                    required
+                    disabled={loading}
+                    value={formData.age}
+                    onChange={handleChange}
+                    placeholder="e.g. 28"
+                    className="input placeholder:text-xs disabled:opacity-60"
+                  />
+                </Field>
 
-                  <Field label="Gender" htmlFor="gender">
-                    <select
+                <Field label="Gender" htmlFor="gender">
+                  <Select
+                    value={formData.gender || undefined}
+                    onValueChange={(val) => {
+                      setFormData((prev) => ({ ...prev, gender: val }));
+                      if (error) setError(null);
+                    }}
+                    disabled={loading}
+                  >
+                    <SelectTrigger
                       id="gender"
-                      required
-                      disabled={loading}
-                      value={formData.gender}
-                      onChange={handleChange}
-                      className="input placeholder:text-xs disabled:opacity-60 text-xs bg-white cursor-pointer"
+                      className={`h-[43px] w-full text-[14px] px-3.5 py-2.5 rounded-lg border bg-white transition-all duration-150 cursor-pointer disabled:opacity-60 shadow-none ${
+                        !formData.gender
+                          ? "text-[#9A8987]"
+                          : "text-ink font-normal"
+                      } ${
+                        error && !formData.gender
+                          ? "border-red-400 ring-2 ring-red-100"
+                          : "border-line hover:border-[#5E3E3B]/40 focus:border-[#5E3E3B] focus:ring-4 focus:ring-[#5E3E3B]/15"
+                      }`}
                     >
-                      <option value="">Select Gender</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                    </select>
-                  </Field>
-                </div>
+                      <SelectValue placeholder="Select Gender" />
+                    </SelectTrigger>
+                    <SelectContent
+                      className="bg-white rounded-xl border border-line shadow-xl p-1.5 min-w-[var(--radix-select-trigger-width)] z-50"
+                      position="popper"
+                      sideOffset={4}
+                    >
+                      <SelectItem
+                        value="male"
+                        className="cursor-pointer py-2.5 px-3 rounded-lg text-sm font-medium hover:bg-[#FAF7F6] focus:bg-[#FAF7F6] focus:text-[#5E3E3B] transition-colors"
+                      >
+                        Male
+                      </SelectItem>
+                      <SelectItem
+                        value="female"
+                        className="cursor-pointer py-2.5 px-3 rounded-lg text-sm font-medium hover:bg-[#FAF7F6] focus:bg-[#FAF7F6] focus:text-[#5E3E3B] transition-colors"
+                      >
+                        Female
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
 
                 <Field label="Residential Address" htmlFor="address">
                   <input

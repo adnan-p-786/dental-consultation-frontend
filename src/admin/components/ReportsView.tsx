@@ -768,6 +768,134 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         </Card>
       </div>
 
+         {/* FILTERED APPOINTMENTS TABLE AUDIT */}
+      <Card className="border-line shadow-xs bg-white">
+        <CardHeader className="pb-3 border-b border-line flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-semibold text-ink flex items-center gap-2">
+              <FileText className="w-4 h-4 text-teal-deep" />
+              Filtered Consultation Records ({filteredAppointments.length})
+            </CardTitle>
+            <p className="text-xs text-ink-soft mt-0.5">
+              Live audit dataset generated from active search and criteria
+              filters.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => refetchAnalytics()}
+            disabled={loading}
+            className="text-xs h-8 border-line text-ink cursor-pointer gap-1"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </CardHeader>
+        <CardContent className="pt-4 p-0 sm:p-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-12 text-xs text-ink-soft gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-teal-deep" />
+              Loading report dataset from database...
+            </div>
+          ) : filteredAppointments.length === 0 ? (
+            <div className="text-center py-12 px-4">
+              <FileText className="w-8 h-8 text-ink-soft mx-auto mb-2 opacity-40" />
+              <h4 className="text-xs font-bold text-ink">No Records Found</h4>
+              <p className="text-[11px] text-ink-soft mt-1">
+                No appointments matched the specified search or filter
+                parameters.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResetFilters}
+                className="mt-3 text-xs h-8 cursor-pointer"
+              >
+                Clear All Filters
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-line bg-[#FAF7F6] text-ink font-semibold">
+                    <th className="py-2.5 px-3">ID / Ref</th>
+                    <th className="py-2.5 px-3">Patient</th>
+                    <th className="py-2.5 px-3">Treatment</th>
+                    <th className="py-2.5 px-3">Assigned Doctor</th>
+                    <th className="py-2.5 px-3">Date & Time</th>
+                    <th className="py-2.5 px-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line/60">
+                  {filteredAppointments.slice(0, 25).map((apt) => (
+                    <tr key={apt.id} className="hover:bg-[#FAF7F6]/50">
+                      <td className="py-2.5 px-3 font-mono text-[11px] text-ink-soft">
+                        #{apt.id}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <span className="font-semibold text-ink block">
+                          {apt.patient?.name || apt.patientName || "Anonymous"}
+                        </span>
+                        <span className="text-[11px] text-ink-soft block">
+                          {apt.patient?.email || apt.patientEmail || ""}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <span className="font-medium text-ink">
+                          {apt.treatment ||
+                            apt.tratmentType ||
+                            "General Consultation"}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <span className="text-ink">
+                          {apt.assignedDoctor?.name ||
+                            apt.assignedDoctorName ||
+                            "Unassigned"}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <span className="font-medium text-ink block">
+                          {apt.confirmedDate ||
+                            apt.preferredDate ||
+                            apt.requestedDate ||
+                            "—"}
+                        </span>
+                        <span className="text-[11px] text-ink-soft block">
+                          {apt.confirmedTime ||
+                            apt.preferredTime ||
+                            apt.requestedTime ||
+                            ""}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <Badge
+                          variant={(apt.status as any) || "pending"}
+                          className="capitalize text-[10px]"
+                        >
+                          {apt.status || "pending"}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {filteredAppointments.length > 25 && (
+                <div className="p-3 text-center text-xs text-ink-soft border-t border-line bg-[#FAF7F6]/40">
+                  Showing first 25 of {filteredAppointments.length} records.
+                  Click Export CSV to download the complete dataset.
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* APPOINTMENTS BY MONTH (PDF Section 11) */}
       {metrics?.appointmentsByMonth &&
         metrics.appointmentsByMonth.length > 0 && (
@@ -917,134 +1045,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           </CardContent>
         </Card>
       </div>
-
-      {/* FILTERED APPOINTMENTS TABLE AUDIT */}
-      <Card className="border-line shadow-xs bg-white">
-        <CardHeader className="pb-3 border-b border-line flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-base font-semibold text-ink flex items-center gap-2">
-              <FileText className="w-4 h-4 text-teal-deep" />
-              Filtered Consultation Records ({filteredAppointments.length})
-            </CardTitle>
-            <p className="text-xs text-ink-soft mt-0.5">
-              Live audit dataset generated from active search and criteria
-              filters.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => refetchAnalytics()}
-            disabled={loading}
-            className="text-xs h-8 border-line text-ink cursor-pointer gap-1"
-          >
-            <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-        </CardHeader>
-        <CardContent className="pt-4 p-0 sm:p-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-12 text-xs text-ink-soft gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-teal-deep" />
-              Loading report dataset from database...
-            </div>
-          ) : filteredAppointments.length === 0 ? (
-            <div className="text-center py-12 px-4">
-              <FileText className="w-8 h-8 text-ink-soft mx-auto mb-2 opacity-40" />
-              <h4 className="text-xs font-bold text-ink">No Records Found</h4>
-              <p className="text-[11px] text-ink-soft mt-1">
-                No appointments matched the specified search or filter
-                parameters.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleResetFilters}
-                className="mt-3 text-xs h-8 cursor-pointer"
-              >
-                Clear All Filters
-              </Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-line bg-[#FAF7F6] text-ink font-semibold">
-                    <th className="py-2.5 px-3">ID / Ref</th>
-                    <th className="py-2.5 px-3">Patient</th>
-                    <th className="py-2.5 px-3">Treatment</th>
-                    <th className="py-2.5 px-3">Assigned Doctor</th>
-                    <th className="py-2.5 px-3">Date & Time</th>
-                    <th className="py-2.5 px-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line/60">
-                  {filteredAppointments.slice(0, 25).map((apt) => (
-                    <tr key={apt.id} className="hover:bg-[#FAF7F6]/50">
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-ink-soft">
-                        #{apt.id}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <span className="font-semibold text-ink block">
-                          {apt.patient?.name || apt.patientName || "Anonymous"}
-                        </span>
-                        <span className="text-[11px] text-ink-soft block">
-                          {apt.patient?.email || apt.patientEmail || ""}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <span className="font-medium text-ink">
-                          {apt.treatment ||
-                            apt.tratmentType ||
-                            "General Consultation"}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <span className="text-ink">
-                          {apt.assignedDoctor?.name ||
-                            apt.assignedDoctorName ||
-                            "Unassigned"}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <span className="font-medium text-ink block">
-                          {apt.confirmedDate ||
-                            apt.preferredDate ||
-                            apt.requestedDate ||
-                            "—"}
-                        </span>
-                        <span className="text-[11px] text-ink-soft block">
-                          {apt.confirmedTime ||
-                            apt.preferredTime ||
-                            apt.requestedTime ||
-                            ""}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <Badge
-                          variant={(apt.status as any) || "pending"}
-                          className="capitalize text-[10px]"
-                        >
-                          {apt.status || "pending"}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {filteredAppointments.length > 25 && (
-                <div className="p-3 text-center text-xs text-ink-soft border-t border-line bg-[#FAF7F6]/40">
-                  Showing first 25 of {filteredAppointments.length} records.
-                  Click Export CSV to download the complete dataset.
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* SAVE SNAPSHOT MODAL */}
       <Dialog open={isSaveModalOpen} onOpenChange={setIsSaveModalOpen}>

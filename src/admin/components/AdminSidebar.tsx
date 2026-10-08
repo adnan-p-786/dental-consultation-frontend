@@ -47,7 +47,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onCloseMobile,
 }) => {
   const navigate = useNavigate();
-  const { user, logout, isSuperAdmin } = useAuth();
+  const { user, openSignOutModal, isSuperAdmin } = useAuth();
   const isSuper = isSuperAdmin || user?.role === "superadmin";
   const adminName = user
     ? `${user.firstName} ${user.lastName}`
@@ -167,13 +167,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               {(!collapsed || mobileOpen) && (
                 <div className="flex flex-col truncate">
                   <span className="font-semibold text-base text-ink tracking-tight">
-                    32 Stories
+                    32Stories
                   </span>
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-ink-soft">Dental Portal</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-teal-50 text-teal-800 px-1.5 py-0.2 rounded border border-teal-200">
-                      {isSuper ? "Super Admin" : "Admin"}
-                    </span>
+                    
                   </div>
                 </div>
               )}
@@ -216,7 +214,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           >
             {(!collapsed || mobileOpen) && (
               <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-ink-soft/70">
-                Management Portal
+                Admin Portal
               </div>
             )}
 
@@ -363,9 +361,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <button
             type="button"
             onClick={() => {
-              if (onCloseMobile) onCloseMobile();
-              logout();
-              navigate("/auth/admin/login", { replace: true });
+              openSignOutModal(() => {
+                if (onCloseMobile) onCloseMobile();
+                navigate("/auth/admin/login", { replace: true });
+              });
             }}
             className={cn(
               "flex items-center text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer rounded-xl",

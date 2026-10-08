@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "@/components/ui/sonner";
+import { SignOutConfirmModal } from "@/components/SignOutConfirmModal";
 
 export type UserRole = "patient" | "doctor" | "superadmin" | "admin";
 
@@ -25,6 +26,10 @@ interface AuthContextType {
   isPatient: boolean;
   login: (token: string, user: AuthUser) => void;
   logout: () => void;
+  openSignOutModal: (callback?: () => void) => void;
+  confirmSignOut: (callback?: () => void) => void;
+  closeSignOutModal: () => void;
+  isSignOutModalOpen: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +43,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState<boolean>(false);
+  const [signOutCallback, setSignOutCallback] = useState<(() => void) | null>(
+    null
+  );
 
   useEffect(() => {
     try {
@@ -82,6 +91,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  const openSignOutModal = (callback?: () => void) => {
+    setSignOutCallback(() => callback || null);
+    setIsSignOutModalOpen(true);
+  };
+
+  const closeSignOutModal = () => {
+    setIsSignOutModalOpen(false);
+    setSignOutCallback(null);
+  };
+
+  const handleConfirmSignOut = () => {
+    const cb = signOutCallback;
+    closeSignOutModal();
+    logout();
+    if (cb) {
+      cb();
+    }
+  };
+
   const role = user?.role || null;
   const isAuthenticated = Boolean(token && user);
   const isSuperAdmin = role === "superadmin";
@@ -103,9 +131,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         isPatient,
         login,
         logout,
+        openSignOutModal,
+        confirmSignOut: openSignOutModal,
+        closeSignOutModal,
+        isSignOutModalOpen,
       }}
     >
       {children}
+      <SignOutConfirmModal
+        isOpen={isSignOutModalOpen}
+        onClose={closeSignOutModal}
+        onConfirm={handleConfirmSignOut}
+        user={user}
+      />
     </AuthContext.Provider>
   );
 };

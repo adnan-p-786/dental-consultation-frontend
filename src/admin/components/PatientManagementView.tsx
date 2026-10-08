@@ -37,7 +37,7 @@ import type { PatientRecord } from "@/api/User/userApi";
 import { DeletePatientModal } from "./DeletePatientModal";
 
 export const PatientManagementView: React.FC = () => {
-  const { data: patients = [], isLoading, isFetching, refetch } = usePatientsQuery();
+  const { data: patients = [], isLoading } = usePatientsQuery();
   const deletePatientMutation = useDeletePatientMutation();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -79,9 +79,6 @@ export const PatientManagementView: React.FC = () => {
 
   // Statistics
   const totalCount = patients.length;
-  const completedProfilesCount = patients.filter(
-    (p) => p.age && p.gender && p.address
-  ).length;
 
   const handleDeleteClick = (patient: PatientRecord) => {
     setPatientToDelete(patient);
@@ -134,25 +131,7 @@ export const PatientManagementView: React.FC = () => {
                 {totalCount} Total Patients
               </span>
             </div>
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-paper border border-line text-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="font-semibold text-ink">
-                {completedProfilesCount} Complete Profiles
-              </span>
-            </div>
           </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="text-xs h-9 px-3 gap-1.5 rounded-xl border-line hover:bg-paper cursor-pointer font-medium"
-            title="Refresh patient list"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-ink-soft ${isFetching ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
         </div>
       </div>
 

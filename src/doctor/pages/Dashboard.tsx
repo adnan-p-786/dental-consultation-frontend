@@ -30,7 +30,7 @@ type ScheduleTab = "today" | "upcoming" | "completed" | "all";
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, openSignOutModal } = useAuth();
   const { data: dbAppointments = [], refetch: refetchAppointments } =
     useAppointmentsQuery();
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
@@ -240,8 +240,9 @@ export default function DoctorDashboard() {
             <button
               type="button"
               onClick={() => {
-                logout();
-                navigate("/auth/admin/login", { replace: true });
+                openSignOutModal(() => {
+                  navigate("/auth/admin/login", { replace: true });
+                });
               }}
               className="ml-2 flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
               title="Sign Out"
@@ -586,19 +587,23 @@ export default function DoctorDashboard() {
 
                       <div className="flex items-center gap-2">
                         {/* Access Online Consultation Link (SOW Section 5 & 7) */}
-                        {apt.consultationType === "video" && (
-                          <a
-                            href={apt.meetingLink}
-                            onClick={() => console.log(apt.meetingLink)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                          >
-                            <Video className="w-3.5 h-3.5 text-mint" />
-                            <span>Join Video Call</span>
-                            <ExternalLink className="w-3 h-3 text-white/70" />
-                          </a>
-                        )}
+                        {apt.consultationType === "video" &&
+                          apt.meetingLink &&
+                          !["cancelled", "completed", "rejected"].includes(
+                            (apt.status || "").toLowerCase(),
+                          ) && (
+                            <a
+                              href={apt.meetingLink}
+                              onClick={() => console.log(apt.meetingLink)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                            >
+                              <Video className="w-3.5 h-3.5 text-mint" />
+                              <span>Join Video Call</span>
+                              <ExternalLink className="w-3 h-3 text-white/70" />
+                            </a>
+                          )}
 
                         {/* Open Consultation Workspace (SOW Section 7) */}
                         <button
@@ -661,7 +666,10 @@ export default function DoctorDashboard() {
               className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6"
             >
               {/* Meeting Link Quick Bar */}
-              {activeWorkspaceApt.consultationType === "video" && (
+              {activeWorkspaceApt.consultationType === "video" &&
+                !["cancelled", "completed", "rejected"].includes(
+                  (activeWorkspaceApt.status || "").toLowerCase(),
+                ) && (
                 <div className="p-4 rounded-2xl bg-[#FAF2F0] border border-teal-deep/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-teal-deep text-white flex items-center justify-center shrink-0">

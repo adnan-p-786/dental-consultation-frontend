@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Calendar,
   Clock,
@@ -21,6 +21,7 @@ import {
   PlayCircle,
   Sparkles,
   Phone,
+  LogOut,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { appointmentService } from "@/lib/appointmentService";
@@ -51,7 +52,8 @@ const SOW_STEPS: { status: AppointmentStatus; label: string; step: number }[] =
   ];
 
 export const PatientPortal: React.FC = () => {
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, openSignOutModal } = useAuth();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const cancelAppointmentMutation = useCancelAppointmentMutation();
@@ -413,6 +415,20 @@ export const PatientPortal: React.FC = () => {
               <Plus className="w-3.5 h-3.5" />
               <span>Book Appointment</span>
             </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                openSignOutModal(() => {
+                  navigate("/", { replace: true });
+                });
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-ink-soft hover:text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors cursor-pointer border border-line/60"
+              title="Sign Out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
           </div>
         </div>
       </header>
@@ -941,7 +957,6 @@ export const PatientPortal: React.FC = () => {
               {selectedAppointment.meetingLink &&
               !selectedAppointment.meetingLink.includes("/cdr-") &&
               (selectedAppointment.status === "approved" ||
-                selectedAppointment.status === "completed" ||
                 selectedAppointment.status === "proposed") ? (
                 <div className="p-4 rounded-2xl bg-[#FAF3F2] border border-[#E8CDC9] space-y-3">
                   <div className="flex items-center justify-between">
