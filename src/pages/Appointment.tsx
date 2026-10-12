@@ -599,7 +599,7 @@ export default function Appointment() {
                   >
                     <SelectTrigger
                       id="treatment-select"
-                      className="w-full h-12 text-sm px-4 py-3 rounded-xl border border-line bg-paper/30 hover:bg-white text-ink font-medium outline-none transition-all focus:border-mint-deep focus:bg-white focus:ring-4 focus:ring-mint-deep/15 cursor-pointer disabled:opacity-60 shadow-2xs"
+                      className="w-full h-11 text-sm bg-white"
                     >
                       <SelectValue
                         placeholder={
@@ -609,14 +609,9 @@ export default function Appointment() {
                         }
                       />
                     </SelectTrigger>
-                    <SelectContent className="bg-white rounded-xl border border-line shadow-xl p-1.5 max-h-72 z-50">
+                    <SelectContent className="max-h-72">
                       {activeTreatments.map((cat) => (
-                        <SelectItem
-                          key={cat}
-                          value={cat}
-                          hideIndicator
-                          className="cursor-pointer py-2.5 px-3 text-sm rounded-lg hover:bg-line-soft focus:bg-[#FAF7F6] focus:text-teal-deep font-medium transition-colors"
-                        >
+                        <SelectItem key={cat} value={cat}>
                           {cat}
                         </SelectItem>
                       ))}

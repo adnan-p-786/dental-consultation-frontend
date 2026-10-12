@@ -1244,22 +1244,7 @@ function Dashboard() {
                     value={selectedDoctorFilter}
                     onValueChange={(value) => setSelectedDoctorFilter(value)}
                   >
-                    <SelectTrigger
-                      className="
-      h-9
-      w-full sm:w-[190px]
-      px-3
-      rounded-lg
-      border border-line
-      bg-white
-      text-xs font-semibold text-ink-soft
-      hover:text-ink
-      cursor-pointer
-      outline-none
-      focus:ring-2 focus:ring-primary/20
-      flex items-center justify-between
-    "
-                    >
+                    <SelectTrigger className="w-full sm:w-[190px]">
                       <SelectValue placeholder="All Doctors" />
                     </SelectTrigger>
 

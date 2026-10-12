@@ -19,7 +19,7 @@ import type { Doctor } from "../types";
 
 interface DoctorManagementViewProps {
   doctors: Doctor[];
-  onToggleStatus: (doctorId: string) => void;
+  onToggleStatus?: (doctorId: string) => void;
   onAddDoctor?: (doctor: Doctor) => void;
   onUpdateDoctor?: (doctor: Doctor) => void;
   onDeleteDoctor?: (doctorId: string) => void;
@@ -27,7 +27,6 @@ interface DoctorManagementViewProps {
 
 export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
   doctors,
-  onToggleStatus,
   onAddDoctor,
   onUpdateDoctor,
   onDeleteDoctor,
@@ -80,28 +79,18 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-line shadow-xs">
         <div>
           <h3 className="font-display font-semibold text-xl text-ink">
-            Doctor & Availability Management
+            Doctor Management
           </h3>
           <p className="text-xs text-ink-soft mt-1">
-            Configure working hours, availability schedules, and room
-            assignments for dental providers.
+            Manage dental providers, clinical credentials, qualifications, and
+            medical staff directory.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-paper border border-line text-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="font-semibold text-ink">
-                {doctors.filter((d) => d.status === "available").length}{" "}
-                Available
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-paper border border-line text-xs">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              <span className="font-semibold text-ink">
-                {doctors.filter((d) => d.status === "busy").length} In Session
-              </span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-paper border border-line text-xs font-semibold text-teal-deep">
+              <span>{doctors.length} Doctors Registered</span>
             </div>
           </div>
 
@@ -259,27 +248,19 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
               </div>
 
               {/* Card Actions */}
-              <div className="pt-2 border-t border-line flex items-center justify-between gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onToggleStatus(doc.id)}
-                  className="text-xs h-8 flex-1 cursor-pointer"
-                >
-                  Toggle Availability
-                </Button>
+              <div className="pt-2 border-t border-line flex justify-between gap-2">
                 {onUpdateDoctor && (
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => {
                       setEditingDoctor(doc);
                       setIsAddModalOpen(true);
                     }}
-                    className="text-xs h-8 text-teal-deep hover:text-teal-700 hover:bg-teal-50 p-2 cursor-pointer"
-                    title="Edit Doctor"
+                    className="text-xs h-8 w-1/2 text-teal-deep hover:text-teal-700 hover:bg-teal-50 gap-1.5 cursor-pointer font-medium flex-1 sm:flex-initial"
                   >
                     <Pencil className="w-3.5 h-3.5" />
+                    <span>Edit</span>
                   </Button>
                 )}
                 {onDeleteDoctor && (
@@ -287,10 +268,11 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={() => setDoctorToDelete(doc)}
-                    className="text-xs h-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-2 cursor-pointer"
+                    className="text-xs h-8 w-1/2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-2 cursor-pointer"
                     title="Remove Doctor"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
                   </Button>
                 )}
               </div>

@@ -34,7 +34,6 @@ import {
   Printer,
   CalendarCheck,
   Paperclip,
-  Zap,
   ArrowRight,
   Copy,
 } from "lucide-react";
@@ -66,10 +65,6 @@ export default function DoctorDashboard() {
   // Filter & Search states
   const [searchQuery, setSearchQuery] = useState("");
   const [scheduleFilter, setScheduleFilter] = useState<ScheduleFilter>("today");
-  const [availability, setAvailability] = useState<
-    "available" | "busy" | "offline"
-  >("available");
-
   // Modals state
   const [activeWorkspaceApt, setActiveWorkspaceApt] =
     useState<Appointment | null>(null);
@@ -615,8 +610,6 @@ export default function DoctorDashboard() {
         <DoctorHeader
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          availability={availability}
-          onAvailabilityChange={setAvailability}
           todayAppointments={todayAppointments}
           onSelectAppointment={handleOpenWorkspace}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
@@ -2086,7 +2079,7 @@ export default function DoctorDashboard() {
                 <select
                   value={updatedTreatmentType}
                   onChange={(e) => setUpdatedTreatmentType(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-xl border border-line bg-paper/50 focus:bg-white focus:border-mint-deep focus:outline-none font-medium cursor-pointer"
+                  className="w-full h-10 text-xs px-3.5 rounded-xl border border-line bg-white text-ink shadow-2xs hover:border-[#5E3E3B]/40 hover:bg-[#FAF7F6]/40 focus:ring-2 focus:ring-[#5E3E3B]/15 focus:border-[#5E3E3B] font-medium cursor-pointer transition-all outline-none"
                 >
                   {documentTreatmentCategories.map((cat) => (
                     <option key={cat} value={cat}>
@@ -2105,7 +2098,7 @@ export default function DoctorDashboard() {
                   onChange={(e) =>
                     setUpdatedTreatmentStatus(e.target.value as AppointmentStatus)
                   }
-                  className="w-full text-xs p-2.5 rounded-xl border border-line bg-paper/50 focus:bg-white focus:border-mint-deep focus:outline-none font-medium cursor-pointer"
+                  className="w-full h-10 text-xs px-3.5 rounded-xl border border-line bg-white text-ink shadow-2xs hover:border-[#5E3E3B]/40 hover:bg-[#FAF7F6]/40 focus:ring-2 focus:ring-[#5E3E3B]/15 focus:border-[#5E3E3B] font-medium cursor-pointer transition-all outline-none"
                 >
                   <option value="approved">Approved & Scheduled</option>
                   <option value="under_review">Under Clinical Review</option>

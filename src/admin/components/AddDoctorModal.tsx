@@ -407,7 +407,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
                   setStatus(val)
                 }
               >
-                <SelectTrigger className="h-9 text-xs">
+                <SelectTrigger>
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -430,7 +430,7 @@ export const AddDoctorModal: React.FC<AddDoctorModalProps> = ({
               value={specialization}
               onValueChange={setSpecialization}
             >
-              <SelectTrigger className="h-9 text-xs">
+              <SelectTrigger>
                 <SelectValue
                   placeholder={
                     loadingTreatments

@@ -440,33 +440,21 @@ function Register() {
                   >
                     <SelectTrigger
                       id="gender"
-                      className={`h-[43px] w-full text-[14px] px-3.5 py-2.5 rounded-lg border bg-white transition-all duration-150 cursor-pointer disabled:opacity-60 shadow-none ${
-                        !formData.gender
-                          ? "text-[#9A8987]"
-                          : "text-ink font-normal"
+                      className={`h-[43px] w-full text-[14px] ${
+                        !formData.gender ? "text-[#9A8987]" : "text-ink font-normal"
                       } ${
                         error && !formData.gender
                           ? "border-red-400 ring-2 ring-red-100"
-                          : "border-line hover:border-[#5E3E3B]/40 focus:border-[#5E3E3B] focus:ring-4 focus:ring-[#5E3E3B]/15"
+                          : ""
                       }`}
                     >
                       <SelectValue placeholder="Select Gender" />
                     </SelectTrigger>
-                    <SelectContent
-                      className="bg-white rounded-xl border border-line shadow-xl p-1.5 min-w-[var(--radix-select-trigger-width)] z-50"
-                      position="popper"
-                      sideOffset={4}
-                    >
-                      <SelectItem
-                        value="male"
-                        className="cursor-pointer py-2.5 px-3 rounded-lg text-sm font-medium hover:bg-[#FAF7F6] focus:bg-[#FAF7F6] focus:text-[#5E3E3B] transition-colors"
-                      >
+                    <SelectContent position="popper" sideOffset={4}>
+                      <SelectItem value="male">
                         Male
                       </SelectItem>
-                      <SelectItem
-                        value="female"
-                        className="cursor-pointer py-2.5 px-3 rounded-lg text-sm font-medium hover:bg-[#FAF7F6] focus:bg-[#FAF7F6] focus:text-[#5E3E3B] transition-colors"
-                      >
+                      <SelectItem value="female">
                         Female
                       </SelectItem>
                     </SelectContent>

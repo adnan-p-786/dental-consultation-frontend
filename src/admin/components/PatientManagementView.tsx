@@ -143,12 +143,12 @@ export const PatientManagementView: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by patient name, email, phone, or address..."
-            className="pl-9 h-10 text-xs rounded-xl bg-paper/60 border-line focus-visible:ring-1 focus-visible:ring-mint-deep"
+            className="pl-9 h-10 text-xs rounded-xl bg-white border-line shadow-2xs hover:border-[#5E3E3B]/40 focus-visible:ring-2 focus-visible:ring-[#5E3E3B]/15 focus-visible:border-[#5E3E3B] transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-light hover:text-ink cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-soft hover:text-ink cursor-pointer"
             >
               Clear
             </button>
@@ -161,13 +161,13 @@ export const PatientManagementView: React.FC = () => {
             <span className="hidden sm:inline">Gender:</span>
           </div>
           <Select value={selectedGender} onValueChange={setSelectedGender}>
-            <SelectTrigger className="w-[140px] h-10 text-xs rounded-xl border-line bg-paper/60">
+            <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Gender" />
             </SelectTrigger>
-            <SelectContent className="rounded-xl border-line">
-              <SelectItem value="all" className="text-xs">All Genders</SelectItem>
-              <SelectItem value="male" className="text-xs">Male</SelectItem>
-              <SelectItem value="female" className="text-xs">Female</SelectItem>
+            <SelectContent>
+              <SelectItem value="all">All Genders</SelectItem>
+              <SelectItem value="male">Male</SelectItem>
+              <SelectItem value="female">Female</SelectItem>
             </SelectContent>
           </Select>
         </div>

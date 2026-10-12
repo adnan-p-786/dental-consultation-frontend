@@ -246,7 +246,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               onValueChange={(val: TreatmentType) => setTreatment(val)}
               disabled={loadingTreatments}
             >
-              <SelectTrigger className="h-9 text-xs">
+              <SelectTrigger>
                 <SelectValue
                   placeholder={
                     loadingTreatments
@@ -257,7 +257,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {activeTreatments.map((opt: string) => (
-                  <SelectItem key={opt} value={opt} hideIndicator>
+                  <SelectItem key={opt} value={opt}>
                     {opt}
                   </SelectItem>
                 ))}
@@ -426,15 +426,15 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                 setAssignedDoctorId(val === "unassigned" ? "" : val)
               }
             >
-              <SelectTrigger className="h-9 text-xs">
+              <SelectTrigger>
                 <SelectValue placeholder="Leave unassigned or select doctor..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unassigned" hideIndicator>
+                <SelectItem value="unassigned">
                   -- Leave Unassigned --
                 </SelectItem>
                 {doctors.map((doc) => (
-                  <SelectItem key={doc.id} value={doc.id} hideIndicator>
+                  <SelectItem key={doc.id} value={doc.id}>
                     {doc.name}{" "}
                     {doc.specialization ? `(${doc.specialization})` : ""}
                   </SelectItem>

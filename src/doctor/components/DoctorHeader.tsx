@@ -5,14 +5,12 @@ import {
   Video,
   Menu,
   Stethoscope,
-  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -22,8 +20,8 @@ import type { Appointment } from "@/admin/types";
 interface DoctorHeaderProps {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
-  availability: "available" | "busy" | "offline";
-  onAvailabilityChange: (status: "available" | "busy" | "offline") => void;
+  availability?: "available" | "busy" | "offline";
+  onAvailabilityChange?: (status: "available" | "busy" | "offline") => void;
   todayAppointments: Appointment[];
   onSelectAppointment: (appointment: Appointment) => void;
   onOpenMobileMenu?: () => void;
@@ -32,8 +30,6 @@ interface DoctorHeaderProps {
 export const DoctorHeader: React.FC<DoctorHeaderProps> = ({
   searchQuery: _searchQuery,
   onSearchChange: _onSearchChange,
-  availability,
-  onAvailabilityChange,
   todayAppointments,
   onSelectAppointment,
   onOpenMobileMenu,
@@ -74,63 +70,6 @@ export const DoctorHeader: React.FC<DoctorHeaderProps> = ({
           <span className="text-emerald-700 font-semibold">Doctor On Duty</span>
         </div>
 
-        {/* Doctor Availability Switcher Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex items-center gap-2 bg-[#FAF2F0] hover:bg-line-soft px-3 py-1.5 rounded-xl border border-teal-deep/15 text-xs transition-colors cursor-pointer"
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  availability === "available"
-                    ? "bg-emerald-500 animate-pulse"
-                    : availability === "busy"
-                      ? "bg-amber-500"
-                      : "bg-gray-400"
-                }`}
-              />
-              <span className="font-semibold text-teal-deep capitalize">
-                {availability === "available"
-                  ? "Available"
-                  : availability === "busy"
-                    ? "In Consult"
-                    : "Offline"}
-              </span>
-              <ChevronDown className="w-3 h-3 text-ink-soft ml-0.5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-48 rounded-xl border-line bg-white shadow-xl p-1"
-          >
-            <DropdownMenuLabel className="text-xs text-ink-soft px-2 py-1.5">
-              Set Clinical Status
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-line" />
-            <DropdownMenuItem
-              onClick={() => onAvailabilityChange("available")}
-              className="cursor-pointer text-xs rounded-lg flex items-center gap-2 py-2"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>Online & Available</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onAvailabilityChange("busy")}
-              className="cursor-pointer text-xs rounded-lg flex items-center gap-2 py-2"
-            >
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              <span>In Consultation</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onAvailabilityChange("offline")}
-              className="cursor-pointer text-xs rounded-lg flex items-center gap-2 py-2"
-            >
-              <span className="w-2 h-2 rounded-full bg-gray-400" />
-              <span>Offline / On Break</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
 
         {/* Notification Bell with Today's Appointments */}
         <DropdownMenu>
@@ -152,17 +91,17 @@ export const DoctorHeader: React.FC<DoctorHeaderProps> = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-80 rounded-2xl border-line bg-white shadow-xl p-2 z-50"
+            className="w-80 rounded-xl border border-line bg-white shadow-xl p-1.5 z-50"
           >
-            <DropdownMenuLabel className="flex items-center justify-between py-1.5 px-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-teal-deep">
+            <DropdownMenuLabel className="flex items-center justify-between py-1.5 px-2.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#5E3E3B]">
                 Today's Consultations
               </span>
-              <Badge className="bg-[#FAF2F0] text-teal-deep text-[10px]">
+              <Badge className="bg-[#FAF2F0] text-[#5E3E3B] text-[10px]">
                 {todayAppointments.length} Scheduled
               </Badge>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-line" />
+            <DropdownMenuSeparator />
             <div className="max-h-64 overflow-y-auto space-y-1 py-1">
               {todayAppointments.length === 0 ? (
                 <div className="p-4 text-center text-xs text-ink-soft">
@@ -174,7 +113,7 @@ export const DoctorHeader: React.FC<DoctorHeaderProps> = ({
                     key={apt.id}
                     type="button"
                     onClick={() => onSelectAppointment(apt)}
-                    className="w-full text-left p-2.5 rounded-xl hover:bg-paper transition-colors flex items-start gap-2.5 text-xs cursor-pointer"
+                    className="w-full text-left p-2.5 rounded-lg hover:bg-[#FAF2F0] transition-colors flex items-start gap-2.5 text-xs cursor-pointer"
                   >
                     <div className="w-8 h-8 rounded-lg bg-teal-deep/10 text-teal-deep flex items-center justify-center shrink-0">
                       {apt.consultationType === "video" ? (

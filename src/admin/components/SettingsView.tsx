@@ -53,6 +53,11 @@ import type {
   ConsultationTypeConfig,
   GeneralAppointmentSettings,
 } from "@/api/Setting/settingApi";
+import {
+  useDoctorsQuery,
+  useUpdateDoctorStatusMutation,
+} from "@/api/Doctor/doctorHooks";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { defaultSettings as mockDefaults } from "../data/mockData";
 import { toast } from "sonner";
 
@@ -371,6 +376,34 @@ export const SettingsView: React.FC = () => {
     useState<ConsultationTypeConfig[]>(defaultConsultationTypes);
   const [generalSettings, setGeneralSettings] =
     useState<GeneralAppointmentSettings>(defaultGeneralAppointmentSettings);
+
+  const { data: clinicDoctors = [], isLoading: isLoadingDoctors } =
+    useDoctorsQuery();
+  const updateDoctorStatusMutation = useUpdateDoctorStatusMutation();
+
+  const handleUpdateDoctorAvailability = (
+    doctorId: string | number,
+    doctorName: string,
+    newStatus: "available" | "busy" | "on_leave",
+  ) => {
+    updateDoctorStatusMutation.mutate(
+      { id: doctorId, status: newStatus },
+      {
+        onSuccess: () => {
+          const readable =
+            newStatus === "on_leave"
+              ? "On Leave / Offline"
+              : newStatus === "busy"
+                ? "In Consultation (Busy)"
+                : "Available";
+          toast.success(`${doctorName} status updated to ${readable}`);
+        },
+        onError: () => {
+          toast.error(`Failed to update ${doctorName} availability`);
+        },
+      },
+    );
+  };
 
   const [saved, setSaved] = useState(false);
   const [testStatus, setTestStatus] = useState<string | null>(null);
@@ -1042,7 +1075,7 @@ export const SettingsView: React.FC = () => {
                         maxActivePerPatient: Number(e.target.value) || 3,
                       })
                     }
-                    className="text-xs font-semibold py-1 px-2 rounded-lg border border-line bg-white cursor-pointer"
+                    className="h-10 text-xs font-medium px-3.5 rounded-xl border border-line bg-white text-ink shadow-2xs hover:border-[#5E3E3B]/40 hover:bg-[#FAF7F6]/40 focus:ring-2 focus:ring-[#5E3E3B]/15 focus:border-[#5E3E3B] transition-all cursor-pointer outline-none"
                   >
                     <option value={1}>1 Active</option>
                     <option value={2}>2 Active</option>
@@ -1187,164 +1220,121 @@ export const SettingsView: React.FC = () => {
         )}
 
         {/* ========================================================================= */}
-        {/* 4. DOCTOR AVAILABILITY SETTINGS (NEW FUNCTION)                             */}
+        {/* 4. DOCTOR AVAILABILITY SETTINGS & ROSTER                                 */}
         {/* ========================================================================= */}
         {shouldShow("doctors") && (
-          <Card className="border-line shadow-xs">
-            <CardHeader className="pb-3 border-b border-line flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-base font-semibold text-ink flex items-center gap-2">
-                  <Users className="w-4 h-4 text-teal-deep" />
-                  Doctor Availability & Scheduling Rules
-                </CardTitle>
-                <p className="text-xs text-ink-soft mt-0.5">
-                  Configure default dentist availability statuses, concurrency
-                  caps, and assignment allocation.
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-ink">
-                  Default Doctor Status
-                </label>
-                <select
-                  value={doctorAvailability.defaultStatus}
-                  onChange={(e) =>
-                    setDoctorAvailability({
-                      ...doctorAvailability,
-                      defaultStatus: e.target.value as any,
-                    })
-                  }
-                  className="w-full text-xs font-medium py-2 px-3 rounded-xl border border-line bg-white cursor-pointer"
-                >
-                  <option value="available">
-                    Available (Accepting Consultations)
-                  </option>
-                  <option value="busy">Busy (Reviewing Cases)</option>
-                  <option value="offline">Offline / By Appointment Only</option>
-                </select>
-                <p className="text-[11px] text-ink-soft">
-                  Initial state for on-duty doctors.
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-ink">
-                  Max Parallel Consultations Per Slot
-                </label>
-                <select
-                  value={doctorAvailability.maxParallelPerSlot}
-                  onChange={(e) =>
-                    setDoctorAvailability({
-                      ...doctorAvailability,
-                      maxParallelPerSlot: Number(e.target.value) || 1,
-                    })
-                  }
-                  className="w-full text-xs font-medium py-2 px-3 rounded-xl border border-line bg-white cursor-pointer"
-                >
-                  <option value={1}>1 Patient (Strict 1-on-1 Dedicated)</option>
-                  <option value={2}>2 Patients (Overlap Triage Allowed)</option>
-                </select>
-                <p className="text-[11px] text-ink-soft">
-                  Limits double-booking the same dentist in one slot.
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-ink">
-                  Doctor Assignment Mode
-                </label>
-                <select
-                  value={doctorAvailability.assignmentMode}
-                  onChange={(e) =>
-                    setDoctorAvailability({
-                      ...doctorAvailability,
-                      assignmentMode: e.target.value as any,
-                    })
-                  }
-                  className="w-full text-xs font-medium py-2 px-3 rounded-xl border border-line bg-white cursor-pointer"
-                >
-                  <option value="round_robin">
-                    Round-Robin (Balanced Distribution)
-                  </option>
-                  <option value="least_busy">
-                    Least Busy (Lowest Active Queue)
-                  </option>
-                  <option value="manual">
-                    Manual Assignment (Admin Directs)
-                  </option>
-                </select>
-                <p className="text-[11px] text-ink-soft">
-                  Strategy used during appointment review.
-                </p>
-              </div>
-
-              <div className="sm:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-line">
-                <div className="flex items-center justify-between p-3.5 rounded-xl border border-line bg-[#FAF7F6]">
-                  <div>
-                    <span className="text-xs font-bold text-ink block">
-                      Auto-Busy During Active Call
-                    </span>
-                    <span className="text-[11px] text-ink-soft">
-                      Automatically marks doctor as busy while video session is
-                      underway
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setDoctorAvailability({
-                        ...doctorAvailability,
-                        autoBusyDuringCall:
-                          !doctorAvailability.autoBusyDuringCall,
-                      })
-                    }
-                    className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                      doctorAvailability.autoBusyDuringCall
-                        ? "bg-teal-deep text-white border-teal-deep"
-                        : "bg-white text-zinc-500 border-zinc-300"
-                    }`}
-                  >
-                    {doctorAvailability.autoBusyDuringCall
-                      ? "Enabled"
-                      : "Disabled"}
-                  </button>
+          <div className="space-y-6">
+            {/* Live Doctor Availability Roster Card */}
+            <Card className="border-line shadow-xs">
+              <CardHeader className="pb-3 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base font-semibold text-ink flex items-center gap-2">
+                    <Users className="w-4 h-4 text-teal-deep" />
+                    Doctor Availability & Duty Status
+                  </CardTitle>
+                  <p className="text-xs text-ink-soft mt-0.5">
+                    Configure real-time clinical duty statuses and consultation availability for each doctor.
+                  </p>
                 </div>
 
-                <div className="flex items-center justify-between p-3.5 rounded-xl border border-line bg-[#FAF7F6]">
-                  <div>
-                    <span className="text-xs font-bold text-ink block">
-                      Emergency Case Override
-                    </span>
-                    <span className="text-[11px] text-ink-soft">
-                      Allow clinic admin to override doctor busy status for
-                      emergency triage
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>
+                      {clinicDoctors.filter((d) => d.status === "available").length} Available
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setDoctorAvailability({
-                        ...doctorAvailability,
-                        allowEmergencyOverride:
-                          !doctorAvailability.allowEmergencyOverride,
-                      })
-                    }
-                    className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                      doctorAvailability.allowEmergencyOverride
-                        ? "bg-teal-deep text-white border-teal-deep"
-                        : "bg-white text-zinc-500 border-zinc-300"
-                    }`}
-                  >
-                    {doctorAvailability.allowEmergencyOverride
-                      ? "Allowed"
-                      : "Disabled"}
-                  </button>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span>
+                      {clinicDoctors.filter((d) => d.status === "busy").length} Busy
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold">
+                    <span className="w-2 h-2 rounded-full bg-slate-400" />
+                    <span>
+                      {clinicDoctors.filter((d) => d.status === "on_leave" || (d.status as string) === "offline").length} On Leave
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+
+              <CardContent className="pt-4">
+                {isLoadingDoctors ? (
+                  <div className="py-8 text-center text-xs text-ink-soft flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-teal-deep" />
+                    <span>Loading clinic doctor availability...</span>
+                  </div>
+                ) : clinicDoctors.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-ink-soft">
+                    No doctors registered in the system yet. Add doctors from the Doctor Management directory.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    {clinicDoctors.map((doc) => {
+                      const statusKey = doc.status || "available";
+
+                      return (
+                        <div
+                          key={doc.id}
+                          className="p-3.5 rounded-xl border border-line bg-white hover:border-mint-deep/60 transition-all flex flex-col justify-between gap-3 shadow-2xs"
+                        >
+                          <div className="flex items-start gap-3">
+                            <Avatar className="w-10 h-10 border border-line-soft shrink-0">
+                              <AvatarImage src={doc.avatar} />
+                              <AvatarFallback className="bg-teal-50 text-teal-deep font-bold text-xs">
+                                {doc.name.replace("Dr. ", "").slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-semibold text-xs text-ink truncate" title={doc.name}>
+                                {doc.name}
+                              </h4>
+                              <p className="text-[11px] text-mint-deep font-medium truncate mt-0.5">
+                                {doc.specialization}
+                              </p>
+                              <div className="flex items-center gap-1.5 text-[10.5px] text-ink-soft mt-1">
+                                <Clock className="w-3 h-3 text-ink-soft shrink-0" />
+                                <span className="truncate">{doc.workingHours || "Regular Hours"}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-line/60 flex items-center justify-between gap-2">
+                            <span className="text-[11px] text-ink-soft font-medium">
+                              Availability:
+                            </span>
+                            <select
+                              value={statusKey}
+                              onChange={(e) =>
+                                handleUpdateDoctorAvailability(
+                                  doc.id,
+                                  doc.name,
+                                  e.target.value as "available" | "busy" | "on_leave",
+                                )
+                              }
+                              className={`text-xs font-semibold py-1.5 px-3 rounded-xl border cursor-pointer shadow-2xs transition-all ${
+                                statusKey === "available"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                  : statusKey === "busy"
+                                    ? "bg-amber-50 text-amber-700 border-amber-300"
+                                    : "bg-slate-100 text-slate-700 border-slate-300"
+                              }`}
+                            >
+                              <option value="available">Available</option>
+                              <option value="busy">Busy</option>
+                              <option value="on_leave">On Leave</option>
+                            </select>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+          </div>
         )}
 
         {/* ========================================================================= */}
@@ -1579,7 +1569,7 @@ export const SettingsView: React.FC = () => {
                               color: e.target.value,
                             })
                           }
-                          className="text-[11px] h-8 rounded-md border border-line bg-white px-2"
+                          className="h-10 text-xs font-medium px-3.5 rounded-xl border border-line bg-white text-ink shadow-2xs hover:border-[#5E3E3B]/40 hover:bg-[#FAF7F6]/40 focus:ring-2 focus:ring-[#5E3E3B]/15 focus:border-[#5E3E3B] transition-all cursor-pointer outline-none"
                           aria-label={`${status.label} color`}
                         >
                           {[

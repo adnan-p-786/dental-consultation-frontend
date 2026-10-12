@@ -577,18 +577,18 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 <span>Assigned Doctor</span>
               </label>
               <Select value={selectedDoctor} onValueChange={(val) => setSelectedDoctor(val)}>
-                <SelectTrigger className="h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-medium text-ink shadow-2xs hover:border-[#E8CDC9] hover:bg-[#FAF7F6]/40 focus:ring-2 focus:ring-[#5E3E3B]/15 focus:border-[#5E3E3B] transition-all">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="All Doctors" />
                 </SelectTrigger>
-                <SelectContent className="max-h-64 rounded-xl shadow-lg border border-line bg-white">
-                  <SelectItem value="all" className="text-xs cursor-pointer">
+                <SelectContent className="max-h-64">
+                  <SelectItem value="all">
                     <div className="flex items-center gap-2">
                       <User className="w-3.5 h-3.5 text-ink-soft" />
                       <span className="font-semibold text-ink">All Doctors</span>
                     </div>
                   </SelectItem>
                   {doctorFilterOptions.map((doc) => (
-                    <SelectItem key={doc.id} value={doc.name} className="text-xs cursor-pointer">
+                    <SelectItem key={doc.id} value={doc.name}>
                       <div className="flex items-center gap-2">
                         <span className="w-4 h-4 rounded-full bg-[#FAF2F0] text-[#5E3E3B] text-[10px] font-bold flex items-center justify-center shrink-0">
                           {doc.name.replace("Dr. ", "").slice(0, 1)}
@@ -608,18 +608,18 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 <span>Treatment Type</span>
               </label>
               <Select value={selectedTreatment} onValueChange={(val) => setSelectedTreatment(val)}>
-                <SelectTrigger className="h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-medium text-ink shadow-2xs hover:border-[#E8CDC9] hover:bg-[#FAF7F6]/40 focus:ring-2 focus:ring-[#5E3E3B]/15 focus:border-[#5E3E3B] transition-all">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="All Treatments" />
                 </SelectTrigger>
-                <SelectContent className="max-h-72 w-[var(--radix-select-trigger-width)] min-w-[280px] rounded-xl shadow-xl border border-line bg-white p-1">
-                  <SelectItem value="all" className="text-xs cursor-pointer py-2">
+                <SelectContent className="max-h-72 w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                  <SelectItem value="all">
                     <div className="flex items-center gap-2">
                       <Stethoscope className="w-3.5 h-3.5 text-ink-soft shrink-0" />
                       <span className="font-semibold text-ink">All Treatments</span>
                     </div>
                   </SelectItem>
                   {treatmentFilterOptions.map((t) => (
-                    <SelectItem key={t} value={t} className="text-xs cursor-pointer py-2">
+                    <SelectItem key={t} value={t}>
                       <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#5E3E3B] shrink-0" />
                         <span className="font-medium text-ink leading-snug">{t}</span>
@@ -637,10 +637,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 <span>Appointment Status</span>
               </label>
               <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val)}>
-                <SelectTrigger className="h-10 w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-medium text-ink shadow-2xs hover:border-[#E8CDC9] hover:bg-[#FAF7F6]/40 focus:ring-2 focus:ring-[#5E3E3B]/15 focus:border-[#5E3E3B] transition-all">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
-                <SelectContent className="max-h-64 rounded-xl shadow-lg border border-line bg-white">
+                <SelectContent className="max-h-64">
                   {STATUS_FILTER_OPTIONS.map((st) => (
                     <SelectItem key={st.id} value={st.id} className="text-xs cursor-pointer">
                       <div className="flex items-center gap-2">

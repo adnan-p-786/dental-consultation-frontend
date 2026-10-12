@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import {
@@ -10,10 +10,20 @@ import {
   ShieldCheck,
   Sparkles,
   Stethoscope,
-  User,
   X,
+  ChevronDown,
+  Mail,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,6 +39,19 @@ function Header() {
   } = useAuth();
   const isSuper = isSuperAdmin || user?.role === "superadmin";
   const isPatient = isAuthenticated && !isAdmin && !isDoctor;
+
+  const patientInitials = useMemo(() => {
+    if (!user) return "P";
+    const first = user.firstName?.charAt(0) || "";
+    const last = user.lastName?.charAt(0) || "";
+    return (first + last).toUpperCase() || "P";
+  }, [user]);
+
+  const patientFullName = useMemo(() => {
+    if (!user) return "Patient";
+    const name = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+    return name || user.email || "Patient";
+  }, [user]);
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -159,26 +182,115 @@ function Header() {
                 )}
                 {isPatient && (
                   <>
-                    <span className="hidden lg:flex items-center gap-1.5 text-[13.5px] text-ink font-medium px-2.5 py-1.5 bg-line-soft/60 rounded-xl">
-                      <User className="w-3.5 h-3.5 text-teal-deep" />
-                      <span>{user?.firstName}</span>
-                    </span>
-                    <Link
-                      to="/patient/portal"
-                      className="flex items-center gap-1.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] transition-all text-paper text-[13.5px] font-semibold py-2 px-3.5 shadow-xs"
-                    >
-                      <Calendar className="w-4 h-4 text-mint" />
-                      <span>My Appointments</span>
-                    </Link>
+                    
+
+                    {/* Patient Own Profile Dropdown with Logout button inside */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#FAF2F0] hover:bg-[#F3E7E4] border border-line transition-all duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-deep/20 group"
+                          aria-label="Open patient profile menu"
+                        >
+                          <Avatar className="w-7 h-7 border border-teal-deep/20 shrink-0">
+                            <AvatarFallback className="bg-teal-deep text-white text-[11px] font-bold">
+                              {patientInitials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col text-left max-w-[120px] lg:max-w-[150px]">
+                            <span className="text-xs font-semibold text-teal-deep leading-tight truncate">
+                              {patientFullName}
+                            </span>
+                            <span className="text-[10px] text-ink-soft leading-none truncate">
+                              Patient
+                            </span>
+                          </div>
+                          <ChevronDown className="w-3.5 h-3.5 text-ink-soft group-hover:text-teal-deep transition-transform duration-200" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-72 rounded-xl border border-line bg-white shadow-xl p-1.5 z-50 animate-in fade-in-80"
+                      >
+                        {/* Profile Header Card */}
+                        <div className="p-3 bg-paper rounded-lg border border-line/60 mb-1">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10 border border-teal-deep/20 shrink-0">
+                              <AvatarFallback className="bg-teal-deep text-white text-sm font-bold">
+                                {patientInitials}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold text-ink truncate">
+                                  {patientFullName}
+                                </span>
+                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <Badge className="bg-[#FAF2F0] text-teal-deep border-teal-deep/20 text-[9px] font-semibold px-1.5 py-0 leading-tight">
+                                  Patient
+                                </Badge>
+                                {user?.id && (
+                                  <span className="text-[10px] text-ink-soft font-mono">
+                                    #PT-{user.id}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-2.5 pt-2 border-t border-line/60 space-y-1 text-[11px] text-ink-soft">
+                            {user?.email && (
+                              <div className="flex items-center gap-2 truncate">
+                                <Mail className="w-3 h-3 text-ink-soft shrink-0" />
+                                <span className="truncate">{user.email}</span>
+                              </div>
+                            )}
+                            {user?.phoneNumber && (
+                              <div className="flex items-center gap-2 truncate">
+                                <Phone className="w-3 h-3 text-ink-soft shrink-0" />
+                                <span className="truncate">{user.phoneNumber}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Navigation items */}
+                        <DropdownMenuItem asChild>
+                          <Link
+                            to="/patient/portal"
+                            className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-ink hover:text-[#5E3E3B] hover:bg-[#FAF2F0] rounded-lg cursor-pointer"
+                          >
+                            <Calendar className="w-4 h-4 text-[#5E3E3B]" />
+                            <span>My Appointments</span>
+                          </Link>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+
+                        {/* Logout button inside profile */}
+                        <DropdownMenuItem
+                          onClick={() => openSignOutModal()}
+                          className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4 text-rose-500" />
+                          <span>Sign Out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </>
                 )}
-                <button
-                  onClick={() => openSignOutModal()}
-                  className="flex items-center gap-1 text-[13px] font-medium text-ink-soft hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
-                  title="Log out"
-                >
-                  <LogOut className="w-4.5 h-4.5" />
-                </button>
+
+                {!isPatient && (
+                  <button
+                    onClick={() => openSignOutModal()}
+                    className="flex items-center gap-1 text-[13px] font-medium text-ink-soft hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
+                    title="Log out"
+                  >
+                    <LogOut className="w-4.5 h-4.5" />
+                  </button>
+                )}
               </div>
             ) : (
               <>
@@ -203,13 +315,23 @@ function Header() {
           {/* Mobile menu trigger */}
           <div className="flex md:hidden items-center gap-2">
             {isAuthenticated ? (
-              <button
-                onClick={() => openSignOutModal()}
-                className="p-1.5 rounded-lg text-ink-soft hover:text-red-600 cursor-pointer"
-                title="Log out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
+              isPatient ? (
+                <Link
+                  to="/patient/portal"
+                  className="flex items-center gap-1.5 text-xs font-semibold bg-[#5E3E3B] hover:bg-[#262525] text-white px-2.5 py-1.5 rounded-lg transition-colors"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-mint" />
+                  <span>Appointments</span>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => openSignOutModal()}
+                  className="p-1.5 rounded-lg text-ink-soft hover:text-red-600 cursor-pointer"
+                  title="Log out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              )
             ) : (
               <Link
                 to={
@@ -303,25 +425,56 @@ function Header() {
                   </Link>
                 )}
                 {isPatient && (
-                  <Link
-                    to="/patient/portal"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-teal-deep text-white text-[14px] font-semibold shadow-xs"
-                  >
-                    <Calendar className="w-4 h-4 text-mint" />
-                    <span>My Appointments ({user?.firstName})</span>
-                  </Link>
+                  <div className="space-y-2">
+                    <div className="p-3 bg-paper rounded-xl border border-line flex items-center gap-3">
+                      <Avatar className="w-9 h-9 border border-teal-deep/20 shrink-0">
+                        <AvatarFallback className="bg-teal-deep text-white text-xs font-bold">
+                          {patientInitials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-ink truncate">
+                          {patientFullName}
+                        </div>
+                        <div className="text-[10px] text-ink-soft truncate">
+                          {user?.email || "Patient Portal"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Link
+                      to="/patient/portal"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-teal-deep text-white text-[14px] font-semibold shadow-xs"
+                    >
+                      <Calendar className="w-4 h-4 text-mint" />
+                      <span>My Appointments</span>
+                    </Link>
+
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        openSignOutModal();
+                      }}
+                      className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-[13px] font-semibold cursor-pointer w-full"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
                 )}
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    openSignOutModal();
-                  }}
-                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-[14px] font-semibold cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Log out ({user?.firstName})</span>
-                </button>
+                {!isPatient && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      openSignOutModal();
+                    }}
+                    className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-[14px] font-semibold cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Log out ({user?.firstName})</span>
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2 mt-1">

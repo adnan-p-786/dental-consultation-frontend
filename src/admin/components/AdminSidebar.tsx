@@ -80,7 +80,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     },
     {
       id: "doctors" as AdminTab,
-      label: "Doctors & Availability",
+      label: "Doctors",
       shortLabel: "Doctors",
       icon: Stethoscope,
       badge: null,

@@ -39,7 +39,6 @@ export const doctorApi = {
           workingHours: d.workingHours || "09:00 AM - 05:00 PM",
           status: (d.status as "available" | "busy" | "on_leave") || "available",
           activeAppointments: 0,
-          room: d.room || "Room 1",
           rating: d.rating ? Number(d.rating) : 4.9,
         }));
         fetchedDoctors.push(...tableDoctors);

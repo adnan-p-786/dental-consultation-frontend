@@ -40,7 +40,7 @@ interface DoctorSidebarProps {
 export const DoctorSidebar: React.FC<DoctorSidebarProps> = ({
   activeTab,
   onTabChange,
-  assignedCount,
+  assignedCount: _assignedCount = 0,
   todayCount,
   collapsed,
   onToggleCollapse,
@@ -72,7 +72,7 @@ export const DoctorSidebar: React.FC<DoctorSidebarProps> = ({
       label: "Assigned Appointments",
       shortLabel: "Appointments",
       icon: CalendarCheck2,
-      badge: todayCount > 0 ? todayCount : assignedCount > 0 ? assignedCount : null,
+      badge: null,
       badgeVariant: todayCount > 0 ? "urgent" : "normal",
     },
     {
@@ -212,6 +212,7 @@ export const DoctorSidebar: React.FC<DoctorSidebarProps> = ({
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              const isItemCollapsed = collapsed && !mobileOpen;
 
               return (
                 <button
@@ -221,51 +222,52 @@ export const DoctorSidebar: React.FC<DoctorSidebarProps> = ({
                     if (onCloseMobile) onCloseMobile();
                   }}
                   className={cn(
-                    "w-full flex items-center rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer text-left group relative",
-                    collapsed && !mobileOpen
-                      ? "justify-center p-3"
-                      : "gap-3 px-3.5 py-3",
+                    "flex items-center rounded-xl transition-all duration-150 text-left cursor-pointer group relative text-xs font-semibold",
+                    isItemCollapsed
+                      ? "w-10 h-10 mx-auto justify-center p-0"
+                      : "w-full gap-3 px-3.5 py-3",
                     isActive
-                      ? "bg-teal-deep text-white shadow-xs"
-                      : "text-ink-soft hover:text-teal-deep hover:bg-line-soft/80",
+                      ? "bg-[#5E3E3B] text-white shadow-xs"
+                      : "text-ink-soft hover:bg-line-soft hover:text-[#5E3E3B]",
                   )}
-                  title={collapsed && !mobileOpen ? item.label : undefined}
+                  title={isItemCollapsed ? item.label : undefined}
                 >
-                  <Icon
-                    className={cn(
-                      "w-4 h-4 shrink-0 transition-colors",
-                      isActive
-                        ? "text-mint"
-                        : "text-ink-soft group-hover:text-teal-deep",
-                    )}
-                  />
-
-                  {(!collapsed || mobileOpen) && (
-                    <span className="truncate flex-1">{item.label}</span>
-                  )}
-
-                  {/* Notification badge */}
-                  {item.badge !== null && (
-                    <span
+                  <div className="relative flex items-center justify-center shrink-0">
+                    <Icon
                       className={cn(
-                        "rounded-full font-bold text-[10px] flex items-center justify-center shrink-0",
-                        collapsed && !mobileOpen
-                          ? "absolute top-1.5 right-1.5 w-4 h-4"
-                          : "px-2 py-0.5",
+                        "w-4 h-4 transition-transform group-hover:scale-105 shrink-0",
                         isActive
-                          ? "bg-white text-teal-deep"
-                          : item.badgeVariant === "urgent"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-[#FAF2F0] text-teal-deep",
+                          ? "text-emerald-300"
+                          : "text-ink-soft group-hover:text-teal-deep",
                       )}
-                    >
-                      {item.badge}
-                    </span>
+                    />
+                    {isItemCollapsed && item.badge !== null && (
+                      <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-bold px-1 ring-2 ring-white shadow-xs">
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
+
+                  {!isItemCollapsed && (
+                    <>
+                      <span className="truncate flex-1 font-semibold text-xs">
+                        {item.label}
+                      </span>
+
+                      {item.badge !== null && (
+                        <Badge
+                          variant={isActive ? "secondary" : "requested"}
+                          className="ml-auto text-[10px] px-2 py-0.5 shrink-0 font-bold"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </>
                   )}
 
-                  {/* Tooltip in collapsed desktop mode */}
-                  {collapsed && !mobileOpen && (
-                    <span className="pointer-events-none absolute left-full ml-3 hidden group-hover:flex items-center px-2.5 py-1 rounded-lg bg-teal-deep text-white text-xs font-medium whitespace-nowrap shadow-md z-50">
+                  {/* Desktop hover tooltip when collapsed */}
+                  {isItemCollapsed && (
+                    <span className="pointer-events-none absolute left-full ml-3 hidden group-hover:flex items-center px-2.5 py-1 rounded-lg bg-teal-deep text-white text-xs font-medium whitespace-nowrap shadow-md z-50 animate-in fade-in-0 zoom-in-95">
                       {item.label}
                     </span>
                   )}

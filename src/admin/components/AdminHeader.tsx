@@ -90,9 +90,9 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 rounded-xl border-line bg-white p-2 shadow-lg">
-            <DropdownMenuLabel className="flex items-center justify-between py-2">
-              <span className="font-semibold text-sm text-ink">
+          <DropdownMenuContent align="end" className="w-80 rounded-xl border border-line bg-white p-1.5 shadow-xl z-50">
+            <DropdownMenuLabel className="flex items-center justify-between py-1.5 px-2.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-ink">
                 Appointment Requests
               </span>
               <Badge variant="requested" className="text-[10px]">
@@ -112,7 +112,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   <DropdownMenuItem
                     key={apt.id}
                     onClick={() => onSelectAppointment(apt)}
-                    className="flex flex-col items-start gap-1 p-2.5 rounded-lg cursor-pointer hover:bg-line-soft transition-colors"
+                    className="flex flex-col items-start gap-1 p-2.5 rounded-lg cursor-pointer hover:bg-[#FAF2F0] transition-colors"
                   >
                     <div className="flex items-center justify-between w-full">
                       <span className="font-semibold text-xs text-ink">
