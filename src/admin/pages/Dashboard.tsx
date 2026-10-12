@@ -644,7 +644,10 @@ function Dashboard() {
               ...apt.timeline,
             ],
           };
-          if (selectedAppointment && String(selectedAppointment.id) === String(id)) {
+          if (
+            selectedAppointment &&
+            String(selectedAppointment.id) === String(id)
+          ) {
             setSelectedAppointment(updated);
           }
           return updated;
@@ -1429,8 +1432,11 @@ function Dashboard() {
                             {["cancelled", "completed", "rejected"].includes(
                               (apt.status || "").toLowerCase(),
                             ) ? (
-                              <span className="text-xs text-ink-light italic">—</span>
-                            ) : apt.meetingLink && !apt.meetingLink.includes("/cdr-") ? (
+                              <span className="text-xs text-ink-light italic">
+                                —
+                              </span>
+                            ) : apt.meetingLink &&
+                              !apt.meetingLink.includes("/cdr-") ? (
                               <a
                                 href={apt.meetingLink}
                                 target="_blank"
@@ -1444,7 +1450,9 @@ function Dashboard() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleOpenDetail(apt, "scheduling")}
+                                onClick={() =>
+                                  handleOpenDetail(apt, "scheduling")
+                                }
                                 className="text-[11px] h-7 text-ink-soft hover:text-teal-deep p-1 cursor-pointer"
                               >
                                 + Add Link
