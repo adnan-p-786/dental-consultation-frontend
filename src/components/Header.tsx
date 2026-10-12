@@ -34,7 +34,9 @@ function Header() {
     { name: "Home", href: "/" },
     {
       name: "Book Consultation",
-      href: isAuthenticated ? "/appointment" : "/auth/login?redirect=/appointment",
+      href: isAuthenticated
+        ? "/appointment"
+        : "/auth/login?redirect=/appointment",
     },
   ];
 
@@ -43,7 +45,10 @@ function Header() {
       return pathname === "/";
     }
     const cleanHref = href.split("?")[0];
-    return pathname === cleanHref || (cleanHref !== "/" && pathname?.startsWith(cleanHref));
+    return (
+      pathname === cleanHref ||
+      (cleanHref !== "/" && pathname?.startsWith(cleanHref))
+    );
   };
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -53,7 +58,8 @@ function Header() {
           <div className="flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5 text-mint shrink-0" />
             <div className="truncate text-[12px]">
-             32<span className="text-[11px]">Stories</span> | Online Dental Consultation
+              32<span className="text-[11px]">Stories</span> | Online Dental
+              Consultation
             </div>
           </div>
 
@@ -172,7 +178,6 @@ function Header() {
                   title="Log out"
                 >
                   <LogOut className="w-4.5 h-4.5" />
-                  
                 </button>
               </div>
             ) : (
@@ -207,7 +212,11 @@ function Header() {
               </button>
             ) : (
               <Link
-                to={isAuthenticated ? "/appointment" : "/auth/login?redirect=/appointment"}
+                to={
+                  isAuthenticated
+                    ? "/appointment"
+                    : "/auth/login?redirect=/appointment"
+                }
                 className="text-[13px] font-semibold bg-[#5E3E3B] hover:bg-[#262525] text-white px-3 py-1.5 rounded-lg transition-colors"
               >
                 Book

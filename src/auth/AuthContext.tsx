@@ -50,8 +50,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     try {
-      const savedToken = localStorage.getItem(TOKEN_KEY);
-      const savedUserStr = localStorage.getItem(USER_KEY);
+      // Clear legacy localStorage auth keys so past persisted sessions don't linger across project runs
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+
+      const savedToken = sessionStorage.getItem(TOKEN_KEY);
+      const savedUserStr = sessionStorage.getItem(USER_KEY);
 
       if (savedToken && savedUserStr) {
         const parsedUser: AuthUser = JSON.parse(savedUserStr);
@@ -63,8 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (err) {
       console.error("Failed to restore auth session:", err);
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(USER_KEY);
     } finally {
       setIsLoading(false);
     }
@@ -75,13 +79,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       ...newUser,
       role: (newUser.role?.toLowerCase() || "patient") as UserRole,
     };
-    localStorage.setItem(TOKEN_KEY, newToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
+    // Clean any legacy localStorage keys
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+
+    sessionStorage.setItem(TOKEN_KEY, newToken);
+    sessionStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
     setToken(newToken);
     setUser(normalizedUser);
   };
 
   const logout = () => {
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     setToken(null);

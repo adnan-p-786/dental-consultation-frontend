@@ -953,100 +953,100 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* KPI Stat Cards (PDF Section 6: Dashboard Metrics) */}
-              <div className="dashboard-stat-grid grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-8">
-                <div className="p-2.5 sm:p-3.5 rounded-xl border border-amber-200 bg-amber-50/70 shadow-xs flex flex-col justify-between">
-                  <span className="text-[10.5px] sm:text-[11px] font-semibold text-amber-900 leading-tight">
+              {/* KPI Stat Cards (Matching Doctor Dashboard text scale) */}
+              <div className="dashboard-stat-grid grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:grid-cols-8">
+                <div className="p-3 sm:p-4 rounded-2xl border border-amber-200 bg-amber-50/70 shadow-xs flex flex-col justify-between">
+                  <span className="text-xs font-semibold text-amber-900 leading-tight">
                     New Requests
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-amber-900 mt-1.5 sm:mt-2">
+                  <div className="text-2xl sm:text-3xl font-display font-bold text-amber-900 mt-1.5 sm:mt-2">
                     {kpis.newRequests}
                   </div>
-                  <span className="text-[9.5px] sm:text-[10px] text-amber-700">
+                  <span className="text-[11px] font-medium text-amber-700 mt-1 inline-block">
                     Needs review
                   </span>
                 </div>
 
-                <div className="p-2.5 sm:p-3.5 rounded-xl border border-purple-200 bg-purple-50/70 shadow-xs flex flex-col justify-between">
-                  <span className="text-[10.5px] sm:text-[11px] font-semibold text-purple-900 leading-tight">
+                <div className="p-3 sm:p-4 rounded-2xl border border-purple-200 bg-purple-50/70 shadow-xs flex flex-col justify-between">
+                  <span className="text-xs font-semibold text-purple-900 leading-tight">
                     Pending Approvals
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-purple-900 mt-1.5 sm:mt-2">
+                  <div className="text-2xl sm:text-3xl font-display font-bold text-purple-900 mt-1.5 sm:mt-2">
                     {kpis.pendingApprovals}
                   </div>
-                  <span className="text-[9.5px] sm:text-[10px] text-purple-700">
+                  <span className="text-[11px] font-medium text-purple-700 mt-1 inline-block">
                     Action required
                   </span>
                 </div>
 
-                <div className="p-2.5 sm:p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/70 shadow-xs flex flex-col justify-between">
-                  <span className="text-[10.5px] sm:text-[11px] font-semibold text-emerald-900 leading-tight">
+                <div className="p-3 sm:p-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 shadow-xs flex flex-col justify-between">
+                  <span className="text-xs font-semibold text-emerald-900 leading-tight">
                     Today's Consults
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-emerald-900 mt-1.5 sm:mt-2">
+                  <div className="text-2xl sm:text-3xl font-display font-bold text-emerald-900 mt-1.5 sm:mt-2">
                     {kpis.todayAppointments}
                   </div>
-                  <span className="text-[9.5px] sm:text-[10px] text-emerald-700">
+                  <span className="text-[11px] font-medium text-emerald-700 mt-1 inline-block">
                     Live schedule
                   </span>
                 </div>
 
-                <div className="p-2.5 sm:p-3.5 rounded-xl border border-teal-200 bg-teal-50/70 shadow-xs flex flex-col justify-between">
-                  <span className="text-[10.5px] sm:text-[11px] font-semibold text-teal-900 leading-tight">
+                <div className="p-3 sm:p-4 rounded-2xl border border-teal-200 bg-teal-50/70 shadow-xs flex flex-col justify-between">
+                  <span className="text-xs font-semibold text-teal-900 leading-tight">
                     Upcoming
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-teal-900 mt-1.5 sm:mt-2">
+                  <div className="text-2xl sm:text-3xl font-display font-bold text-teal-900 mt-1.5 sm:mt-2">
                     {kpis.upcomingAppointments}
                   </div>
-                  <span className="text-[9.5px] sm:text-[10px] text-teal-700">
+                  <span className="text-[11px] font-medium text-teal-700 mt-1 inline-block">
                     Confirmed
                   </span>
                 </div>
 
-                <div className="p-2.5 sm:p-3.5 rounded-xl border border-blue-200 bg-blue-50/70 shadow-xs flex flex-col justify-between">
-                  <span className="text-[10.5px] sm:text-[11px] font-semibold text-blue-900 leading-tight">
+                <div className="p-3 sm:p-4 rounded-2xl border border-blue-200 bg-blue-50/70 shadow-xs flex flex-col justify-between">
+                  <span className="text-xs font-semibold text-blue-900 leading-tight">
                     Completed
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-blue-900 mt-1.5 sm:mt-2">
+                  <div className="text-2xl sm:text-3xl font-display font-bold text-blue-900 mt-1.5 sm:mt-2">
                     {kpis.completedConsultations}
                   </div>
-                  <span className="text-[9.5px] sm:text-[10px] text-blue-700">
+                  <span className="text-[11px] font-medium text-blue-700 mt-1 inline-block">
                     Finished
                   </span>
                 </div>
 
-                <div className="p-2.5 sm:p-3.5 rounded-xl border border-orange-200 bg-orange-50/70 shadow-xs flex flex-col justify-between">
-                  <span className="text-[10.5px] sm:text-[11px] font-semibold text-orange-900 leading-tight">
+                <div className="p-3 sm:p-4 rounded-2xl border border-orange-200 bg-orange-50/70 shadow-xs flex flex-col justify-between">
+                  <span className="text-xs font-semibold text-orange-900 leading-tight">
                     Reschedules
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-orange-900 mt-1.5 sm:mt-2">
+                  <div className="text-2xl sm:text-3xl font-display font-bold text-orange-900 mt-1.5 sm:mt-2">
                     {kpis.reschedulingRequests}
                   </div>
-                  <span className="text-[9.5px] sm:text-[10px] text-orange-700">
+                  <span className="text-[11px] font-medium text-orange-700 mt-1 inline-block">
                     Requested
                   </span>
                 </div>
 
-                <div className="p-2.5 sm:p-3.5 rounded-xl border border-rose-200 bg-rose-50/70 shadow-xs flex flex-col justify-between">
-                  <span className="text-[10.5px] sm:text-[11px] font-semibold text-rose-900 leading-tight">
+                <div className="p-3 sm:p-4 rounded-2xl border border-rose-200 bg-rose-50/70 shadow-xs flex flex-col justify-between">
+                  <span className="text-xs font-semibold text-rose-900 leading-tight">
                     Cancelled
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-rose-900 mt-1.5 sm:mt-2">
+                  <div className="text-2xl sm:text-3xl font-display font-bold text-rose-900 mt-1.5 sm:mt-2">
                     {kpis.cancelledAppointments}
                   </div>
-                  <span className="text-[9.5px] sm:text-[10px] text-rose-700">
+                  <span className="text-[11px] font-medium text-rose-700 mt-1 inline-block">
                     Patient/Clinic
                   </span>
                 </div>
 
-                <div className="p-2.5 sm:p-3.5 rounded-xl border border-zinc-300 bg-zinc-100 shadow-xs flex flex-col justify-between">
-                  <span className="text-[10.5px] sm:text-[11px] font-semibold text-zinc-800 leading-tight">
+                <div className="p-3 sm:p-4 rounded-2xl border border-zinc-300 bg-zinc-100 shadow-xs flex flex-col justify-between">
+                  <span className="text-xs font-semibold text-zinc-800 leading-tight">
                     No-Show
                   </span>
-                  <div className="text-lg sm:text-xl font-bold text-zinc-900 mt-1.5 sm:mt-2">
+                  <div className="text-2xl sm:text-3xl font-display font-bold text-zinc-900 mt-1.5 sm:mt-2">
                     {kpis.noShowAppointments}
                   </div>
-                  <span className="text-[9.5px] sm:text-[10px] text-zinc-600">
+                  <span className="text-[11px] font-medium text-zinc-600 mt-1 inline-block">
                     Missed
                   </span>
                 </div>
@@ -1059,7 +1059,7 @@ function Dashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-amber-600" />
-                      <h3 className="font-semibold text-base text-ink">
+                      <h3 className="font-display font-semibold text-lg text-ink">
                         Pending Request Approvals & Reviews (
                         {kpis.pendingApprovals})
                       </h3>
@@ -1124,20 +1124,6 @@ function Dashboard() {
                             >
                               Review & Assign
                             </Button>
-                            {/* <Button
-                              size="sm"
-                              onClick={() =>
-                                handleUpdateStatus(
-                                  apt.id,
-                                  "approved",
-                                  "One-click approved.",
-                                )
-                              }
-                              className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs h-8 gap-1"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                              Approve
-                            </Button> */}
                           </div>
                         </div>
                       ))}
@@ -1156,7 +1142,7 @@ function Dashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarCheck className="w-4 h-4 text-teal-deep" />
-                      <h3 className="font-semibold text-base text-ink">
+                      <h3 className="font-display font-semibold text-lg text-ink">
                         Today's Consultations
                       </h3>
                     </div>
@@ -1193,7 +1179,7 @@ function Dashboard() {
                               </span>
                               <Badge
                                 variant={apt.status}
-                                className="text-[9px]"
+                                className="text-[10px]"
                               >
                                 {apt.status}
                               </Badge>

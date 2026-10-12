@@ -19,7 +19,6 @@ import {
   Mail,
   Layers,
   Settings2,
-  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1744,65 +1743,7 @@ export const SettingsView: React.FC = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* ========================================================================= */}
-        {/* 7. VIDEO MEETING INTEGRATION                                             */}
-        {/* ========================================================================= */}
-        {shouldShow("video") && (
-          <Card className="border-line shadow-xs">
-            <CardHeader className="pb-3 border-b border-line">
-              <CardTitle className="text-base font-semibold text-ink flex items-center gap-2">
-                <Video className="w-4 h-4 text-teal-deep" />
-                Video Meeting Integration
-              </CardTitle>
-              <p className="text-xs text-ink-soft mt-0.5">
-                Configure the provider and default link used for online
-                consultations.
-              </p>
-            </CardHeader>
-            <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-ink">
-                  Preferred Video Provider
-                </label>
-                <select
-                  value={settings.meetingProvider}
-                  onChange={(e) =>
-                    setSettings({ ...settings, meetingProvider: e.target.value })
-                  }
-                  className="w-full text-xs font-medium py-2 px-3 rounded-xl border border-line bg-white cursor-pointer"
-                >
-                  <option value="manual">Manual Meeting Link</option>
-                  <option value="google_meet">Google Meet</option>
-                  <option value="zoom">Zoom</option>
-                  <option value="microsoft_teams">Microsoft Teams</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-ink">
-                  Default Meeting Link
-                </label>
-                <Input
-                  type="url"
-                  value={settings.manualMeetingLink}
-                  onChange={(e) =>
-                    setSettings({ ...settings, manualMeetingLink: e.target.value })
-                  }
-                  placeholder="https://meet.google.com/..."
-                  className="text-xs"
-                />
-              </div>
-              <div className="md:col-span-2 rounded-xl border border-blue-200 bg-blue-50/70 p-3 text-[11px] text-blue-900 flex items-start gap-2">
-                <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <span>
-                  Meeting links are shared with authorized patients and
-                  assigned doctors through the appointment workflow.
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
+        
         {/* ========================================================================= */}
         {/* 8. REMINDER TIMINGS & NOTIFICATIONS (Already implemented, preserved)      */}
         {/* ========================================================================= */}

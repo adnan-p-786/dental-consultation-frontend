@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  Search,
   Bell,
   Clock,
   Calendar,
@@ -9,7 +8,6 @@ import {
   Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -22,17 +20,17 @@ import {
 import type { Appointment } from "../types";
 
 interface AdminHeaderProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  onNewAppointmentClick: () => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  onNewAppointmentClick?: () => void;
   pendingAppointments: Appointment[];
   onSelectAppointment: (appointment: Appointment) => void;
   onOpenMobileMenu?: () => void;
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
-  searchQuery,
-  onSearchChange,
+  searchQuery: _searchQuery,
+  onSearchChange: _onSearchChange,
   pendingAppointments,
   onSelectAppointment,
   onOpenMobileMenu,
@@ -61,17 +59,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             <Menu className="h-5 w-5" />
           </button>
         )}
-        <div className="relative hidden w-full max-w-sm sm:block">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
-          <Input
-            type="text"
-            placeholder="Search appointments, patients..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            aria-label="Search appointments and patients"
-            className="h-10 rounded-xl border-line bg-paper/70 pl-9 text-xs shadow-xs transition-shadow placeholder:text-ink-soft/70 focus:bg-white focus:shadow-sm"
-          />
-        </div>
+       
       </div>
 
       {/* Right controls */}

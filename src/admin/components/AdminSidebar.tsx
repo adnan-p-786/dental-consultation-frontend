@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   CalendarCheck2,
@@ -8,7 +8,6 @@ import {
   BarChart3,
   Settings,
   ShieldCheck,
-  ExternalLink,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -170,8 +169,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     32Stories
                   </span>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-ink-soft">Dental Portal</span>
-                    
+                    <Badge className="bg-[#FAF2F0] text-teal-deep border-teal-deep/20 text-[10px] font-bold px-1.5 py-0 leading-tight">
+                      Admin Portal
+                    </Badge>                    
                   </div>
                 </div>
               )}
@@ -214,7 +214,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           >
             {(!collapsed || mobileOpen) && (
               <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-ink-soft/70">
-                Admin Portal
+                Clinical Workspace
               </div>
             )}
 
@@ -231,12 +231,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     if (onCloseMobile) onCloseMobile();
                   }}
                   className={cn(
-                    "flex items-center rounded-xl transition-all duration-150 text-left cursor-pointer group relative",
+                    "flex items-center rounded-xl transition-all duration-150 text-left cursor-pointer group relative text-xs font-semibold",
                     isItemCollapsed
-                      ? "w-11 h-11 mx-auto justify-center p-0"
-                      : "w-full gap-3 px-3.5 py-2.5 text-sm font-medium",
+                      ? "w-10 h-10 mx-auto justify-center p-0"
+                      : "w-full gap-3 px-3.5 py-3",
                     isActive
-                      ? "bg-[#5E3E3B] text-white shadow-xs font-semibold"
+                      ? "bg-[#5E3E3B] text-white shadow-xs"
                       : "text-ink-soft hover:bg-line-soft hover:text-[#5E3E3B]",
                   )}
                   title={isItemCollapsed ? item.label : undefined}
@@ -244,7 +244,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   <div className="relative flex items-center justify-center shrink-0">
                     <Icon
                       className={cn(
-                        "w-5 h-5 transition-transform group-hover:scale-105 shrink-0",
+                        "w-4 h-4 transition-transform group-hover:scale-105 shrink-0",
                         isActive
                           ? "text-emerald-300"
                           : "text-ink-soft group-hover:text-teal-deep",
@@ -259,14 +259,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
                   {!isItemCollapsed && (
                     <>
-                      <span className="truncate flex-1 font-medium">
+                      <span className="truncate flex-1 font-semibold text-xs">
                         {item.label}
                       </span>
 
                       {item.badge !== null && (
                         <Badge
                           variant={isActive ? "secondary" : "requested"}
-                          className="ml-auto text-[11px] px-2 py-0.5 shrink-0 font-bold"
+                          className="ml-auto text-[10px] px-2 py-0.5 shrink-0 font-bold"
                         >
                           {item.badge}
                         </Badge>
@@ -293,35 +293,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             collapsed && !mobileOpen ? "p-2 flex flex-col items-center" : "p-3",
           )}
         >
-          {/* External patient site link */}
-          {!collapsed || mobileOpen ? (
-            <Link
-              to="/"
-              target="_blank"
-              className="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-ink-soft hover:text-teal-deep hover:bg-line-soft transition-colors group"
-            >
-              <span className="flex items-center gap-2">
-                <ExternalLink className="w-3.5 h-3.5 text-mint-deep" />
-                Patient Booking Site
-              </span>
-              <span className="text-[10px] text-ink-soft/60 group-hover:underline">
-                Open tab
-              </span>
-            </Link>
-          ) : (
-            <Link
-              to="/"
-              target="_blank"
-              className="w-10 h-10 flex items-center justify-center rounded-xl text-ink-soft hover:text-teal-deep hover:bg-line-soft transition-colors relative group"
-              title="Open Patient Booking Site"
-            >
-              <ExternalLink className="w-4 h-4 text-mint-deep" />
-              <span className="pointer-events-none absolute left-full ml-3 hidden group-hover:flex items-center px-2.5 py-1 rounded-lg bg-teal-deep text-white text-xs font-medium whitespace-nowrap shadow-md z-50">
-                Patient Booking Site
-              </span>
-            </Link>
-          )}
-
           {/* Current Admin User */}
           <div
             className={cn(

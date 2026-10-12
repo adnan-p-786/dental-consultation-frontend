@@ -15,7 +15,9 @@ apiClient.interceptors.request.use(
       config.url = config.url.replace(/^\/api/, "");
     }
 
-    const token = localStorage.getItem("dental_auth_token");
+    const token =
+      sessionStorage.getItem("dental_auth_token") ||
+      localStorage.getItem("dental_auth_token");
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -30,6 +32,10 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       console.warn("[API] 401 Unauthorized - authentication required or expired.");
+      sessionStorage.removeItem("dental_auth_token");
+      sessionStorage.removeItem("dental_auth_user");
+      localStorage.removeItem("dental_auth_token");
+      localStorage.removeItem("dental_auth_user");
     }
     return Promise.reject(error);
   }
