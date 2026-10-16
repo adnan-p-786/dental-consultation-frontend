@@ -377,8 +377,18 @@ export default function DoctorDashboard() {
   };
 
   // Quick update/save meeting link from workspace
+  const formatMeetingUrl = (url: string) => {
+    let trimmed = url.trim();
+    if (!trimmed) return "";
+    if (!/^https?:\/\//i.test(trimmed) && trimmed.includes(".")) {
+      trimmed = `https://${trimmed}`;
+    }
+    return trimmed;
+  };
+
+  // Quick update/save meeting link from workspace
   const handleUpdateMeetingLinkFromWorkspace = (link: string) => {
-    const cleanLink = link.trim();
+    const cleanLink = formatMeetingUrl(link);
     setCustomMeetingLink(cleanLink);
     if (!activeWorkspaceApt) return;
 
@@ -425,16 +435,17 @@ export default function DoctorDashboard() {
     toast.success("Treatment details updated successfully!");
   };
 
-
   // Mark consultation as completed
   const handleCompleteConsultation = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeWorkspaceApt) return;
 
-    if (customMeetingLink !== activeWorkspaceApt.meetingLink) {
+    const cleanLink = formatMeetingUrl(customMeetingLink);
+
+    if (cleanLink !== (activeWorkspaceApt.meetingLink || "")) {
       appointmentService.updateAppointment(
         activeWorkspaceApt.id,
-        { meetingLink: customMeetingLink.trim() || undefined },
+        { meetingLink: cleanLink || undefined },
         doctorName,
       );
     }
@@ -455,10 +466,12 @@ export default function DoctorDashboard() {
   const handleSaveNotesDraft = () => {
     if (!activeWorkspaceApt) return;
 
-    if (customMeetingLink !== activeWorkspaceApt.meetingLink) {
+    const cleanLink = formatMeetingUrl(customMeetingLink);
+
+    if (cleanLink !== (activeWorkspaceApt.meetingLink || "")) {
       appointmentService.updateAppointment(
         activeWorkspaceApt.id,
-        { meetingLink: customMeetingLink.trim() || undefined },
+        { meetingLink: cleanLink || undefined },
         doctorName,
       );
     }
@@ -1635,7 +1648,7 @@ export default function DoctorDashboard() {
                     </div>
                     <div className="flex items-center gap-2 mt-1.5">
                       <input
-                        type="url"
+                        type="text"
                         value={customMeetingLink}
                         onChange={(e) => setCustomMeetingLink(e.target.value)}
                         placeholder="https://meet.google.com/... or paste video room link"
@@ -1669,7 +1682,11 @@ export default function DoctorDashboard() {
                         <Copy className="w-4 h-4" />
                       </button>
                       <a
-                        href={customMeetingLink}
+                        href={
+                          customMeetingLink.startsWith("http")
+                            ? customMeetingLink
+                            : `https://${customMeetingLink}`
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 py-2 px-4 rounded-xl bg-[#5E3E3B] text-white text-xs font-semibold hover:bg-[#262525] transition-all cursor-pointer shadow-xs"

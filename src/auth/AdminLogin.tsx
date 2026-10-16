@@ -136,24 +136,24 @@ function AdminLogin() {
         duration: 2500,
       });
 
-      const resolvedRole =
-        response.data?.role?.toLowerCase() || userType.toLowerCase();
+      const resolvedRole = (
+        response.data?.role || userType
+      ).toLowerCase();
+
+      const target =
+        resolvedRole === "superadmin" || resolvedRole === "admin"
+          ? "/admin/dashboard"
+          : resolvedRole === "doctor"
+          ? "/doctor/dashboard"
+          : redirectPath &&
+            !redirectPath.startsWith("/auth") &&
+            !redirectPath.startsWith("/admin/login")
+          ? redirectPath
+          : "/";
 
       setTimeout(() => {
-        if (resolvedRole === "superadmin" || resolvedRole === "admin") {
-          navigate("/admin/dashboard", { replace: true });
-        } else if (resolvedRole === "doctor") {
-          navigate("/doctor/dashboard", { replace: true });
-        } else if (
-          redirectPath &&
-          !redirectPath.startsWith("/auth") &&
-          !redirectPath.startsWith("/admin/login")
-        ) {
-          navigate(redirectPath, { replace: true });
-        } else {
-          navigate("/", { replace: true });
-        }
-      }, 300);
+        navigate(target, { replace: true });
+      }, 50);
     } catch (err: any) {
       const serverError =
         err?.response?.data?.error ||

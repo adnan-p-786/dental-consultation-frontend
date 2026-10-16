@@ -14,10 +14,37 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   redirectTo = "/auth/login",
   children,
 }) => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, token, isLoading } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
+  // Resolve effective user and token from state or immediate storage
+  let effectiveUser = user;
+  let effectiveToken = token;
+
+  if (!effectiveUser || !effectiveToken) {
+    try {
+      const savedToken =
+        sessionStorage.getItem("dental_auth_token") ||
+        localStorage.getItem("dental_auth_token");
+      const savedUserStr =
+        sessionStorage.getItem("dental_auth_user") ||
+        localStorage.getItem("dental_auth_user");
+      if (savedToken && savedUserStr) {
+        const parsed = JSON.parse(savedUserStr);
+        if (parsed) {
+          parsed.role = (parsed.role?.toLowerCase() || "patient") as UserRole;
+          effectiveUser = parsed;
+          effectiveToken = savedToken;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const effectiveAuth = Boolean(effectiveToken && effectiveUser);
+
+  if (isLoading && !effectiveAuth) {
     return (
       <div className="min-h-screen bg-[#FAF7F6] flex flex-col items-center justify-center gap-3">
         <div className="w-12 h-12 rounded-2xl bg-teal-deep text-white flex items-center justify-center shadow-md">
@@ -41,7 +68,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  if (!isAuthenticated || !user) {
+  if (!effectiveAuth || !effectiveUser) {
     // Redirect unauthenticated user to registration or login with redirect param
     const targetUrl = `${location.pathname}${location.search || ""}`;
     return (
@@ -53,15 +80,21 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // If user role is not allowed on this route, redirect to their role-specific home
-  if (
-    allowedRoles &&
-    allowedRoles.length > 0 &&
-    !allowedRoles.includes(user.role)
-  ) {
-    if (user.role === "superadmin" || (user.role as string) === "admin") {
+  const userRole = (effectiveUser.role || "").toLowerCase() as UserRole;
+  const normalizedAllowed = (allowedRoles || []).map(
+    (r) => r.toLowerCase() as UserRole
+  );
+
+  const hasRole =
+    normalizedAllowed.length === 0 ||
+    normalizedAllowed.includes(userRole) ||
+    (userRole === "superadmin" && normalizedAllowed.includes("admin"));
+
+  if (!hasRole) {
+    if (userRole === "superadmin" || userRole === "admin") {
       return <Navigate to="/admin/dashboard" replace />;
     }
-    if (user.role === "doctor") {
+    if (userRole === "doctor") {
       return <Navigate to="/doctor/dashboard" replace />;
     }
     return <Navigate to="/" replace />;

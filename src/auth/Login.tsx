@@ -88,7 +88,6 @@ function Login() {
       const response = await loginMutation.mutateAsync({
         email: emailClean,
         password: passwordClean,
-        role: "patient",
       });
 
       if (response.token && response.data) {
@@ -101,19 +100,19 @@ function Login() {
         duration: 2500,
       });
 
-      const resolvedRole = response.data?.role?.toLowerCase() || "patient";
+      const resolvedRole = (response.data?.role || "").toLowerCase();
+      const target =
+        resolvedRole === "superadmin" || resolvedRole === "admin"
+          ? "/admin/dashboard"
+          : resolvedRole === "doctor"
+          ? "/doctor/dashboard"
+          : redirectPath && !redirectPath.startsWith("/auth")
+          ? redirectPath
+          : "/";
 
       setTimeout(() => {
-        if (resolvedRole === "superadmin" || resolvedRole === "admin") {
-          navigate("/admin/dashboard", { replace: true });
-        } else if (resolvedRole === "doctor") {
-          navigate("/doctor/dashboard", { replace: true });
-        } else if (redirectPath && !redirectPath.startsWith("/auth")) {
-          navigate(redirectPath, { replace: true });
-        } else {
-          navigate("/", { replace: true });
-        }
-      }, 300);
+        navigate(target, { replace: true });
+      }, 50);
     } catch (err: any) {
       const serverError =
         err?.response?.data?.error ||
@@ -303,6 +302,16 @@ function Login() {
                   <span>Sign In</span>
                 )}
               </button>
+
+              <div className="mt-2 pt-3 border-t border-line/60 text-center text-xs text-ink-soft">
+                <span>Doctor or Clinic Staff? </span>
+                <Link
+                  to="/auth/admin/login"
+                  className="text-teal-deep font-semibold hover:underline"
+                >
+                  Sign in to Staff Portal
+                </Link>
+              </div>
             </form>
           </div>
         </div>

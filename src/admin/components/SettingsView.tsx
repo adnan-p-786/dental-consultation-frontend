@@ -363,17 +363,25 @@ type SettingsTab =
 export const SettingsView: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<SettingsTab>("all");
 
-  const [settings, setSettings] = useState<ClinicSettings>(defaultClinicSettings);
-  const [reminders, setReminders] = useState<ReminderConfig>(defaultReminderConfig);
-  const [workingHours, setWorkingHours] = useState<DayWorkingHours[]>(defaultWorkingHours);
+  const [settings, setSettings] = useState<ClinicSettings>(
+    defaultClinicSettings,
+  );
+  const [reminders, setReminders] = useState<ReminderConfig>(
+    defaultReminderConfig,
+  );
+  const [workingHours, setWorkingHours] =
+    useState<DayWorkingHours[]>(defaultWorkingHours);
   const [doctorAvailability, setDoctorAvailability] =
     useState<DoctorAvailabilitySettings>(defaultDoctorAvailability);
-  const [emailTemplates, setEmailTemplates] =
-    useState<EmailTemplateConfig[]>(defaultEmailTemplates);
-  const [appointmentStatuses, setAppointmentStatuses] =
-    useState<AppointmentStatusConfig[]>(defaultAppointmentStatuses);
-  const [consultationTypes, setConsultationTypes] =
-    useState<ConsultationTypeConfig[]>(defaultConsultationTypes);
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplateConfig[]>(
+    defaultEmailTemplates,
+  );
+  const [appointmentStatuses, setAppointmentStatuses] = useState<
+    AppointmentStatusConfig[]
+  >(defaultAppointmentStatuses);
+  const [consultationTypes, setConsultationTypes] = useState<
+    ConsultationTypeConfig[]
+  >(defaultConsultationTypes);
   const [generalSettings, setGeneralSettings] =
     useState<GeneralAppointmentSettings>(defaultGeneralAppointmentSettings);
 
@@ -561,17 +569,27 @@ export const SettingsView: React.FC = () => {
       setIsTreatmentModalOpen(false);
     } catch (err: any) {
       console.error("Failed to save treatment:", err);
-      toast.error(err?.response?.data?.message || err?.message || "Failed to save treatment");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to save treatment",
+      );
     }
   };
 
   const handleToggleTreatment = async (item: Treatment) => {
     try {
       await toggleTreatmentMutation.mutateAsync(item.id);
-      toast.success(`Treatment "${item.name}" marked as ${!item.isActive ? "active" : "inactive"}`);
+      toast.success(
+        `Treatment "${item.name}" marked as ${!item.isActive ? "active" : "inactive"}`,
+      );
     } catch (err: any) {
       console.error("Failed to toggle treatment status:", err);
-      toast.error(err?.response?.data?.message || err?.message || "Failed to update treatment status");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to update treatment status",
+      );
     }
   };
 
@@ -582,7 +600,11 @@ export const SettingsView: React.FC = () => {
       toast.success("Treatment disabled successfully");
     } catch (err: any) {
       console.error("Failed to delete treatment:", err);
-      toast.error(err?.response?.data?.message || err?.message || "Failed to delete treatment");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to delete treatment",
+      );
     }
   };
 
@@ -607,7 +629,11 @@ export const SettingsView: React.FC = () => {
       setTimeout(() => setSaved(false), 3000);
     } catch (err: any) {
       console.error("Failed to save settings to database:", err);
-      toast.error(err?.response?.data?.message || err?.message || "Failed to save settings");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to save settings",
+      );
     }
   };
 
@@ -679,7 +705,9 @@ export const SettingsView: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3 bg-white rounded-2xl border border-line p-12">
         <Loader2 className="w-8 h-8 animate-spin text-teal-deep" />
-        <p className="text-sm font-medium text-ink-soft">Loading clinic settings from database...</p>
+        <p className="text-sm font-medium text-ink-soft">
+          Loading clinic settings from database...
+        </p>
       </div>
     );
   }
@@ -1233,7 +1261,8 @@ export const SettingsView: React.FC = () => {
                     Doctor Availability & Duty Status
                   </CardTitle>
                   <p className="text-xs text-ink-soft mt-0.5">
-                    Configure real-time clinical duty statuses and consultation availability for each doctor.
+                    Configure real-time clinical duty statuses and consultation
+                    availability for each doctor.
                   </p>
                 </div>
 
@@ -1241,19 +1270,31 @@ export const SettingsView: React.FC = () => {
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     <span>
-                      {clinicDoctors.filter((d) => d.status === "available").length} Available
+                      {
+                        clinicDoctors.filter((d) => d.status === "available")
+                          .length
+                      }{" "}
+                      Available
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold">
                     <span className="w-2 h-2 rounded-full bg-amber-500" />
                     <span>
-                      {clinicDoctors.filter((d) => d.status === "busy").length} Busy
+                      {clinicDoctors.filter((d) => d.status === "busy").length}{" "}
+                      Busy
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold">
                     <span className="w-2 h-2 rounded-full bg-slate-400" />
                     <span>
-                      {clinicDoctors.filter((d) => d.status === "on_leave" || (d.status as string) === "offline").length} On Leave
+                      {
+                        clinicDoctors.filter(
+                          (d) =>
+                            d.status === "on_leave" ||
+                            (d.status as string) === "offline",
+                        ).length
+                      }{" "}
+                      On Leave
                     </span>
                   </div>
                 </div>
@@ -1267,7 +1308,8 @@ export const SettingsView: React.FC = () => {
                   </div>
                 ) : clinicDoctors.length === 0 ? (
                   <div className="py-8 text-center text-xs text-ink-soft">
-                    No doctors registered in the system yet. Add doctors from the Doctor Management directory.
+                    No doctors registered in the system yet. Add doctors from
+                    the Doctor Management directory.
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -1283,11 +1325,17 @@ export const SettingsView: React.FC = () => {
                             <Avatar className="w-10 h-10 border border-line-soft shrink-0">
                               <AvatarImage src={doc.avatar} />
                               <AvatarFallback className="bg-teal-50 text-teal-deep font-bold text-xs">
-                                {doc.name.replace("Dr. ", "").slice(0, 2).toUpperCase()}
+                                {doc.name
+                                  .replace("Dr. ", "")
+                                  .slice(0, 2)
+                                  .toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
-                              <h4 className="font-semibold text-xs text-ink truncate" title={doc.name}>
+                              <h4
+                                className="font-semibold text-xs text-ink truncate"
+                                title={doc.name}
+                              >
                                 {doc.name}
                               </h4>
                               <p className="text-[11px] text-mint-deep font-medium truncate mt-0.5">
@@ -1295,7 +1343,9 @@ export const SettingsView: React.FC = () => {
                               </p>
                               <div className="flex items-center gap-1.5 text-[10.5px] text-ink-soft mt-1">
                                 <Clock className="w-3 h-3 text-ink-soft shrink-0" />
-                                <span className="truncate">{doc.workingHours || "Regular Hours"}</span>
+                                <span className="truncate">
+                                  {doc.workingHours || "Regular Hours"}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -1310,7 +1360,10 @@ export const SettingsView: React.FC = () => {
                                 handleUpdateDoctorAvailability(
                                   doc.id,
                                   doc.name,
-                                  e.target.value as "available" | "busy" | "on_leave",
+                                  e.target.value as
+                                    | "available"
+                                    | "busy"
+                                    | "on_leave",
                                 )
                               }
                               className={`text-xs font-semibold py-1.5 px-3 rounded-xl border cursor-pointer shadow-2xs transition-all ${
@@ -1333,7 +1386,6 @@ export const SettingsView: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-
           </div>
         )}
 
@@ -1525,7 +1577,11 @@ export const SettingsView: React.FC = () => {
                     </p>
                   </div>
                   <Badge variant="outline" className="text-[10px]">
-                    {appointmentStatuses.filter((status) => status.isActive).length} active
+                    {
+                      appointmentStatuses.filter((status) => status.isActive)
+                        .length
+                    }{" "}
+                    active
                   </Badge>
                 </div>
 
@@ -1642,7 +1698,8 @@ export const SettingsView: React.FC = () => {
                     </p>
                   </div>
                   <Badge variant="outline" className="text-[10px]">
-                    {consultationTypes.filter((type) => type.isActive).length} active
+                    {consultationTypes.filter((type) => type.isActive).length}{" "}
+                    active
                   </Badge>
                 </div>
 
@@ -1733,7 +1790,7 @@ export const SettingsView: React.FC = () => {
             </CardContent>
           </Card>
         )}
-        
+
         {/* ========================================================================= */}
         {/* 8. REMINDER TIMINGS & NOTIFICATIONS (Already implemented, preserved)      */}
         {/* ========================================================================= */}

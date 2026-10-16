@@ -56,12 +56,19 @@ export const userApi = {
   },
 
   async getPatients(): Promise<PatientRecord[]> {
-    const res = await apiClient.get<{ success: boolean; data: PatientRecord[] }>("/users/patients");
+    const res = await apiClient.get<{
+      success: boolean;
+      data: PatientRecord[];
+    }>("/users/patients");
     return res.data.data;
   },
 
-  async deletePatient(id: number): Promise<{ success: boolean; message: string }> {
-    const res = await apiClient.delete<{ success: boolean; message: string }>(`/users/patients/${id}`);
+  async deletePatient(
+    id: number,
+  ): Promise<{ success: boolean; message: string }> {
+    const res = await apiClient.delete<{ success: boolean; message: string }>(
+      `/users/patients/${id}`,
+    );
     return res.data;
   },
 };

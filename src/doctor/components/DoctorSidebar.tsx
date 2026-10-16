@@ -132,10 +132,10 @@ export const DoctorSidebar: React.FC<DoctorSidebarProps> = ({
         <div>
           <div
             className={cn(
-              "border-b border-line transition-all duration-200",
+              "h-16 flex items-center border-b border-line transition-all duration-200 box-border",
               collapsed && !mobileOpen
-                ? "flex flex-col items-center py-4 px-2 gap-2"
-                : "flex items-center justify-between px-5 py-5",
+                ? "justify-between px-2.5"
+                : "justify-between px-5",
             )}
           >
             <div
@@ -144,8 +144,17 @@ export const DoctorSidebar: React.FC<DoctorSidebarProps> = ({
                 collapsed && !mobileOpen ? "justify-center" : "overflow-hidden",
               )}
             >
-              <div className="w-10 h-10 rounded-xl bg-teal-deep text-white flex items-center justify-center shrink-0 shadow-xs">
-                <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+              <div
+                className={cn(
+                  "rounded-xl bg-teal-deep text-white flex items-center justify-center shrink-0 shadow-xs transition-all",
+                  collapsed && !mobileOpen ? "w-8 h-8" : "w-10 h-10",
+                )}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className={collapsed && !mobileOpen ? "w-5 h-5" : "w-6 h-6"}
+                >
                   <path
                     d="M12 3C8.5 3 6 5.2 6 8.6c0 2.6.7 4.3 1.3 6.6.5 1.9.9 4.4 2 5.5.5.5 1.1.3 1.4-.4.5-1.2.6-3.4 1.3-3.4s.8 2.2 1.3 3.4c.3.7.9.9 1.4.4 1.1-1.1 1.5-3.6 2-5.5.6-2.3 1.3-4 1.3-6.6C18 5.2 15.5 3 12 3z"
                     stroke="currentColor"
@@ -156,10 +165,10 @@ export const DoctorSidebar: React.FC<DoctorSidebarProps> = ({
               </div>
               {(!collapsed || mobileOpen) && (
                 <div className="flex flex-col truncate">
-                  <span className="font-semibold text-base text-ink tracking-tight">
+                  <span className="font-semibold text-base text-ink tracking-tight leading-tight">
                     32Stories
                   </span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 mt-0.5">
                     <Badge className="bg-[#FAF2F0] text-teal-deep border-teal-deep/20 text-[10px] font-bold px-1.5 py-0 leading-tight">
                       Doctor Portal
                     </Badge>
@@ -172,9 +181,9 @@ export const DoctorSidebar: React.FC<DoctorSidebarProps> = ({
             <button
               onClick={onToggleCollapse}
               className={cn(
-                "hidden md:flex rounded-lg text-ink-soft hover:text-teal-deep hover:bg-line-soft transition-colors cursor-pointer",
+                "hidden md:flex rounded-lg text-ink-soft hover:text-teal-deep hover:bg-line-soft transition-colors cursor-pointer shrink-0",
                 collapsed && !mobileOpen
-                  ? "w-8 h-8 items-center justify-center p-0"
+                  ? "w-6 h-6 items-center justify-center p-0"
                   : "p-1.5",
               )}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}

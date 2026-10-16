@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   Calendar,
   Clock,
@@ -21,10 +21,6 @@ import {
   PlayCircle,
   Sparkles,
   Phone,
-  User,
-  ChevronDown,
-  ShieldCheck,
-  Mail,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { appointmentService } from "@/lib/appointmentService";
@@ -32,14 +28,6 @@ import type { Appointment, AppointmentStatus } from "@/admin/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -63,28 +51,24 @@ const SOW_STEPS: { status: AppointmentStatus; label: string; step: number }[] =
   ];
 
 export const PatientPortal: React.FC = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const cancelAppointmentMutation = useCancelAppointmentMutation();
 
   const patientFilters = useMemo(
     () => ({
       email: user?.email,
-      phone: user?.phoneNumber,
-      name: user
-        ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
-        : undefined,
     }),
-    [user?.email, user?.phoneNumber, user?.firstName, user?.lastName],
+    [user?.email],
   );
 
   const {
-    data: backendApts = [],
+    data: backendApts,
     isLoading: loading,
     refetch: refetchAppointments,
-  } = usePatientAppointmentsQuery(patientFilters, Boolean(user));
+  } = usePatientAppointmentsQuery(patientFilters, Boolean(user?.email));
+
+  const [localUpdateTick, setLocalUpdateTick] = useState(0);
 
   const [activeFilter, setActiveFilter] = useState<
     "all" | "active" | "completed" | "cancelled"
@@ -98,80 +82,11 @@ export const PatientPortal: React.FC = () => {
     useState<Appointment | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-
-  const patientInitials = useMemo(() => {
-    if (!user) return "P";
-    const first = user.firstName?.charAt(0) || "";
-    const last = user.lastName?.charAt(0) || "";
-    return (first + last).toUpperCase() || "P";
-  }, [user]);
-
-  const patientFullName = useMemo(() => {
-    if (!user) return "Patient";
-    const name = `${user.firstName || ""} ${user.lastName || ""}`.trim();
-    return name || user.email || "Patient";
-  }, [user]);
-
-  // Sync and merge local cached appointments with live query results
-  useEffect(() => {
-    if (!user) {
-      setAppointments([]);
-      return;
-    }
-
-    const localApts = appointmentService.getPatientAppointments({
-      email: user.email,
-      phone: user.phoneNumber,
-      name: `${user.firstName} ${user.lastName}`,
-    });
-
-    const map = new Map<string, Appointment>();
-    localApts.forEach((apt) => map.set(apt.id, apt));
-
-    backendApts.forEach((apt) => {
-      const local = map.get(apt.id);
-      const cleanMeetingLink =
-        apt.meetingLink && !apt.meetingLink.includes("/cdr-")
-          ? apt.meetingLink
-          : local?.meetingLink && !local.meetingLink.includes("/cdr-")
-            ? local.meetingLink
-            : undefined;
-
-      if (local) {
-        map.set(apt.id, {
-          ...local,
-          ...apt,
-          assignedDoctor: apt.assignedDoctor || local.assignedDoctor,
-          assignedDoctorId: apt.assignedDoctorId || local.assignedDoctorId,
-          confirmedDate: apt.confirmedDate || local.confirmedDate,
-          confirmedTime: apt.confirmedTime || local.confirmedTime,
-          meetingLink: cleanMeetingLink,
-          meetingPlatform: apt.meetingPlatform || local.meetingPlatform,
-          consultationNotes: apt.consultationNotes || local.consultationNotes,
-          documents:
-            apt.documents && apt.documents.length > 0
-              ? apt.documents
-              : local.documents,
-        });
-      } else {
-        map.set(apt.id, {
-          ...apt,
-          meetingLink: cleanMeetingLink,
-        });
-      }
-    });
-
-    const merged = Array.from(map.values()).sort((a, b) => {
-      return Number(b.id) - Number(a.id);
-    });
-
-    setAppointments(merged);
-  }, [user, backendApts]);
 
   useEffect(() => {
     const handleUpdate = () => {
       refetchAppointments();
+      setLocalUpdateTick((prev) => prev + 1);
     };
 
     window.addEventListener("dental_appointments_updated", handleUpdate);
@@ -179,6 +94,66 @@ export const PatientPortal: React.FC = () => {
       window.removeEventListener("dental_appointments_updated", handleUpdate);
     };
   }, [refetchAppointments]);
+
+  // Sync and merge local cached appointments with live query results strictly for logged-in patient
+  const appointments = useMemo(() => {
+    if (!user || !user.email) {
+      return [];
+    }
+
+    const userEmail = user.email.toLowerCase().trim();
+
+    const localApts = appointmentService.getPatientAppointments({
+      email: user.email,
+    });
+
+    const map = new Map<string, Appointment>();
+    localApts.forEach((apt) => map.set(apt.id, apt));
+
+    if (backendApts && Array.isArray(backendApts)) {
+      backendApts.forEach((apt) => {
+        const aptEmail = (apt.patient?.email || "").toLowerCase().trim();
+        if (!aptEmail || aptEmail !== userEmail) {
+          return; // Guard against foreign or unassigned patient appointments
+        }
+
+        const local = map.get(apt.id);
+        const cleanMeetingLink =
+          apt.meetingLink && !apt.meetingLink.includes("/cdr-")
+            ? apt.meetingLink
+            : local?.meetingLink && !local.meetingLink.includes("/cdr-")
+              ? local.meetingLink
+              : undefined;
+
+        if (local) {
+          map.set(apt.id, {
+            ...local,
+            ...apt,
+            assignedDoctor: apt.assignedDoctor || local.assignedDoctor,
+            assignedDoctorId: apt.assignedDoctorId || local.assignedDoctorId,
+            confirmedDate: apt.confirmedDate || local.confirmedDate,
+            confirmedTime: apt.confirmedTime || local.confirmedTime,
+            meetingLink: cleanMeetingLink,
+            meetingPlatform: apt.meetingPlatform || local.meetingPlatform,
+            consultationNotes: apt.consultationNotes || local.consultationNotes,
+            documents:
+              apt.documents && apt.documents.length > 0
+                ? apt.documents
+                : local.documents,
+          });
+        } else {
+          map.set(apt.id, {
+            ...apt,
+            meetingLink: cleanMeetingLink,
+          });
+        }
+      });
+    }
+
+    return Array.from(map.values()).sort((a, b) => {
+      return Number(b.id) - Number(a.id);
+    });
+  }, [user, backendApts, localUpdateTick]);
 
   // Filtering
   const filteredAppointments = useMemo(() => {
@@ -417,128 +392,15 @@ export const PatientPortal: React.FC = () => {
             <span>Home</span>
           </Link> */}
 
-          {/* User Profile & Actions */}
+          {/* Header Actions */}
           <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Patient Profile Dropdown with Logout button inside */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#FAF2F0] hover:bg-[#F3E7E4] border border-line transition-all duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-deep/20 group"
-                  aria-label="Open patient profile menu"
-                >
-                  <Avatar className="w-7 h-7 border border-teal-deep/20 shrink-0">
-                    <AvatarFallback className="bg-teal-deep text-white text-[11px] font-bold">
-                      {patientInitials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="hidden sm:flex flex-col text-left max-w-[130px] md:max-w-[160px]">
-                    <span className="text-xs font-semibold text-teal-deep leading-tight truncate">
-                      {patientFullName}
-                    </span>
-                    <span className="text-[10px] text-ink-soft leading-none truncate">
-                      {user?.email || "Patient Portal"}
-                    </span>
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-ink-soft group-hover:text-teal-deep transition-transform duration-200" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-72 sm:w-80 rounded-xl border border-line bg-white shadow-xl p-1.5 z-50 animate-in fade-in-80"
-              >
-                {/* Profile Header Card */}
-                <div className="p-3 bg-paper rounded-lg border border-line/60 mb-1">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10 border border-teal-deep/20 shrink-0">
-                      <AvatarFallback className="bg-teal-deep text-white text-sm font-bold">
-                        {patientInitials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-ink truncate">
-                          {patientFullName}
-                        </span>
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <Badge className="bg-[#FAF2F0] text-teal-deep border-teal-deep/20 text-[9px] font-semibold px-1.5 py-0 leading-tight">
-                          Patient Portal
-                        </Badge>
-                        {user?.id && (
-                          <span className="text-[10px] text-ink-soft font-mono">
-                            #PT-{user.id}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-2.5 pt-2 border-t border-line/60 space-y-1 text-[11px] text-ink-soft">
-                    {user?.email && (
-                      <div className="flex items-center gap-2 truncate">
-                        <Mail className="w-3 h-3 text-ink-soft shrink-0" />
-                        <span className="truncate">{user.email}</span>
-                      </div>
-                    )}
-                    {user?.phoneNumber && (
-                      <div className="flex items-center gap-2 truncate">
-                        <Phone className="w-3 h-3 text-ink-soft shrink-0" />
-                        <span className="truncate">{user.phoneNumber}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Quick Consultation Metrics */}
-                <div className="grid grid-cols-3 gap-1.5 p-2 bg-slate-50/70 rounded-lg border border-line/40 my-1 text-center">
-                  <div className="p-1">
-                    <div className="text-xs font-bold text-teal-deep">
-                      {stats.active}
-                    </div>
-                    <div className="text-[9px] text-ink-soft uppercase font-medium">
-                      Active
-                    </div>
-                  </div>
-                  <div className="p-1 border-x border-line/40">
-                    <div className="text-xs font-bold text-emerald-600">
-                      {stats.completed}
-                    </div>
-                    <div className="text-[9px] text-ink-soft uppercase font-medium">
-                      Done
-                    </div>
-                  </div>
-                  <div className="p-1">
-                    <div className="text-xs font-bold text-ink">
-                      {stats.total}
-                    </div>
-                    <div className="text-[9px] text-ink-soft uppercase font-medium">
-                      Total
-                    </div>
-                  </div>
-                </div>
-
-                <DropdownMenuSeparator />
-
-                {/* Menu Actions */}
-                <DropdownMenuItem
-                  onClick={() => setIsProfileModalOpen(true)}
-                  className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-ink hover:text-[#5E3E3B] hover:bg-[#FAF2F0] rounded-lg cursor-pointer"
-                >
-                  <User className="w-4 h-4 text-[#5E3E3B]" />
-                  <span>My Profile</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={() => navigate("/appointment")}
-                  className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-ink hover:text-[#5E3E3B] hover:bg-[#FAF2F0] rounded-lg cursor-pointer"
-                >
-                  <Calendar className="w-4 h-4 text-mint-deep" />
-                  <span>Book New Appointment</span>
-                </DropdownMenuItem>               
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Link
+              to="/appointment"
+              className="flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] text-white text-xs sm:text-sm font-semibold transition-all shadow-xs"
+            >
+              <Calendar className="w-4 h-4 text-mint" />
+              <span>Book Consultation</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -1327,141 +1189,6 @@ export const PatientPortal: React.FC = () => {
             >
               {isCancelling ? "Cancelling..." : "Confirm Cancellation"}
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-      {/* MODAL 3: PATIENT PROFILE MODAL */}
-      <Dialog open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen}>
-        <DialogContent className="max-w-md w-[95vw] sm:w-full p-6 bg-white rounded-3xl">
-          <DialogHeader>
-            <div className="flex items-center justify-between pb-2 border-b border-line">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-teal-deep/10 text-teal-deep flex items-center justify-center">
-                  <User className="w-4 h-4" />
-                </div>
-                <div>
-                  <DialogTitle className="font-display text-base font-semibold text-ink">
-                    My Profile
-                  </DialogTitle>
-                </div>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="space-y-4 pt-3">
-            {/* Identity Card */}
-            <div className="p-4 rounded-2xl bg-[#FAF2F0] border border-line flex items-center gap-3.5">
-              <Avatar className="w-12 h-12 border-2 border-teal-deep/30 shrink-0">
-                <AvatarFallback className="bg-teal-deep text-white text-base font-bold">
-                  {patientInitials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-bold text-ink truncate">
-                  {patientFullName}
-                </div>
-                <div className="text-xs text-ink-soft truncate mt-0.5">
-                  {user?.email || "No email registered"}
-                </div>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded-md border border-line text-ink-soft">
-                    ID: PT-{user?.id ?? "001"}
-                  </span>
-                  <span className="text-[10px] text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-md font-medium">
-                    Active Account
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Information Grid */}
-            <div className="space-y-2.5">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-ink-soft px-0.5">
-                Contact & Account Information
-              </div>
-
-              <div className="grid grid-cols-1 gap-2 text-xs">
-                <div className="p-3 rounded-xl bg-paper border border-line flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-ink-soft">
-                    <Mail className="w-3.5 h-3.5 text-teal-deep" />
-                    <span>Email Address</span>
-                  </div>
-                  <span className="font-semibold text-ink truncate max-w-[200px]">
-                    {user?.email || "Not specified"}
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-paper border border-line flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-ink-soft">
-                    <Phone className="w-3.5 h-3.5 text-teal-deep" />
-                    <span>Phone Number</span>
-                  </div>
-                  <span className="font-semibold text-ink">
-                    {user?.phoneNumber || "Not provided"}
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-paper border border-line flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-ink-soft">
-                    <Calendar className="w-3.5 h-3.5 text-teal-deep" />
-                    <span>Member Since</span>
-                  </div>
-                  <span className="font-semibold text-ink">
-                    {user?.createdAt
-                      ? new Date(user.createdAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
-                      : "Registered"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Activity Summary */}
-            <div className="space-y-2.5">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-ink-soft px-0.5">
-                Consultation Summary
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="p-3 rounded-xl bg-teal-50/50 border border-teal-200/50 text-center">
-                  <div className="text-lg font-bold text-teal-deep">{stats.total}</div>
-                  <div className="text-[10px] text-teal-900/70 font-medium">Total Booked</div>
-                </div>
-                <div className="p-3 rounded-xl bg-amber-50/50 border border-amber-200/50 text-center">
-                  <div className="text-lg font-bold text-amber-700">{stats.active}</div>
-                  <div className="text-[10px] text-amber-900/70 font-medium">In Progress</div>
-                </div>
-                <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200/50 text-center">
-                  <div className="text-lg font-bold text-emerald-700">{stats.completed}</div>
-                  <div className="text-[10px] text-emerald-900/70 font-medium">Completed</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Actions */}
-            <div className="flex items-center justify-between pt-3 border-t border-line">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsProfileModalOpen(false)}
-                className="text-xs"
-              >
-                Close
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setIsProfileModalOpen(false);
-                  navigate("/appointment");
-                }}
-                className="bg-[#5E3E3B] hover:bg-[#262525] text-white text-xs font-semibold gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Book Consultation
-              </Button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>

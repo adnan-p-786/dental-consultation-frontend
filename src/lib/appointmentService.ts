@@ -349,41 +349,14 @@ export const appointmentService = {
     name?: string;
   }): Appointment[] {
     const all = this.getAppointments();
-    if (!patient) return [];
+    if (!patient || !patient.email) return [];
 
     const patientEmail = (patient.email || "").toLowerCase().trim();
-    const patientPhone = (patient.phone || "").replace(/\D/g, "");
-    const patientName = (patient.name || "").toLowerCase().trim();
+    if (!patientEmail) return [];
 
     return all.filter((apt) => {
-      // Email match
-      if (
-        apt.patient?.email &&
-        patientEmail &&
-        apt.patient.email.toLowerCase().trim() === patientEmail
-      ) {
-        return true;
-      }
-      // Phone match
-      if (apt.patient?.phone && patientPhone) {
-        const aptPhone = apt.patient.phone.replace(/\D/g, "");
-        if (
-          aptPhone &&
-          (aptPhone === patientPhone ||
-            aptPhone.endsWith(patientPhone) ||
-            patientPhone.endsWith(aptPhone))
-        ) {
-          return true;
-        }
-      }
-      // Name match
-      if (apt.patient?.name && patientName) {
-        const aptName = apt.patient.name.toLowerCase().trim();
-        if (aptName === patientName) {
-          return true;
-        }
-      }
-      return false;
+      const aptEmail = (apt.patient?.email || "").toLowerCase().trim();
+      return aptEmail === patientEmail;
     });
   },
 

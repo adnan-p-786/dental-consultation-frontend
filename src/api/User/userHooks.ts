@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { userApi, type LoginPayload, type RegisterPayload, type PatientRecord } from "./userApi";
+import {
+  userApi,
+  type LoginPayload,
+  type RegisterPayload,
+  type PatientRecord,
+} from "./userApi";
 import { queryKeys } from "../queryKeys";
 
 export const useLoginMutation = () => {
@@ -31,4 +36,3 @@ export const useDeletePatientMutation = () => {
     },
   });
 };
-

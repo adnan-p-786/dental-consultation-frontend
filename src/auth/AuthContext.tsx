@@ -40,9 +40,35 @@ const USER_KEY = "dental_auth_user";
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      return (
+        sessionStorage.getItem(TOKEN_KEY) ||
+        localStorage.getItem(TOKEN_KEY) ||
+        null
+      );
+    } catch {
+      return null;
+    }
+  });
+
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    try {
+      const savedUserStr =
+        sessionStorage.getItem(USER_KEY) || localStorage.getItem(USER_KEY);
+      if (savedUserStr) {
+        const parsedUser: AuthUser = JSON.parse(savedUserStr);
+        parsedUser.role = (parsedUser.role?.toLowerCase() ||
+          "patient") as UserRole;
+        return parsedUser;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  });
+
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState<boolean>(false);
   const [signOutCallback, setSignOutCallback] = useState<(() => void) | null>(
     null
@@ -50,16 +76,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     try {
-      // Clear legacy localStorage auth keys so past persisted sessions don't linger across project runs
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
-
-      const savedToken = sessionStorage.getItem(TOKEN_KEY);
-      const savedUserStr = sessionStorage.getItem(USER_KEY);
+      const savedToken =
+        sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
+      const savedUserStr =
+        sessionStorage.getItem(USER_KEY) || localStorage.getItem(USER_KEY);
 
       if (savedToken && savedUserStr) {
         const parsedUser: AuthUser = JSON.parse(savedUserStr);
-        // Normalize role to lowercase
         parsedUser.role = (parsedUser.role?.toLowerCase() ||
           "patient") as UserRole;
         setToken(savedToken);
@@ -67,8 +90,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (err) {
       console.error("Failed to restore auth session:", err);
-      sessionStorage.removeItem(TOKEN_KEY);
-      sessionStorage.removeItem(USER_KEY);
     } finally {
       setIsLoading(false);
     }
@@ -79,12 +100,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       ...newUser,
       role: (newUser.role?.toLowerCase() || "patient") as UserRole,
     };
-    // Clean any legacy localStorage keys
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
 
     sessionStorage.setItem(TOKEN_KEY, newToken);
     sessionStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
+    localStorage.setItem(TOKEN_KEY, newToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
+
     setToken(newToken);
     setUser(normalizedUser);
   };

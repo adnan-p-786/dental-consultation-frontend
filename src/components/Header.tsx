@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import {
@@ -13,10 +13,11 @@ import {
   X,
   ChevronDown,
   Mail,
+  User,
+  Plus,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,9 +25,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import type { Appointment } from "@/admin/types";
+import { usePatientAppointmentsQuery } from "@/api/Appointment/appointmentHooks";
+import { appointmentService } from "@/lib/appointmentService";
 
 function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const location = useLocation();
   const pathname = location.pathname;
   const {
@@ -73,6 +85,70 @@ function Header() {
       (cleanHref !== "/" && pathname?.startsWith(cleanHref))
     );
   };
+
+  const patientFilters = useMemo(
+    () => ({
+      email: user?.email,
+      phone: user?.phoneNumber,
+      name: user
+        ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+        : undefined,
+    }),
+    [user?.email, user?.phoneNumber, user?.firstName, user?.lastName],
+  );
+
+  const isPatientQueryEnabled = Boolean(isPatient && user?.email);
+  const { data: backendApts, refetch: refetchAppointments } =
+    usePatientAppointmentsQuery(patientFilters, isPatientQueryEnabled);
+
+  const [localUpdateTick, setLocalUpdateTick] = useState(0);
+
+  useEffect(() => {
+    if (!isPatient) return;
+    const handleUpdate = () => {
+      refetchAppointments();
+      setLocalUpdateTick((prev) => prev + 1);
+    };
+    window.addEventListener("dental_appointments_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("dental_appointments_updated", handleUpdate);
+    };
+  }, [isPatient, refetchAppointments]);
+
+  const appointments = useMemo(() => {
+    if (!user || !isPatient) {
+      return [];
+    }
+
+    const localApts = appointmentService.getPatientAppointments({
+      email: user.email,
+      phone: user.phoneNumber,
+      name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+    });
+
+    const map = new Map<string, Appointment>();
+    localApts.forEach((apt) => map.set(String(apt.id), apt));
+    if (backendApts && Array.isArray(backendApts)) {
+      backendApts.forEach((apt) => map.set(String(apt.id), apt));
+    }
+
+    return Array.from(map.values());
+  }, [user, isPatient, backendApts, localUpdateTick]);
+
+  const stats = useMemo(() => {
+    const total = appointments.length;
+    const active = appointments.filter(
+      (a) => !["completed", "cancelled", "no_show"].includes(a.status),
+    ).length;
+    const completed = appointments.filter(
+      (a) => a.status === "completed",
+    ).length;
+    const online = appointments.filter(
+      (a) => a.consultationType === "video" || Boolean(a.meetingLink),
+    ).length;
+    return { total, active, completed, online };
+  }, [appointments]);
+    
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* Top micro announcement & utility bar */}
@@ -182,8 +258,6 @@ function Header() {
                 )}
                 {isPatient && (
                   <>
-                    
-
                     {/* Patient Own Profile Dropdown with Logout button inside */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -227,16 +301,6 @@ function Header() {
                                 </span>
                                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                               </div>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <Badge className="bg-[#FAF2F0] text-teal-deep border-teal-deep/20 text-[9px] font-semibold px-1.5 py-0 leading-tight">
-                                  Patient
-                                </Badge>
-                                {user?.id && (
-                                  <span className="text-[10px] text-ink-soft font-mono">
-                                    #PT-{user.id}
-                                  </span>
-                                )}
-                              </div>
                             </div>
                           </div>
 
@@ -250,13 +314,50 @@ function Header() {
                             {user?.phoneNumber && (
                               <div className="flex items-center gap-2 truncate">
                                 <Phone className="w-3 h-3 text-ink-soft shrink-0" />
-                                <span className="truncate">{user.phoneNumber}</span>
+                                <span className="truncate">
+                                  {user.phoneNumber}
+                                </span>
                               </div>
                             )}
                           </div>
                         </div>
 
+                        <div className="grid grid-cols-3 gap-1.5 p-2 bg-slate-50/70 rounded-lg border border-line/40 my-1 text-center">
+                          <div className="p-1">
+                            <div className="text-xs font-bold text-teal-deep">
+                              {stats.active}
+                            </div>
+                            <div className="text-[9px] text-ink-soft uppercase font-medium">
+                              Active
+                            </div>
+                          </div>
+                          <div className="p-1 border-x border-line/40">
+                            <div className="text-xs font-bold text-emerald-600">
+                              {stats.completed}
+                            </div>
+                            <div className="text-[9px] text-ink-soft uppercase font-medium">
+                              Done
+                            </div>
+                          </div>
+                          <div className="p-1">
+                            <div className="text-xs font-bold text-ink">
+                              {stats.total}
+                            </div>
+                            <div className="text-[9px] text-ink-soft uppercase font-medium">
+                              Total
+                            </div>
+                          </div>
+                        </div>
+
                         {/* Navigation items */}
+                        <DropdownMenuItem
+                          onClick={() => setIsProfileModalOpen(true)}
+                          className="flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-ink hover:text-[#5E3E3B] hover:bg-[#FAF2F0] rounded-lg cursor-pointer"
+                        >
+                          <User className="w-4 h-4 text-[#5E3E3B]" />
+                          <span>My Profile</span>
+                        </DropdownMenuItem>
+
                         <DropdownMenuItem asChild>
                           <Link
                             to="/patient/portal"
@@ -315,15 +416,7 @@ function Header() {
           {/* Mobile menu trigger */}
           <div className="flex md:hidden items-center gap-2">
             {isAuthenticated ? (
-              isPatient ? (
-                <Link
-                  to="/patient/portal"
-                  className="flex items-center gap-1.5 text-xs font-semibold bg-[#5E3E3B] hover:bg-[#262525] text-white px-2.5 py-1.5 rounded-lg transition-colors"
-                >
-                  <Calendar className="w-3.5 h-3.5 text-mint" />
-                  <span>Appointments</span>
-                </Link>
-              ) : (
+              isPatient ? null : (
                 <button
                   onClick={() => openSignOutModal()}
                   className="p-1.5 rounded-lg text-ink-soft hover:text-red-600 cursor-pointer"
@@ -442,6 +535,18 @@ function Header() {
                       </div>
                     </div>
 
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        setIsProfileModalOpen(true);
+                      }}
+                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-line bg-white hover:bg-[#FAF2F0] text-ink text-[14px] font-semibold shadow-xs cursor-pointer w-full transition-colors"
+                    >
+                      <User className="w-4 h-4 text-[#5E3E3B]" />
+                      <span>My Profile</span>
+                    </button>
+
                     <Link
                       to="/patient/portal"
                       onClick={() => setMobileMenuOpen(false)}
@@ -498,6 +603,131 @@ function Header() {
           </div>
         </div>
       )}
+
+      {/* Patient Profile Modal */}
+      <Dialog open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen}>
+        <DialogContent className="max-w-md w-[95vw] sm:w-full p-6 bg-white rounded-3xl">
+          <DialogHeader>
+            <div className="flex items-center justify-between pb-2 border-b border-line">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-teal-deep/10 text-teal-deep flex items-center justify-center">
+                  <User className="w-4 h-4" />
+                </div>
+                <div>
+                  <DialogTitle className="font-display text-base font-semibold text-ink">
+                    My Profile
+                  </DialogTitle>
+                </div>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-3">
+            {/* Identity Card */}
+            <div className="p-4 rounded-2xl bg-[#FAF2F0] border border-line flex items-center gap-3.5">
+              <Avatar className="w-12 h-12 border-2 border-teal-deep/30 shrink-0">
+                <AvatarFallback className="bg-teal-deep text-white text-base font-bold">
+                  {patientInitials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-ink truncate">
+                  {patientFullName}
+                </div>
+                <div className="text-xs text-ink-soft truncate mt-0.5">
+                  {user?.email || "No email registered"}
+                </div>
+              </div>
+            </div>
+
+            {/* Information Grid */}
+            <div className="space-y-2.5">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-ink-soft px-0.5">
+                Contact & Account Information
+              </div>
+
+              <div className="grid grid-cols-1 gap-2 text-xs">
+                <div className="p-3 rounded-xl bg-paper border border-line flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-ink-soft">
+                    <Mail className="w-3.5 h-3.5 text-teal-deep" />
+                    <span>Email Address</span>
+                  </div>
+                  <span className="font-semibold text-ink truncate max-w-[200px]">
+                    {user?.email || "Not specified"}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-paper border border-line flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-ink-soft">
+                    <Phone className="w-3.5 h-3.5 text-teal-deep" />
+                    <span>Phone Number</span>
+                  </div>
+                  <span className="font-semibold text-ink">
+                    {user?.phoneNumber || "Not provided"}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-paper border border-line flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-ink-soft">
+                    <Calendar className="w-3.5 h-3.5 text-teal-deep" />
+                    <span>Member Since</span>
+                  </div>
+                  <span className="font-semibold text-ink">
+                    {user?.createdAt
+                      ? new Date(user.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : "Registered"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Activity Summary */}
+            <div className="space-y-2.5">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-ink-soft px-0.5">
+                Consultation Summary
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="p-3 rounded-xl bg-teal-50/50 border border-teal-200/50 text-center">
+                  <div className="text-lg font-bold text-teal-deep">{stats.total}</div>
+                  <div className="text-[10px] text-teal-900/70 font-medium">Total Booked</div>
+                </div>
+                <div className="p-3 rounded-xl bg-amber-50/50 border border-amber-200/50 text-center">
+                  <div className="text-lg font-bold text-amber-700">{stats.active}</div>
+                  <div className="text-[10px] text-amber-900/70 font-medium">In Progress</div>
+                </div>
+                <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200/50 text-center">
+                  <div className="text-lg font-bold text-emerald-700">{stats.completed}</div>
+                  <div className="text-[10px] text-emerald-900/70 font-medium">Completed</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex items-center justify-between pt-3 border-t border-line">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsProfileModalOpen(false)}
+                className="text-xs"
+              >
+                Close
+              </Button>
+              <Link
+                to="/appointment"
+                onClick={() => setIsProfileModalOpen(false)}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#5E3E3B] hover:bg-[#262525] text-white text-xs font-semibold shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Book Consultation
+              </Link>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
