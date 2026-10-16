@@ -999,90 +999,90 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
               !["cancelled", "completed", "rejected"].includes(
                 (appointment.status || "").toLowerCase(),
               ) && (
-              <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3.5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-deep flex items-center justify-center">
-                      <Video className="w-4 h-4 text-teal-deep" />
+                <div className="p-4 rounded-xl border border-line bg-white shadow-xs space-y-3.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-deep flex items-center justify-center">
+                        <Video className="w-4 h-4 text-teal-deep" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-ink">
+                          Video Consultation Meeting Link
+                        </h4>
+                        <p className="text-[11px] text-ink-soft">
+                          Assign or generate a video room URL for this
+                          consultation.
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-ink">
-                        Video Consultation Meeting Link
-                      </h4>
-                      <p className="text-[11px] text-ink-soft">
-                        Assign or generate a video room URL for this
-                        consultation.
-                      </p>
-                    </div>
-                  </div>
 
-                  {manualMeetingLink.trim() &&
-                  !manualMeetingLink.includes("/cdr-") ? (
-                    <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-300 text-[11px] font-semibold gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      Active Link Assigned
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className="text-amber-800 bg-amber-50 border-amber-300 text-[11px]"
-                    >
-                      No Link Assigned
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Platform Selector Buttons */}
-                <div className="flex flex-wrap items-center gap-2">
-                  {(["google_meet", "zoom", "teams"] as const).map(
-                    (platform) => (
-                      <button
-                        key={platform}
-                        type="button"
-                        onClick={() => setActiveMeetingPlatform(platform)}
-                        className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
-                          activeMeetingPlatform === platform
-                            ? "border-teal-deep bg-teal-deep text-white shadow-xs"
-                            : "border-line bg-white text-ink-soft hover:border-mint-deep hover:text-ink"
-                        }`}
+                    {manualMeetingLink.trim() &&
+                    !manualMeetingLink.includes("/cdr-") ? (
+                      <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-300 text-[11px] font-semibold gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Active Link Assigned
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-amber-800 bg-amber-50 border-amber-300 text-[11px]"
                       >
-                        {getPlatformLabel(platform)}
-                      </button>
-                    ),
-                  )}
-                </div>
-
-                {/* Link Input & Quick Generation */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-ink flex items-center gap-1.5">
-                      <LinkIcon className="w-3.5 h-3.5 text-teal-deep" />
-                      Meeting Link URL
-                    </label>
+                        No Link Assigned
+                      </Badge>
+                    )}
                   </div>
 
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        type="url"
-                        value={manualMeetingLink}
-                        onChange={(e) => setManualMeetingLink(e.target.value)}
-                        placeholder="e.g. https://meet.google.com/abc-defg-hij or https://zoom.us/j/..."
-                        className="text-xs pr-8"
-                      />
-                      {manualMeetingLink && (
+                  {/* Platform Selector Buttons */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {(["google_meet", "zoom", "teams"] as const).map(
+                      (platform) => (
                         <button
+                          key={platform}
                           type="button"
-                          onClick={() => setManualMeetingLink("")}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink text-xs cursor-pointer p-0.5"
-                          title="Clear input"
+                          onClick={() => setActiveMeetingPlatform(platform)}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                            activeMeetingPlatform === platform
+                              ? "border-teal-deep bg-teal-deep text-white shadow-xs"
+                              : "border-line bg-white text-ink-soft hover:border-mint-deep hover:text-ink"
+                          }`}
                         >
-                          ✕
+                          {getPlatformLabel(platform)}
                         </button>
-                      )}
+                      ),
+                    )}
+                  </div>
+
+                  {/* Link Input & Quick Generation */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-ink flex items-center gap-1.5">
+                        <LinkIcon className="w-3.5 h-3.5 text-teal-deep" />
+                        Meeting Link URL
+                      </label>
                     </div>
 
-                    {/* <Button
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          type="url"
+                          value={manualMeetingLink}
+                          onChange={(e) => setManualMeetingLink(e.target.value)}
+                          placeholder="e.g. https://meet.google.com/abc-defg-hij or https://zoom.us/j/..."
+                          className="text-xs pr-8"
+                        />
+                        {manualMeetingLink && (
+                          <button
+                            type="button"
+                            onClick={() => setManualMeetingLink("")}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink text-xs cursor-pointer p-0.5"
+                            title="Clear input"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
+                      {/* <Button
                       type="button"
                       size="sm"
                       onClick={() => handleSaveMeetingLink()}
@@ -1091,10 +1091,10 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                       <Check className="w-3.5 h-3.5" />
                       Save Link
                     </Button> */}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Schedule */}
 

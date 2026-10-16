@@ -937,12 +937,13 @@ export const PatientPortal: React.FC = () => {
                       Consultation Meeting Access
                     </span>
                     <Badge className="bg-[#5E3E3B] text-white text-[10px] capitalize">
-                      {selectedAppointment.meetingPlatform?.replace("_", " ") || "Google Meet"}
+                      {selectedAppointment.meetingPlatform?.replace("_", " ") ||
+                        "Google Meet"}
                     </Badge>
                   </div>
                   <p className="text-xs text-ink leading-relaxed">
-                    Your dentist has confirmed this consultation slot. Click below to join
-                    the secure video consultation room.
+                    Your dentist has confirmed this consultation slot. Click
+                    below to join the secure video consultation room.
                   </p>
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <a
@@ -978,7 +979,9 @@ export const PatientPortal: React.FC = () => {
                     <span>Meeting Access Pending Clinic Review</span>
                   </div>
                   <p className="text-xs text-amber-800/90 leading-relaxed">
-                    Your appointment request is currently under review by our clinical team. Once confirmed and approved, your assigned dentist and secure video room access link will appear here.
+                    Your appointment request is currently under review by our
+                    clinical team. Once confirmed and approved, your assigned
+                    dentist and secure video room access link will appear here.
                   </p>
                 </div>
               ) : selectedAppointment.status === "approved" &&
@@ -986,10 +989,14 @@ export const PatientPortal: React.FC = () => {
                 <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-1.5">
                   <div className="flex items-center gap-2 text-emerald-900 font-semibold text-xs">
                     <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-                    <span>Appointment Approved &bull; Video Room Being Prepared</span>
+                    <span>
+                      Appointment Approved &bull; Video Room Being Prepared
+                    </span>
                   </div>
                   <p className="text-xs text-emerald-800/90 leading-relaxed">
-                    Your consultation has been confirmed. The clinic administration will attach your video consultation meeting link shortly before your scheduled appointment time.
+                    Your consultation has been confirmed. The clinic
+                    administration will attach your video consultation meeting
+                    link shortly before your scheduled appointment time.
                   </p>
                 </div>
               ) : null}

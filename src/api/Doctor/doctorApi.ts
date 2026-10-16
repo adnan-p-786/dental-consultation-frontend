@@ -27,7 +27,9 @@ export const doctorApi = {
 
     // 1. Fetch from doctor table
     try {
-      const docRes = await apiClient.get<{ success: boolean; data: any[] }>("/doctor/get-doctors");
+      const docRes = await apiClient.get<{ success: boolean; data: any[] }>(
+        "/doctor/get-doctors",
+      );
       if (docRes.data?.success && Array.isArray(docRes.data.data)) {
         const tableDoctors: Doctor[] = docRes.data.data.map((d: any) => ({
           id: String(d.id),
@@ -37,7 +39,8 @@ export const doctorApi = {
           email: d.doctorEmail || d.email || "",
           phone: d.phoneNumber || d.phone || "",
           workingHours: d.workingHours || "09:00 AM - 05:00 PM",
-          status: (d.status as "available" | "busy" | "on_leave") || "available",
+          status:
+            (d.status as "available" | "busy" | "on_leave") || "available",
           activeAppointments: 0,
           rating: d.rating ? Number(d.rating) : 4.9,
         }));
@@ -49,12 +52,15 @@ export const doctorApi = {
 
     // 2. Fetch from users table (role=doctor)
     try {
-      const userRes = await apiClient.get<{ success: boolean; data: any[] }>("/users/doctors");
+      const userRes = await apiClient.get<{ success: boolean; data: any[] }>(
+        "/users/doctors",
+      );
       if (userRes.data?.success && Array.isArray(userRes.data.data)) {
         const apiDoctors: Doctor[] = userRes.data.data.map((u: any) => {
-          const fullName = `Dr. ${u.firstName ? u.firstName.charAt(0).toUpperCase() + u.firstName.slice(1) : ""} ${
-            u.lastName ? u.lastName.toUpperCase() : ""
-          }`.trim();
+          const fullName =
+            `Dr. ${u.firstName ? u.firstName.charAt(0).toUpperCase() + u.firstName.slice(1) : ""} ${
+              u.lastName ? u.lastName.toUpperCase() : ""
+            }`.trim();
           return {
             id: `user-${u.id}`,
             name: fullName || "Dr. Staff",
@@ -72,7 +78,12 @@ export const doctorApi = {
 
         // Deduplicate against doctors with the same email
         for (const doc of apiDoctors) {
-          if (!fetchedDoctors.some((existing) => existing.email.toLowerCase() === doc.email.toLowerCase())) {
+          if (
+            !fetchedDoctors.some(
+              (existing) =>
+                existing.email.toLowerCase() === doc.email.toLowerCase(),
+            )
+          ) {
             fetchedDoctors.push(doc);
           }
         }
@@ -90,22 +101,34 @@ export const doctorApi = {
   },
 
   async addDoctor(data: FormData | Partial<DoctorDbRecord>): Promise<any> {
-    const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
+    const isFormData =
+      typeof FormData !== "undefined" && data instanceof FormData;
     const res = await apiClient.post("/doctor/add-doctor", data, {
-      headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+      headers: isFormData
+        ? { "Content-Type": "multipart/form-data" }
+        : undefined,
     });
     return res.data;
   },
 
-  async updateDoctor(id: string | number, data: FormData | Partial<DoctorDbRecord>): Promise<any> {
-    const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
+  async updateDoctor(
+    id: string | number,
+    data: FormData | Partial<DoctorDbRecord>,
+  ): Promise<any> {
+    const isFormData =
+      typeof FormData !== "undefined" && data instanceof FormData;
     const res = await apiClient.put(`/doctor/update-doctor/${id}`, data, {
-      headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+      headers: isFormData
+        ? { "Content-Type": "multipart/form-data" }
+        : undefined,
     });
     return res.data;
   },
 
-  async updateStatus(id: string | number, status: "available" | "busy" | "on_leave"): Promise<any> {
+  async updateStatus(
+    id: string | number,
+    status: "available" | "busy" | "on_leave",
+  ): Promise<any> {
     const res = await apiClient.patch(`/doctor/${id}/status`, { status });
     return res.data;
   },

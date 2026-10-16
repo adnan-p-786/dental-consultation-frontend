@@ -39,8 +39,12 @@ import {
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 
-
-type ScheduleFilter = "today" | "upcoming" | "in_progress" | "completed" | "all";
+type ScheduleFilter =
+  | "today"
+  | "upcoming"
+  | "in_progress"
+  | "completed"
+  | "all";
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
@@ -74,8 +78,9 @@ export default function DoctorDashboard() {
   // Treatment Update Modal state
   const [treatmentModalApt, setTreatmentModalApt] =
     useState<Appointment | null>(null);
-  const [updatedTreatmentType, setUpdatedTreatmentType] =
-    useState<string>("General Dental Consultation");
+  const [updatedTreatmentType, setUpdatedTreatmentType] = useState<string>(
+    "General Dental Consultation",
+  );
   const [updatedTreatmentStatus, setUpdatedTreatmentStatus] =
     useState<AppointmentStatus>("approved");
   const [treatmentProgressNote, setTreatmentProgressNote] =
@@ -143,14 +148,15 @@ export default function DoctorDashboard() {
     const myId = user?.id ? String(user.id).trim() : "";
     const aptDocId = String(
       apt.assignedDoctorId ||
-      apt.assignedDoctor?.id ||
-      (apt as any).consultation?.doctorId ||
-      "",
+        apt.assignedDoctor?.id ||
+        (apt as any).consultation?.doctorId ||
+        "",
     ).trim();
 
     if (myId && aptDocId) {
       if (aptDocId === myId) return true;
-      if (aptDocId.replace("user-", "") === myId.replace("user-", "")) return true;
+      if (aptDocId.replace("user-", "") === myId.replace("user-", ""))
+        return true;
     }
 
     // 2. Email check
@@ -159,7 +165,9 @@ export default function DoctorDashboard() {
       apt.assignedDoctor?.email ||
       (apt as any).assignedDoctorEmail ||
       ""
-    ).toLowerCase().trim();
+    )
+      .toLowerCase()
+      .trim();
     if (myEmail && aptDocEmail && myEmail === aptDocEmail) {
       return true;
     }
@@ -183,9 +191,15 @@ export default function DoctorDashboard() {
 
     if (currentDocClean && aptDocNameClean) {
       if (currentDocClean === aptDocNameClean) return true;
-      if (currentDocClean.length >= 3 && aptDocNameClean.includes(currentDocClean))
+      if (
+        currentDocClean.length >= 3 &&
+        aptDocNameClean.includes(currentDocClean)
+      )
         return true;
-      if (aptDocNameClean.length >= 3 && currentDocClean.includes(aptDocNameClean))
+      if (
+        aptDocNameClean.length >= 3 &&
+        currentDocClean.includes(aptDocNameClean)
+      )
         return true;
     }
 
@@ -242,7 +256,10 @@ export default function DoctorDashboard() {
 
   // Unique Patient Directory list - ONLY this doctor's patients
   const patientDirectory = useMemo(() => {
-    const map = new Map<string, { patient: any; appointments: Appointment[] }>();
+    const map = new Map<
+      string,
+      { patient: any; appointments: Appointment[] }
+    >();
 
     doctorAppointments.forEach((apt) => {
       const email =
@@ -281,7 +298,9 @@ export default function DoctorDashboard() {
     const todayStr = new Date().toISOString().split("T")[0];
     return doctorAppointments.filter((a) => {
       const d = a.confirmedDate || a.requestedDate;
-      return d === todayStr && a.status !== "completed" && a.status !== "cancelled";
+      return (
+        d === todayStr && a.status !== "completed" && a.status !== "cancelled"
+      );
     });
   }, [doctorAppointments]);
 
@@ -646,9 +665,10 @@ export default function DoctorDashboard() {
                     Welcome back, {doctorName}
                   </h2>
                   <p className="text-xs text-ink-soft mt-1 max-w-xl">
-                    You have <strong>{todayCount} consultations</strong> scheduled
-                    for today. Manage assigned appointments, join video calls,
-                    record clinical findings, and update treatment plans.
+                    You have <strong>{todayCount} consultations</strong>{" "}
+                    scheduled for today. Manage assigned appointments, join
+                    video calls, record clinical findings, and update treatment
+                    plans.
                   </p>
                 </div>
 
@@ -735,7 +755,8 @@ export default function DoctorDashboard() {
                       Today's Consultation Schedule
                     </h3>
                     <p className="text-xs text-ink-soft">
-                      Appointments queued for direct examination or video consultation.
+                      Appointments queued for direct examination or video
+                      consultation.
                     </p>
                   </div>
                   <button
@@ -778,7 +799,8 @@ export default function DoctorDashboard() {
                             </div>
                             <p className="text-xs text-teal-deep font-medium">
                               {apt.treatment} •{" "}
-                              {apt.meetingLink || apt.consultationType === "video"
+                              {apt.meetingLink ||
+                              apt.consultationType === "video"
                                 ? "Video Call"
                                 : "In Clinic"}
                             </p>
@@ -830,7 +852,8 @@ export default function DoctorDashboard() {
                     </h2>
                   </div>
                   <p className="text-xs text-ink-soft">
-                    Clinical appointments, schedule slots, and video rooms assigned specifically to you.
+                    Clinical appointments, schedule slots, and video rooms
+                    assigned specifically to you.
                   </p>
                 </div>
 
@@ -913,7 +936,8 @@ export default function DoctorDashboard() {
                     No assigned appointments found
                   </h3>
                   <p className="text-xs text-ink-soft max-w-sm mx-auto mt-1 leading-relaxed">
-                    You have no consultations assigned under this filter. Check other filters or search query.
+                    You have no consultations assigned under this filter. Check
+                    other filters or search query.
                   </p>
                 </div>
               ) : (
@@ -1014,7 +1038,9 @@ export default function DoctorDashboard() {
 
                             {apt.patientMessage && (
                               <p className="text-xs text-ink-soft bg-paper p-2 rounded-xl border border-line/70 max-w-xl">
-                                <strong className="text-ink">Patient Note:</strong>{" "}
+                                <strong className="text-ink">
+                                  Patient Note:
+                                </strong>{" "}
                                 {apt.patientMessage}
                               </p>
                             )}
@@ -1097,7 +1123,8 @@ export default function DoctorDashboard() {
                       No patient profiles found
                     </h3>
                     <p className="text-xs text-ink-soft max-w-sm mx-auto mt-1 leading-relaxed">
-                      Only patients assigned to your consultations will appear in your clinical directory.
+                      Only patients assigned to your consultations will appear
+                      in your clinical directory.
                     </p>
                   </div>
                 ) : (
@@ -1180,7 +1207,9 @@ export default function DoctorDashboard() {
                             {latestApt && (
                               <button
                                 type="button"
-                                onClick={() => setSelectedPatientInfoApt(latestApt)}
+                                onClick={() =>
+                                  setSelectedPatientInfoApt(latestApt)
+                                }
                                 className="flex-1 py-2 px-3 rounded-xl border border-line hover:bg-paper text-ink font-semibold text-xs text-center transition-colors cursor-pointer"
                               >
                                 View Full Record
@@ -1229,7 +1258,10 @@ export default function DoctorDashboard() {
                   </div>
                 </div>
 
-                {doctorAppointments.filter((a) => a.consultationType === "video" || Boolean(a.meetingLink)).length === 0 ? (
+                {doctorAppointments.filter(
+                  (a) =>
+                    a.consultationType === "video" || Boolean(a.meetingLink),
+                ).length === 0 ? (
                   <div className="p-14 text-center">
                     <div className="w-14 h-14 rounded-2xl bg-[#FAF2F0] text-teal-deep flex items-center justify-center mx-auto mb-3 shadow-2xs">
                       <Video className="w-7 h-7 text-mint-deep" />
@@ -1238,13 +1270,18 @@ export default function DoctorDashboard() {
                       No live video consultations
                     </h3>
                     <p className="text-xs text-ink-soft max-w-sm mx-auto mt-1 leading-relaxed">
-                      There are currently no telehealth video appointments assigned to your schedule.
+                      There are currently no telehealth video appointments
+                      assigned to your schedule.
                     </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {doctorAppointments
-                      .filter((a) => a.consultationType === "video" || Boolean(a.meetingLink))
+                      .filter(
+                        (a) =>
+                          a.consultationType === "video" ||
+                          Boolean(a.meetingLink),
+                      )
                       .map((apt) => (
                         <div
                           key={apt.id}
@@ -1370,7 +1407,8 @@ export default function DoctorDashboard() {
                       No clinical consultation notes found
                     </h3>
                     <p className="text-xs text-ink-soft max-w-sm mx-auto mt-1 leading-relaxed">
-                      Clinical notes and consultation summaries for your assigned patients will appear here once recorded.
+                      Clinical notes and consultation summaries for your
+                      assigned patients will appear here once recorded.
                     </p>
                   </div>
                 ) : (
@@ -1411,7 +1449,9 @@ export default function DoctorDashboard() {
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={() => handlePrintConsultationSummary(apt)}
+                                  onClick={() =>
+                                    handlePrintConsultationSummary(apt)
+                                  }
                                   className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-line bg-white hover:bg-paper text-ink font-semibold text-xs shadow-2xs transition-colors cursor-pointer"
                                 >
                                   <Printer className="w-3.5 h-3.5 text-teal-deep" />
@@ -1445,7 +1485,8 @@ export default function DoctorDashboard() {
                                   Clinical Diagnosis
                                 </span>
                                 <p className="font-semibold text-ink">
-                                  {notes.diagnosis || "Pending diagnostic entry"}
+                                  {notes.diagnosis ||
+                                    "Pending diagnostic entry"}
                                 </p>
                               </div>
 
@@ -1504,7 +1545,8 @@ export default function DoctorDashboard() {
                       No treatment plans assigned
                     </h3>
                     <p className="text-xs text-ink-soft max-w-sm mx-auto mt-1 leading-relaxed">
-                      Treatment updates and clinical care plans will be available once patients are assigned to your schedule.
+                      Treatment updates and clinical care plans will be
+                      available once patients are assigned to your schedule.
                     </p>
                   </div>
                 ) : (
@@ -1590,7 +1632,8 @@ export default function DoctorDashboard() {
                 </h2>
                 <p className="text-xs text-[#EBD8D5] mt-0.5">
                   Treatment: {activeWorkspaceApt.treatment} • Format:{" "}
-                  {customMeetingLink || activeWorkspaceApt.consultationType === "video"
+                  {customMeetingLink ||
+                  activeWorkspaceApt.consultationType === "video"
                     ? "Online Video Call"
                     : "In-Clinic Visit"}
                 </p>
@@ -1654,10 +1697,15 @@ export default function DoctorDashboard() {
                         placeholder="https://meet.google.com/... or paste video room link"
                         className="text-xs font-mono w-full px-2.5 py-1.5 bg-white border border-line rounded-lg text-ink outline-none focus:border-teal-deep focus:ring-1 focus:ring-teal-deep"
                       />
-                      {customMeetingLink !== (activeWorkspaceApt.meetingLink || "") && (
+                      {customMeetingLink !==
+                        (activeWorkspaceApt.meetingLink || "") && (
                         <button
                           type="button"
-                          onClick={() => handleUpdateMeetingLinkFromWorkspace(customMeetingLink)}
+                          onClick={() =>
+                            handleUpdateMeetingLinkFromWorkspace(
+                              customMeetingLink,
+                            )
+                          }
                           className="shrink-0 px-3 py-1.5 bg-teal-deep text-white text-xs font-semibold rounded-lg hover:bg-teal-mid transition-colors cursor-pointer"
                         >
                           Save Link
@@ -1967,9 +2015,12 @@ export default function DoctorDashboard() {
                     </span>
                   </div>
                   <div>
-                    <span className="text-ink-soft block">Preferred Contact:</span>
+                    <span className="text-ink-soft block">
+                      Preferred Contact:
+                    </span>
                     <span className="font-semibold text-teal-deep capitalize">
-                      {selectedPatientInfoApt.patient.preferredContact || "Email"}
+                      {selectedPatientInfoApt.patient.preferredContact ||
+                        "Email"}
                     </span>
                   </div>
                   <div>
@@ -2113,13 +2164,17 @@ export default function DoctorDashboard() {
                 <select
                   value={updatedTreatmentStatus}
                   onChange={(e) =>
-                    setUpdatedTreatmentStatus(e.target.value as AppointmentStatus)
+                    setUpdatedTreatmentStatus(
+                      e.target.value as AppointmentStatus,
+                    )
                   }
                   className="w-full h-10 text-xs px-3.5 rounded-xl border border-line bg-white text-ink shadow-2xs hover:border-[#5E3E3B]/40 hover:bg-[#FAF7F6]/40 focus:ring-2 focus:ring-[#5E3E3B]/15 focus:border-[#5E3E3B] font-medium cursor-pointer transition-all outline-none"
                 >
                   <option value="approved">Approved & Scheduled</option>
                   <option value="under_review">Under Clinical Review</option>
-                  <option value="completed">Completed / Procedure Finished</option>
+                  <option value="completed">
+                    Completed / Procedure Finished
+                  </option>
                   <option value="reschedule_requested">
                     Reschedule Required
                   </option>

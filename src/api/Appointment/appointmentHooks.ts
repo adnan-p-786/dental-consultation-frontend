@@ -16,7 +16,7 @@ export const useAppointmentsQuery = () => {
 
 export const usePatientAppointmentsQuery = (
   filters: AppointmentFilterParams,
-  enabled: boolean = true
+  enabled: boolean = true,
 ) => {
   return useQuery({
     queryKey: queryKeys.appointments.patient(filters),
@@ -29,7 +29,8 @@ export const usePatientAppointmentsQuery = (
 export const useCreateAppointmentMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: FormData | Record<string, any>) => appointmentApi.create(data),
+    mutationFn: (data: FormData | Record<string, any>) =>
+      appointmentApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.appointments.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
@@ -40,8 +41,13 @@ export const useCreateAppointmentMutation = () => {
 export const useUpdateAppointmentMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string | number; payload: Record<string, any> }) =>
-      appointmentApi.update(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string | number;
+      payload: Record<string, any>;
+    }) => appointmentApi.update(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.appointments.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
@@ -63,8 +69,13 @@ export const useCancelAppointmentMutation = () => {
 
 export const useSendReminderMutation = () => {
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string | number; payload: SendReminderPayload }) =>
-      appointmentApi.sendReminder(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string | number;
+      payload: SendReminderPayload;
+    }) => appointmentApi.sendReminder(id, payload),
   });
 };
 

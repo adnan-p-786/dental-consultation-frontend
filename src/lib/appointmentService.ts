@@ -149,9 +149,7 @@ export const appointmentService = {
       requestedTime:
         dbApt.preferredTime || existingLocal?.requestedTime || "Morning",
       confirmedDate:
-        dbApt.confirmedDate ||
-        existingLocal?.confirmedDate ||
-        reqDate,
+        dbApt.confirmedDate || existingLocal?.confirmedDate || reqDate,
       confirmedTime:
         dbApt.confirmedTime ||
         existingLocal?.confirmedTime ||
@@ -159,32 +157,33 @@ export const appointmentService = {
         "Morning",
       assignedDoctorId: resolvedDoctorId ? String(resolvedDoctorId) : undefined,
       assignedDoctorName: resolvedDoctorName || undefined,
-      assignedDoctor: resolvedDoctorName || resolvedDoctorId
-        ? {
-            id: resolvedDoctorId ? String(resolvedDoctorId) : "1",
-            name: resolvedDoctorName || "Doctor",
-            email:
-              matchedDoctor?.email ||
-              existingLocal?.assignedDoctor?.email ||
-              "",
-            specialization:
-              doctorSpecialization ||
-              matchedDoctor?.specialization ||
-              existingLocal?.assignedDoctor?.specialization ||
-              "Specialist",
-            activeAppointments:
-              existingLocal?.assignedDoctor?.activeAppointments || 0,
-            status:
-              matchedDoctor?.status ||
-              existingLocal?.assignedDoctor?.status ||
-              "available",
-            workingHours:
-              matchedDoctor?.workingHours ||
-              existingLocal?.assignedDoctor?.workingHours ||
-              "9am-5pm",
-            avatar: doctorPhoto || matchedDoctor?.avatar || undefined,
-          }
-        : existingLocal?.assignedDoctor,
+      assignedDoctor:
+        resolvedDoctorName || resolvedDoctorId
+          ? {
+              id: resolvedDoctorId ? String(resolvedDoctorId) : "1",
+              name: resolvedDoctorName || "Doctor",
+              email:
+                matchedDoctor?.email ||
+                existingLocal?.assignedDoctor?.email ||
+                "",
+              specialization:
+                doctorSpecialization ||
+                matchedDoctor?.specialization ||
+                existingLocal?.assignedDoctor?.specialization ||
+                "Specialist",
+              activeAppointments:
+                existingLocal?.assignedDoctor?.activeAppointments || 0,
+              status:
+                matchedDoctor?.status ||
+                existingLocal?.assignedDoctor?.status ||
+                "available",
+              workingHours:
+                matchedDoctor?.workingHours ||
+                existingLocal?.assignedDoctor?.workingHours ||
+                "9am-5pm",
+              avatar: doctorPhoto || matchedDoctor?.avatar || undefined,
+            }
+          : existingLocal?.assignedDoctor,
       meetingPlatform:
         dbApt.meetingPlatform ||
         existingLocal?.meetingPlatform ||
@@ -251,7 +250,9 @@ export const appointmentService = {
    */
   async fetchAppointments(): Promise<Appointment[]> {
     try {
-      const res = await apiClient.get<{ success: boolean; data: any[] }>("/appointment/get-all-appointment");
+      const res = await apiClient.get<{ success: boolean; data: any[] }>(
+        "/appointment/get-all-appointment",
+      );
       const json = res.data;
       if (json.success && Array.isArray(json.data)) {
         const localApts = this.getAppointments();
@@ -286,7 +287,11 @@ export const appointmentService = {
       if (!Array.isArray(parsed)) return [];
       // Clean up any legacy fabricated meeting links
       return parsed.map((apt: Appointment) => {
-        if (apt.meetingLink && typeof apt.meetingLink === "string" && apt.meetingLink.includes("/cdr-")) {
+        if (
+          apt.meetingLink &&
+          typeof apt.meetingLink === "string" &&
+          apt.meetingLink.includes("/cdr-")
+        ) {
           return { ...apt, meetingLink: undefined };
         }
         return apt;
@@ -469,8 +474,7 @@ export const appointmentService = {
         payload.preferredTime = updates.confirmedTime;
       }
       if (updates.patient?.name) payload.patientName = updates.patient.name;
-      if (updates.patient?.email)
-        payload.patientEmail = updates.patient.email;
+      if (updates.patient?.email) payload.patientEmail = updates.patient.email;
       if (updates.patient?.phone) payload.phoneNumber = updates.patient.phone;
       if (updates.treatment) payload.tratmentType = updates.treatment;
       if (updatedObj.assignedDoctorId)
