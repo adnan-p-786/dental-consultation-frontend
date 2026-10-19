@@ -236,6 +236,14 @@ export const appointmentService = {
               "",
           }
         : dbApt.consultationNotes || existingLocal?.consultationNotes,
+      consultationStartedAt:
+        dbApt.consultationStartedAt ||
+        (dbApt as any).consultation_started_at ||
+        existingLocal?.consultationStartedAt,
+      consultationCompletedAt:
+        dbApt.consultationCompletedAt ||
+        (dbApt as any).consultation_completed_at ||
+        existingLocal?.consultationCompletedAt,
       timeline:
         existingLocal?.timeline && existingLocal.timeline.length > 0
           ? existingLocal.timeline
@@ -558,11 +566,84 @@ export const appointmentService = {
     return updatedObj;
   },
 
-  completeConsultation(
+  async startConsultation(
+    id: string,
+    actorName = "Doctor",
+  ): Promise<Appointment | null> {
+    const all = this.getAppointments();
+    let updatedObj: Appointment | null = null;
+
+    if (!isNaN(Number(id))) {
+      const res = await apiClient.post(`/appointment/${id}/start-consultation`);
+      if (res.data?.data) {
+        const dbApt = res.data.data;
+        const existing = all.find((a) => String(a.id) === String(id));
+        updatedObj = this.mapDbRecord(dbApt, existing);
+      }
+    }
+
+    if (!updatedObj) {
+      const aptIndex = all.findIndex((a) => String(a.id) === String(id));
+      if (aptIndex !== -1) {
+        const apt = all[aptIndex];
+        const timeline = [
+          {
+            id: `tl_${Date.now()}`,
+            timestamp: new Date().toLocaleString([], {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            action: "Consultation started",
+            actor: actorName,
+          },
+          ...apt.timeline,
+        ];
+        updatedObj = {
+          ...apt,
+          status: "in_progress" as AppointmentStatus,
+          consultationStartedAt: new Date().toISOString(),
+          timeline,
+        };
+      }
+    }
+
+    if (updatedObj) {
+      const newAppointments = all.map((a) =>
+        String(a.id) === String(id) ? updatedObj! : a,
+      );
+      this.saveAppointments(newAppointments, true);
+    }
+    return updatedObj;
+  },
+
+  async completeConsultation(
     id: string,
     notes: ConsultationNotes,
     actorName = "Doctor",
-  ): Appointment | null {
+  ): Promise<Appointment | null> {
+    if (!isNaN(Number(id))) {
+      try {
+        await apiClient.post(`/appointment/${id}/complete-consultation`, {
+          consultationNotes: notes,
+        });
+      } catch (err: any) {
+        console.error("Backend complete consultation failed:", err);
+        throw err;
+      }
+
+      consultationService
+        .saveOrCompleteConsultation({
+          appointmentId: Number(id),
+          notes,
+          isCompleted: true,
+        })
+        .catch((err) =>
+          console.error("Failed to sync completed consultation to DB:", err),
+        );
+    }
+
     const all = this.getAppointments();
     let updatedObj: Appointment | null = null;
 
@@ -592,6 +673,7 @@ export const appointmentService = {
             ...apt.consultationNotes,
             ...notes,
           },
+          consultationCompletedAt: new Date().toISOString(),
           timeline,
         };
         return updatedObj;
@@ -601,26 +683,6 @@ export const appointmentService = {
 
     if (updatedObj) {
       this.saveAppointments(newAppointments, true);
-
-      if (!isNaN(Number(id))) {
-        consultationService
-          .saveOrCompleteConsultation({
-            appointmentId: Number(id),
-            notes,
-            isCompleted: true,
-          })
-          .catch((err) =>
-            console.error("Failed to sync completed consultation to DB:", err),
-          );
-
-        apiClient
-          .patch(`/appointment/update-appointment/${id}`, {
-            status: "completed",
-          })
-          .catch((err) =>
-            console.error("Failed to sync completed status to DB:", err),
-          );
-      }
     }
     return updatedObj;
   },

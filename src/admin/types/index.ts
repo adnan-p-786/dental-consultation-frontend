@@ -4,6 +4,7 @@ export type AppointmentStatus =
   | 'under_review'
   | 'proposed'
   | 'approved'
+  | 'in_progress'
   | 'completed'
   | 'reschedule_requested'
   | 'cancelled'
@@ -91,6 +92,8 @@ export interface Appointment {
   patientMessage?: string;
   documents?: AppointmentDocument[];
   consultationNotes?: ConsultationNotes;
+  consultationStartedAt?: string;
+  consultationCompletedAt?: string;
   timeline: AuditLog[];
   createdAt: string;
 }

@@ -454,8 +454,39 @@ export default function DoctorDashboard() {
     toast.success("Treatment details updated successfully!");
   };
 
+  const [isLifecycleActionLoading, setIsLifecycleActionLoading] =
+    useState(false);
+
+  // Start consultation
+  const handleStartConsultation = async (apt: Appointment) => {
+    try {
+      setIsLifecycleActionLoading(true);
+      await appointmentService.startConsultation(apt.id, doctorName);
+      await refetchAppointments();
+      toast.success(
+        `Consultation started for ${apt.patient.name}! Status is now In Progress.`,
+      );
+      if (
+        activeWorkspaceApt &&
+        String(activeWorkspaceApt.id) === String(apt.id)
+      ) {
+        setActiveWorkspaceApt((prev) =>
+          prev ? { ...prev, status: "in_progress" } : null,
+        );
+      }
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to start consultation.";
+      toast.error(msg);
+    } finally {
+      setIsLifecycleActionLoading(false);
+    }
+  };
+
   // Mark consultation as completed
-  const handleCompleteConsultation = (e: React.FormEvent) => {
+  const handleCompleteConsultation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeWorkspaceApt) return;
 
@@ -469,16 +500,25 @@ export default function DoctorDashboard() {
       );
     }
 
-    appointmentService.completeConsultation(
-      activeWorkspaceApt.id,
-      workspaceNotes,
-      doctorName,
-    );
-
-    setActiveWorkspaceApt(null);
-    refetchAppointments();
-
-    toast.success("Consultation Completed & Clinical Notes Saved!");
+    try {
+      setIsLifecycleActionLoading(true);
+      await appointmentService.completeConsultation(
+        activeWorkspaceApt.id,
+        workspaceNotes,
+        doctorName,
+      );
+      setActiveWorkspaceApt(null);
+      await refetchAppointments();
+      toast.success("Consultation Completed & Clinical Notes Saved!");
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to complete consultation.";
+      toast.error(msg);
+    } finally {
+      setIsLifecycleActionLoading(false);
+    }
   };
 
   // Save consultation notes draft
@@ -807,10 +847,28 @@ export default function DoctorDashboard() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-semibold text-ink bg-paper px-2.5 py-1.5 rounded-lg border border-line">
                             {apt.confirmedTime || apt.requestedTime}
                           </span>
+                          {apt.status === "approved" && (
+                            <button
+                              type="button"
+                              onClick={() => handleStartConsultation(apt)}
+                              disabled={isLifecycleActionLoading}
+                              className="py-1.5 px-3 rounded-lg bg-teal-deep hover:bg-teal-mid text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                              title="Start Consultation"
+                            >
+                              <Stethoscope className="w-3.5 h-3.5 text-mint" />
+                              <span>Start</span>
+                            </button>
+                          )}
+                          {apt.status === "in_progress" && (
+                            <span className="py-1 px-2.5 rounded-lg bg-purple-100 text-purple-700 text-xs font-bold flex items-center gap-1.5 border border-purple-200 animate-pulse">
+                              <span className="w-2 h-2 rounded-full bg-purple-600" />
+                              <span>In Progress</span>
+                            </span>
+                          )}
                           {apt.meetingLink && (
                             <a
                               href={apt.meetingLink}
@@ -1056,6 +1114,26 @@ export default function DoctorDashboard() {
                           </div>
 
                           <div className="flex items-center gap-2 flex-wrap">
+                            {apt.status === "approved" && (
+                              <button
+                                type="button"
+                                onClick={() => handleStartConsultation(apt)}
+                                disabled={isLifecycleActionLoading}
+                                className="flex items-center gap-1.5 py-2 px-3 rounded-xl bg-teal-deep hover:bg-teal-mid text-white text-xs font-semibold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                                title="Start Consultation"
+                              >
+                                <Stethoscope className="w-3.5 h-3.5 text-mint" />
+                                <span>Start</span>
+                              </button>
+                            )}
+
+                            {apt.status === "in_progress" && (
+                              <span className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-purple-100 text-purple-800 text-xs font-bold border border-purple-200 animate-pulse">
+                                <span className="w-2 h-2 rounded-full bg-purple-600" />
+                                <span>In Progress</span>
+                              </span>
+                            )}
+
                             <button
                               type="button"
                               onClick={() => handleOpenWorkspace(apt)}
@@ -1063,7 +1141,11 @@ export default function DoctorDashboard() {
                             >
                               <FileText className="w-3.5 h-3.5" />
                               <span>
-                                {isCompleted ? "View Notes" : "Open Workspace"}
+                                {isCompleted
+                                  ? "View Notes"
+                                  : apt.status === "in_progress"
+                                    ? "Consultation Room"
+                                    : "Open Workspace"}
                               </span>
                             </button>
 
@@ -1626,6 +1708,21 @@ export default function DoctorDashboard() {
                   <span className="text-xs font-mono text-[#EBD8D5]">
                     Ref: {activeWorkspaceApt.referenceNo}
                   </span>
+                  <span
+                    className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                      activeWorkspaceApt.status === "in_progress"
+                        ? "bg-purple-500/40 text-purple-100 border border-purple-300 animate-pulse"
+                        : activeWorkspaceApt.status === "approved"
+                          ? "bg-emerald-500/30 text-emerald-100 border border-emerald-300"
+                          : activeWorkspaceApt.status === "completed"
+                            ? "bg-blue-500/30 text-blue-100 border border-blue-300"
+                            : activeWorkspaceApt.status === "no_show"
+                              ? "bg-rose-500/40 text-rose-100 border border-rose-300"
+                              : "bg-white/10 text-white"
+                    }`}
+                  >
+                    Status: {activeWorkspaceApt.status.replace("_", " ")}
+                  </span>
                 </div>
                 <h2 className="font-display font-bold text-xl sm:text-2xl mt-1">
                   {activeWorkspaceApt.patient.name}
@@ -1939,7 +2036,15 @@ export default function DoctorDashboard() {
                 <div className="flex items-center gap-2 text-xs text-ink-soft">
                   <AlertCircle className="w-4 h-4 text-teal-deep" />
                   <span>
-                    Completing marks the appointment finished and saves notes.
+                    {activeWorkspaceApt.status === "in_progress"
+                      ? "Consultation is currently in progress. Mark completed when finished."
+                      : activeWorkspaceApt.status === "approved"
+                        ? "Appointment is approved. Start consultation when patient is present."
+                        : activeWorkspaceApt.status === "completed"
+                          ? "Consultation has been completed."
+                          : activeWorkspaceApt.status === "no_show"
+                            ? "Appointment marked as No Show (15-minute grace period expired)."
+                            : `Status: ${activeWorkspaceApt.status}`}
                   </span>
                 </div>
 
@@ -1952,13 +2057,48 @@ export default function DoctorDashboard() {
                     Save Notes Draft
                   </button>
 
-                  <button
-                    type="submit"
-                    className="py-2.5 px-5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-2 cursor-pointer"
-                  >
-                    <Check className="w-4 h-4 text-mint" />
-                    <span>Complete Consultation</span>
-                  </button>
+                  {activeWorkspaceApt.status === "approved" && (
+                    <button
+                      type="button"
+                      disabled={isLifecycleActionLoading}
+                      onClick={() => handleStartConsultation(activeWorkspaceApt)}
+                      className="py-2.5 px-5 rounded-xl bg-teal-deep hover:bg-teal-mid active:scale-[0.98] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      <Stethoscope className="w-4 h-4 text-mint" />
+                      <span>
+                        {isLifecycleActionLoading
+                          ? "Starting..."
+                          : "Start Consultation"}
+                      </span>
+                    </button>
+                  )}
+
+                  {activeWorkspaceApt.status === "in_progress" && (
+                    <button
+                      type="submit"
+                      disabled={isLifecycleActionLoading}
+                      className="py-2.5 px-5 rounded-xl bg-[#5E3E3B] hover:bg-[#262525] active:scale-[0.98] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      <Check className="w-4 h-4 text-mint" />
+                      <span>
+                        {isLifecycleActionLoading
+                          ? "Completing..."
+                          : "Complete Consultation"}
+                      </span>
+                    </button>
+                  )}
+
+                  {[
+                    "completed",
+                    "no_show",
+                    "cancelled",
+                    "rejected",
+                  ].includes(activeWorkspaceApt.status) && (
+                    <span className="py-2 px-3 rounded-xl bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">
+                      Lifecycle Finalized (
+                      {activeWorkspaceApt.status.replace("_", " ")})
+                    </span>
+                  )}
                 </div>
               </div>
             </form>

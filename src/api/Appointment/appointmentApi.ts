@@ -98,6 +98,22 @@ export const appointmentApi = {
   },
 
   /**
+   * Start consultation (Doctor / Admin)
+   */
+  async startConsultation(id: string | number): Promise<any> {
+    const res = await apiClient.post(`/appointment/${id}/start-consultation`);
+    return res.data;
+  },
+
+  /**
+   * Complete consultation (Doctor / Admin)
+   */
+  async completeConsultation(id: string | number, payload?: Record<string, any>): Promise<any> {
+    const res = await apiClient.post(`/appointment/${id}/complete-consultation`, payload || {});
+    return res.data;
+  },
+
+  /**
    * Delete an appointment by ID
    */
   async delete(id: string | number): Promise<any> {

@@ -47,7 +47,8 @@ const SOW_STEPS: { status: AppointmentStatus; label: string; step: number }[] =
     { status: "under_review", label: "Under Review", step: 2 },
     { status: "proposed", label: "Proposed", step: 3 },
     { status: "approved", label: "Approved", step: 4 },
-    { status: "completed", label: "Completed", step: 5 },
+    { status: "in_progress", label: "In Progress", step: 5 },
+    { status: "completed", label: "Completed", step: 6 },
   ];
 
 export const PatientPortal: React.FC = () => {
@@ -276,6 +277,20 @@ export const PatientPortal: React.FC = () => {
             Under Review
           </Badge>
         );
+      case "in_progress":
+        return (
+          <Badge className="bg-purple-50 text-purple-700 border-purple-200 border font-medium px-2.5 py-1 animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-purple-600 mr-1.5" />
+            In Progress
+          </Badge>
+        );
+      case "no_show":
+        return (
+          <Badge className="bg-rose-50 text-rose-700 border-rose-200 border font-medium px-2.5 py-1">
+            <XCircle className="w-3.5 h-3.5 mr-1 text-rose-500" />
+            No Show
+          </Badge>
+        );
       case "cancelled":
         return (
           <Badge className="bg-rose-50 text-rose-700 border-rose-200 border font-medium px-2.5 py-1">
@@ -320,8 +335,10 @@ export const PatientPortal: React.FC = () => {
         return 3;
       case "approved":
         return 4;
-      case "completed":
+      case "in_progress":
         return 5;
+      case "completed":
+        return 6;
       default:
         return 1;
     }

@@ -25,6 +25,8 @@ const badgeVariants = cva(
           "bg-blue-50 text-blue-700 border border-blue-200",
         approved:
           "bg-emerald-50 text-emerald-700 border border-emerald-200",
+        in_progress:
+          "bg-purple-100 text-purple-800 border border-purple-200",
         completed:
           "bg-teal-50 text-teal-800 border border-teal-200",
         rescheduled:
