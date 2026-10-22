@@ -11,6 +11,7 @@ import {
   UserCheck,
   Trash2,
 } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -380,6 +381,13 @@ function Dashboard() {
       } catch (e) {}
     }
 
+    if (doctorObj?.status === "on_leave") {
+      toast.error(
+        `Cannot assign Dr. ${doctorObj.name.replace(/^Dr\.\s*/i, "")} because they are currently on leave.`,
+      );
+      return;
+    }
+
     const targetApt = appointments.find((a) => String(a.id) === String(id));
     const nextStatus =
       targetApt?.status === "requested" || targetApt?.status === "pending"
@@ -524,6 +532,13 @@ function Dashboard() {
           );
         }
       } catch (e) {}
+    }
+
+    if (doctorObj?.status === "on_leave") {
+      toast.error(
+        `Cannot assign Dr. ${doctorObj.name.replace(/^Dr\.\s*/i, "")} because they are currently on leave.`,
+      );
+      return;
     }
 
     const targetApt = appointments.find((a) => String(a.id) === String(id));

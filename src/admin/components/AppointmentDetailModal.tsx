@@ -309,6 +309,20 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
       (appointment.assignedDoctorId
         ? String(appointment.assignedDoctorId)
         : "");
+
+    if (docId) {
+      const assignedDoc = availableDoctors.find(
+        (d) => String(d.id) === String(docId),
+      );
+      if (assignedDoc?.status === "on_leave") {
+        setAssignedFeedback(
+          `Dr. ${assignedDoc.name.replace(/^Dr\.\s*/i, "")} is currently on leave. Please select an available doctor.`,
+        );
+        setTimeout(() => setAssignedFeedback(null), 3500);
+        return;
+      }
+    }
+
     const date =
       rescheduleDate || appointment.confirmedDate || appointment.requestedDate;
     const time =
@@ -383,8 +397,15 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 
   const handleSelectDoctor = (docId: string) => {
     const idStr = String(docId);
-    setSelectedDoctorId(idStr);
     const targetDoc = availableDoctors.find((d) => String(d.id) === idStr);
+    if (targetDoc?.status === "on_leave") {
+      setAssignedFeedback(
+        `Dr. ${targetDoc.name.replace(/^Dr\.\s*/i, "")} is currently on leave and cannot be assigned.`,
+      );
+      setTimeout(() => setAssignedFeedback(null), 3000);
+      return;
+    }
+    setSelectedDoctorId(idStr);
     setAssignedFeedback(
       targetDoc?.name
         ? `Selected Dr. ${targetDoc.name.replace(/^Dr\.\s*/i, "")}`
@@ -901,12 +922,21 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 {availableDoctors.map((doc) => {
                   const isSelected =
                     String(selectedDoctorId) === String(doc.id);
+                  const isCurrentlyAssigned =
+                    String(appointment.assignedDoctorId) === String(doc.id);
+                  const isOnLeave = doc.status === "on_leave";
 
                   return (
                     <button
                       type="button"
                       key={doc.id}
-                      onClick={() => handleSelectDoctor(String(doc.id))}
+                      disabled={isOnLeave}
+                      onClick={() => !isOnLeave && handleSelectDoctor(String(doc.id))}
+                      title={
+                        isOnLeave
+                          ? `${doc.name} is currently on leave and cannot be assigned.`
+                          : `Assign ${doc.name}`
+                      }
                       className={`
                         w-full
                         text-left
@@ -914,15 +944,16 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                         rounded-xl
                         border-2
                         transition-all
-                        cursor-pointer
                         flex
                         items-center
                         gap-3
                         select-none
                         ${
-                          isSelected
-                            ? "border-teal-deep bg-teal-50/70 shadow-xs ring-2 ring-teal-deep/30"
-                            : "border-line bg-white hover:border-teal-300 hover:bg-[#FAF7F6]"
+                          isOnLeave
+                            ? "opacity-60 bg-zinc-50 border-line/80 cursor-not-allowed text-ink-soft/80"
+                            : isSelected
+                              ? "border-teal-deep bg-teal-50/70 shadow-xs ring-2 ring-teal-deep/30 cursor-pointer"
+                              : "border-line bg-white hover:border-teal-300 hover:bg-[#FAF7F6] cursor-pointer"
                         }
                       `}
                     >
@@ -947,11 +978,14 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                           <div className="text-xs font-bold text-ink truncate">
                             {doc.name}
                           </div>
-                          {isSelected ? (
+                          {isOnLeave ? (
+                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                              On Leave
+                            </span>
+                          ) : isSelected ? (
                             <span className="text-[10px] font-bold text-teal-deep bg-teal-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                               <Check className="w-3 h-3 text-teal-deep" />
-                              {String(appointment.assignedDoctorId) ===
-                              String(doc.id)
+                              {isCurrentlyAssigned
                                 ? "Assigned"
                                 : "Selected"}
                             </span>
@@ -977,13 +1011,15 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                                   ? "bg-emerald-500"
                                   : doc.status === "busy"
                                     ? "bg-amber-500"
-                                    : "bg-zinc-400"
+                                    : "bg-rose-500"
                               }
                             `}
                           />
 
                           <span className="text-[10px] text-ink-soft capitalize">
-                            {doc.status} • {doc.workingHours || "9am-5pm"}
+                            {isOnLeave
+                              ? "On Leave (Unavailable)"
+                              : `${doc.status} • ${doc.workingHours || "9am-5pm"}`}
                           </span>
                         </div>
                       </div>

@@ -151,6 +151,19 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
       const formattedTime =
         formatDisplayTime(requestedTime) || requestedTime || "10:00 AM";
 
+      if (assignedDoctorId) {
+        const selectedDoc = doctors.find(
+          (d) => String(d.id) === String(assignedDoctorId),
+        );
+        if (selectedDoc?.status === "on_leave") {
+          setError(
+            `Dr. ${selectedDoc.name.replace(/^Dr\.\s*/i, "")} is currently on leave and cannot be assigned.`,
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
       const data = new FormData();
       data.append("patientName", patientName.trim());
       data.append("patientEmail", email.trim().toLowerCase());
@@ -429,20 +442,48 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             </label>
             <Select
               value={assignedDoctorId}
-              onValueChange={(val) =>
-                setAssignedDoctorId(val === "unassigned" ? "" : val)
-              }
+              onValueChange={(val) => {
+                const targetDoc = doctors.find(
+                  (d) => String(d.id) === String(val),
+                );
+                if (targetDoc?.status === "on_leave") return;
+                setAssignedDoctorId(val === "unassigned" ? "" : val);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select doctor..." />
               </SelectTrigger>
               <SelectContent>
-                {doctors.map((doc) => (
-                  <SelectItem key={doc.id} value={doc.id}>
-                    {doc.name}{" "}
-                    {doc.specialization ? `(${doc.specialization})` : ""}
-                  </SelectItem>
-                ))}
+                <SelectItem value="unassigned">
+                  Unassigned (Assign Later)
+                </SelectItem>
+                {doctors.map((doc) => {
+                  const isOnLeave = doc.status === "on_leave";
+                  return (
+                    <SelectItem
+                      key={doc.id}
+                      value={doc.id}
+                      disabled={isOnLeave}
+                      className={
+                        isOnLeave
+                          ? "opacity-60 cursor-not-allowed select-none bg-zinc-50/60"
+                          : ""
+                      }
+                    >
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <span>
+                          {doc.name}{" "}
+                          {doc.specialization ? `(${doc.specialization})` : ""}
+                        </span>
+                        {isOnLeave && (
+                          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded ml-auto">
+                            On Leave
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
