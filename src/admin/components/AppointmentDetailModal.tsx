@@ -10,6 +10,8 @@ import {
   Bell,
   Video,
   Link as LinkIcon,
+  Calendar,
+  Clock,
 } from "lucide-react";
 
 import {
@@ -81,6 +83,32 @@ interface AppointmentDetailModalProps {
   ) => void;
 }
 
+const to24Hour = (timeStr?: string) => {
+  if (!timeStr) return "10:00";
+  const trimmed = timeStr.trim();
+  if (/^\d{2}:\d{2}$/.test(trimmed)) return trimmed;
+  if (/^\d{1}:\d{2}$/.test(trimmed)) return `0${trimmed}`;
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (!match) return "10:00";
+  let h = parseInt(match[1], 10);
+  const m = match[2];
+  const ampm = match[3]?.toUpperCase();
+  if (ampm === "PM" && h < 12) h += 12;
+  if (ampm === "AM" && h === 12) h = 0;
+  return `${h.toString().padStart(2, "0")}:${m}`;
+};
+
+const to12Hour = (timeStr?: string) => {
+  if (!timeStr) return "";
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return timeStr;
+  let h = parseInt(match[1], 10);
+  const m = match[2];
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${h.toString().padStart(2, "0")}:${m} ${ampm}`;
+};
+
 export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   appointment,
   isOpen,
@@ -149,8 +177,8 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
     appointment.confirmedDate || appointment.requestedDate,
   );
 
-  const [rescheduleTime, setRescheduleTime] = useState(
-    appointment.confirmedTime || appointment.requestedTime,
+  const [rescheduleTime, setRescheduleTime] = useState(() =>
+    to24Hour(appointment.confirmedTime || appointment.requestedTime),
   );
 
   const [actionNote, setActionNote] = useState("");
@@ -230,7 +258,9 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
       appointment.assignedDoctorId ? String(appointment.assignedDoctorId) : "",
     );
     setRescheduleDate(appointment.confirmedDate || appointment.requestedDate);
-    setRescheduleTime(appointment.confirmedTime || appointment.requestedTime);
+    setRescheduleTime(
+      to24Hour(appointment.confirmedTime || appointment.requestedTime),
+    );
     setActiveMeetingPlatform(appointment.meetingPlatform || "google_meet");
     setManualMeetingLink(
       appointment.meetingLink && !appointment.meetingLink.includes("/cdr-")
@@ -282,7 +312,10 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
     const date =
       rescheduleDate || appointment.confirmedDate || appointment.requestedDate;
     const time =
-      rescheduleTime || appointment.confirmedTime || appointment.requestedTime;
+      to12Hour(rescheduleTime) ||
+      rescheduleTime ||
+      appointment.confirmedTime ||
+      appointment.requestedTime;
     const platform =
       activeMeetingPlatform || appointment.meetingPlatform || "google_meet";
     const link = manualMeetingLink.trim();
@@ -333,12 +366,13 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   // --------------------------------------------------
 
   const handleProposeSchedule = () => {
+    const formattedTime = to12Hour(rescheduleTime) || rescheduleTime;
     onUpdateSchedule(
       appointment.id,
       rescheduleDate,
-      rescheduleTime,
+      formattedTime,
       actionNote ||
-        `Suggested alternative time slot: ${rescheduleDate} at ${rescheduleTime}`,
+        `Suggested alternative time slot: ${rescheduleDate} at ${formattedTime}`,
     );
     setActionNote("");
   };
@@ -1081,16 +1115,6 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                           </button>
                         )}
                       </div>
-
-                      {/* <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => handleSaveMeetingLink()}
-                      className="bg-teal-deep hover:bg-teal-800 text-white text-xs h-9 px-3.5 font-semibold gap-1.5 shrink-0 shadow-xs cursor-pointer"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      Save Link
-                    </Button> */}
                     </div>
                   </div>
                 </div>
@@ -1124,12 +1148,20 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                     Appointment Date
                   </label>
 
-                  <Input
-                    type="date"
-                    value={rescheduleDate}
-                    onChange={(e) => setRescheduleDate(e.target.value)}
-                    className="text-xs"
-                  />
+                  <div className="relative">
+                    <Input
+                      type="date"
+                      value={rescheduleDate}
+                      onChange={(e) => setRescheduleDate(e.target.value)}
+                      onClick={(e) => {
+                        try {
+                          e.currentTarget.showPicker();
+                        } catch {}
+                      }}
+                      className="text-xs h-9 pr-8 cursor-pointer hide-native-picker [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                    />
+                    <Calendar className="w-3.5 h-3.5 text-ink-soft/60 absolute right-2.5 top-3 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -1137,43 +1169,50 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                     Appointment Time
                   </label>
 
-                  <Input
-                    type="text"
-                    value={rescheduleTime}
-                    onChange={(e) => setRescheduleTime(e.target.value)}
-                    placeholder="e.g. 10:30 AM"
-                    className="text-xs"
-                  />
+                  <div className="relative">
+                    <Input
+                      type="time"
+                      value={rescheduleTime}
+                      onChange={(e) => setRescheduleTime(e.target.value)}
+                      onClick={(e) => {
+                        try {
+                          e.currentTarget.showPicker();
+                        } catch {}
+                      }}
+                      className="text-xs h-9 pr-8 cursor-pointer hide-native-picker [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                    />
+                    <Clock className="w-3.5 h-3.5 text-ink-soft/60 absolute right-2.5 top-3 pointer-events-none" />
+                  </div>
 
-                  <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                  {/* <div className="flex flex-wrap items-center gap-1 mt-1.5">
                     <span className="text-[10px] font-semibold text-ink-soft mr-0.5">
                       Quick Slots:
                     </span>
                     {[
-                      "09:30 AM",
-                      "11:00 AM",
-                      "02:30 PM",
-                      "04:00 PM",
-                      "05:30 PM",
+                      { label: "09:30 AM", value: "09:30" },
+                      { label: "11:00 AM", value: "11:00" },
+                      { label: "02:30 PM", value: "14:30" },
+                      { label: "04:00 PM", value: "16:00" },
+                      { label: "05:30 PM", value: "17:30" },
                     ].map((slot) => (
                       <button
-                        key={slot}
+                        key={slot.value}
                         type="button"
-                        onClick={() => setRescheduleTime(slot)}
+                        onClick={() => setRescheduleTime(slot.value)}
                         className={`text-[10px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
-                          rescheduleTime === slot
+                          rescheduleTime === slot.value
                             ? "bg-[#5E3E3B] text-white border-[#5E3E3B] font-semibold shadow-2xs"
                             : "bg-[#FAF7F6] text-ink-soft border-line hover:border-mint-deep hover:text-ink"
                         }`}
                       >
-                        {slot}
+                        {slot.label}
                       </button>
                     ))}
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
-              <div className="space-y-1">
+              {/* <div className="space-y-1">
                 <label className="text-xs font-semibold text-ink">
                   Reason / Message to Patient (Optional for Reschedule)
                 </label>
@@ -1185,7 +1224,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   onChange={(e) => setActionNote(e.target.value)}
                   className="text-xs"
                 />
-              </div>
+              </div> */}
 
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button
@@ -1201,7 +1240,7 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                   "
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Propose This New Time & Notify Patient
+                  Propose This New Time
                 </Button>
 
                 {appointment.status === "approved" && (

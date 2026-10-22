@@ -15,11 +15,16 @@ import {
   Trash2,
   Loader2,
   BookmarkPlus,
+  BookmarkCheck,
+  Eye,
+  RotateCcw,
+  SlidersHorizontal,
   BarChart3,
   CalendarDays,
   Calendar,
   Sparkles,
 } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,7 +66,7 @@ import {
 import { useTreatmentsQuery } from "@/api/Treatment/treatmentHooks";
 import { useDoctorsQuery } from "@/api/Doctor/doctorHooks";
 
-import { reportsApi, type AnalyticsMetrics } from "@/api/Report/reportApi";
+import { reportsApi, type AnalyticsMetrics, type SavedReport } from "@/api/Report/reportApi";
 
 interface ReportsViewProps {
   appointments: Appointment[];
@@ -92,6 +97,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
   // Saved reports snapshots state
   const [isSavedReportsOpen, setIsSavedReportsOpen] = useState(false);
+  const [selectedReportForDetail, setSelectedReportForDetail] =
+    useState<SavedReport | null>(null);
+  const [activeSnapshot, setActiveSnapshot] = useState<SavedReport | null>(null);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [snapshotTitle, setSnapshotTitle] = useState("");
   const [snapshotDesc, setSnapshotDesc] = useState("");
@@ -132,7 +140,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   } = useReportAnalyticsQuery(filterParams);
 
   const { data: savedReports = [], isLoading: loadingSavedReports } =
-    useSavedReportsQuery({ enabled: isSavedReportsOpen });
+    useSavedReportsQuery();
 
   const saveSnapshotMutation = useSaveReportSnapshotMutation();
   const deleteSnapshotMutation = useDeleteReportSnapshotMutation();
@@ -190,13 +198,17 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
   // Sync analyticsData to local display states (with local fallback if server query hasn't resolved)
   useEffect(() => {
+    if (activeSnapshot) {
+      // In active snapshot mode, metrics are pinned to the selected snapshot
+      return;
+    }
     if (analyticsData) {
       setMetrics(analyticsData.metrics);
       setFilteredAppointments(analyticsData.appointments || []);
     } else {
       calculateClientFallback();
     }
-  }, [analyticsData, initialAppointments]);
+  }, [analyticsData, initialAppointments, activeSnapshot]);
 
   // Client-side fallback computation
   const calculateClientFallback = () => {
@@ -382,17 +394,125 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       setIsSaveModalOpen(false);
       setSnapshotTitle("");
       setSnapshotDesc("");
+      toast.success("Report snapshot saved to database!");
     } catch {
-      // ignore
+      toast.error("Failed to save report snapshot");
     }
   };
 
   const handleDeleteSavedReport = async (id: number) => {
     try {
       await deleteSnapshotMutation.mutateAsync(id);
+      if (activeSnapshot?.id === id) {
+        handleClearSnapshot();
+      }
+      if (selectedReportForDetail?.id === id) {
+        setSelectedReportForDetail(null);
+      }
+      toast.success("Saved report snapshot deleted");
     } catch {
-      // ignore
+      toast.error("Failed to delete report snapshot");
     }
+  };
+
+  const handleOpenReportDetail = (report: SavedReport) => {
+    setSelectedReportForDetail(report);
+  };
+
+  const handleApplySnapshotToDashboard = (report: SavedReport) => {
+    setActiveSnapshot(report);
+    setMetrics(report.metrics);
+
+    // Restore snapshot filters if present
+    if (report.filters) {
+      if (report.filters.doctor !== undefined) setSelectedDoctor(report.filters.doctor || "all");
+      if (report.filters.treatment !== undefined) setSelectedTreatment(report.filters.treatment || "all");
+      if (report.filters.status !== undefined) setSelectedStatus(report.filters.status || "all");
+      if (report.filters.startDate !== undefined) setStartDate(report.filters.startDate || "");
+      if (report.filters.endDate !== undefined) setEndDate(report.filters.endDate || "");
+      if (report.filters.search !== undefined) setSearch(report.filters.search || "");
+    }
+
+    setIsSavedReportsOpen(false);
+    setSelectedReportForDetail(null);
+    toast.success(`Loaded saved snapshot: "${report.title}"`);
+  };
+
+  const handleClearSnapshot = () => {
+    setActiveSnapshot(null);
+    if (analyticsData) {
+      setMetrics(analyticsData.metrics);
+      setFilteredAppointments(analyticsData.appointments || []);
+    } else {
+      calculateClientFallback();
+    }
+    toast.info("Returned to live real-time analytics");
+  };
+
+  const handleExportSavedReportCSV = (report: SavedReport) => {
+    const headers = [
+      "Report Title",
+      "Saved At",
+      "Total Appointments",
+      "Completed Consultations",
+      "Approved",
+      "Pending",
+      "Cancelled",
+      "No Show",
+      "Online Consultations",
+      "Completion Rate",
+      "Cancel Rate",
+    ];
+    const row = [
+      `"${report.title}"`,
+      new Date(report.createdAt).toLocaleString(),
+      report.metrics?.totalAppointments ?? 0,
+      report.metrics?.completedConsultations ?? 0,
+      report.metrics?.approvedAppointments ?? 0,
+      report.metrics?.pendingAppointments ?? 0,
+      report.metrics?.cancelledAppointments ?? 0,
+      report.metrics?.noShowAppointments ?? 0,
+      report.metrics?.onlineConsultations ?? 0,
+      `${report.metrics?.completionRate ?? 0}%`,
+      `${report.metrics?.cancelRate ?? 0}%`,
+    ];
+
+    const breakdownHeaders = ["Treatment", "Count", "Percentage"];
+    const breakdownRows = (report.metrics?.appointmentsByTreatment || []).map(
+      (t) => [`"${t.treatment}"`, t.count, `${t.percentage}%`]
+    );
+
+    const docHeaders = ["Doctor Name", "Count", "Percentage"];
+    const docRows = (report.metrics?.appointmentsByDoctor || []).map(
+      (d) => [`"${d.doctorName}"`, d.count, `${d.percentage}%`]
+    );
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [
+        headers.join(","),
+        row.join(","),
+        "",
+        "--- APPOINTMENTS BY TREATMENT ---",
+        breakdownHeaders.join(","),
+        ...breakdownRows.map((r) => r.join(",")),
+        "",
+        "--- APPOINTMENTS BY DOCTOR ---",
+        docHeaders.join(","),
+        ...docRows.map((r) => r.join(",")),
+      ].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `${report.title.toLowerCase().replace(/[^a-z0-9]/g, "_")}_snapshot.csv`,
+    );
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    toast.success("Saved report CSV downloaded");
   };
 
   // Unique list of all treatments from DB and appointments for filter dropdown
@@ -460,6 +580,55 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* ACTIVE SNAPSHOT BANNER */}
+      {activeSnapshot && (
+        <div className="bg-[#FAF2F0] border-2 border-[#5E3E3B]/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in-50">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-[#5E3E3B] text-white flex items-center justify-center shrink-0 shadow-xs">
+              <BookmarkCheck className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-[#5E3E3B] tracking-wide uppercase">
+                  Archived Report Snapshot Active
+                </span>
+                <Badge className="bg-white text-[#5E3E3B] border-[#5E3E3B]/20 text-[10px] font-medium">
+                  Saved: {new Date(activeSnapshot.createdAt).toLocaleDateString()}
+                </Badge>
+              </div>
+              <h4 className="text-sm font-bold text-ink mt-0.5">
+                {activeSnapshot.title}
+              </h4>
+              {activeSnapshot.description && (
+                <p className="text-xs text-ink-soft">{activeSnapshot.description}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setSelectedReportForDetail(activeSnapshot)}
+              className="text-xs h-8 gap-1.5 border-line bg-white text-ink hover:bg-[#FAF7F6] cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5 text-teal-deep" />
+              View Breakdown
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleClearSnapshot}
+              className="text-xs h-8 gap-1.5 bg-[#5E3E3B] text-white hover:bg-[#262525] cursor-pointer font-medium"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Return to Live Data
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Header & Primary Actions */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-line shadow-xs">
         <div>
@@ -1149,18 +1318,31 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               savedReports.map((item) => (
                 <div
                   key={item.id}
-                  className="p-3.5 rounded-xl border border-line bg-white hover:bg-[#FAF7F6] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  onClick={() => handleOpenReportDetail(item)}
+                  className="p-3.5 rounded-xl border border-line bg-white hover:bg-[#FAF7F6] hover:border-[#5E3E3B]/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer group shadow-2xs"
                 >
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-ink block">
-                      {item.title}
-                    </span>
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-ink group-hover:text-[#5E3E3B] transition-colors">
+                        {item.title}
+                      </span>
+                      {item.filters?.doctor && item.filters.doctor !== "all" && (
+                        <Badge variant="outline" className="text-[10px] py-0 h-4 border-line bg-white">
+                          Doc: {item.filters.doctor}
+                        </Badge>
+                      )}
+                      {item.filters?.treatment && item.filters.treatment !== "all" && (
+                        <Badge variant="outline" className="text-[10px] py-0 h-4 border-line bg-white">
+                          {item.filters.treatment}
+                        </Badge>
+                      )}
+                    </div>
                     {item.description && (
-                      <p className="text-[11px] text-ink-soft">
+                      <p className="text-[11px] text-ink-soft line-clamp-1">
                         {item.description}
                       </p>
                     )}
-                    <div className="flex items-center gap-3 text-[10px] text-ink-soft">
+                    <div className="flex items-center gap-2.5 text-[10.5px] text-ink-soft flex-wrap">
                       <span>
                         Saved: {new Date(item.createdAt).toLocaleDateString()}
                       </span>
@@ -1169,19 +1351,43 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                         {item.metrics?.totalAppointments ?? 0} Appointments
                       </span>
                       <span>•</span>
-                      <span>
+                      <span className="text-emerald-700 font-medium">
                         {item.metrics?.completionRate ?? 0}% Completion
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <div
+                    className="flex items-center gap-2 shrink-0 self-end sm:self-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => handleOpenReportDetail(item)}
+                      className="text-xs h-7 px-2.5 gap-1 bg-[#5E3E3B] text-white hover:bg-[#262525] cursor-pointer shadow-2xs font-semibold"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Open
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleApplySnapshotToDashboard(item)}
+                      className="text-xs h-7 px-2.5 gap-1 border-line text-ink hover:bg-white cursor-pointer shadow-2xs font-medium"
+                      title="Apply this snapshot's filters and metrics to the main reports dashboard"
+                    >
+                      <SlidersHorizontal className="w-3 h-3 text-teal-deep" />
+                      Load
+                    </Button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteSavedReport(item.id)}
                       className="text-xs h-7 px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 cursor-pointer"
+                      title="Delete saved snapshot"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
@@ -1190,6 +1396,218 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               ))
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* SAVED REPORT DETAIL / INSPECTION MODAL */}
+      <Dialog
+        open={!!selectedReportForDetail}
+        onOpenChange={(open) => !open && setSelectedReportForDetail(null)}
+      >
+        <DialogContent className="sm:max-w-3xl bg-white max-h-[90vh] overflow-y-auto p-6">
+          {selectedReportForDetail && (
+            <div className="space-y-5">
+              <DialogHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge className="bg-[#FAF2F0] text-[#5E3E3B] border-[#5E3E3B]/20 text-[10px] font-bold uppercase tracking-wider">
+                        Archived Snapshot
+                      </Badge>
+                      <span className="text-[11px] text-ink-soft">
+                        Saved on {new Date(selectedReportForDetail.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <DialogTitle className="text-lg font-bold text-ink">
+                      {selectedReportForDetail.title}
+                    </DialogTitle>
+                    {selectedReportForDetail.description && (
+                      <p className="text-xs text-ink-soft mt-1 bg-[#FAF7F6] p-2.5 rounded-xl border border-line">
+                        {selectedReportForDetail.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* Filters applied in snapshot */}
+              <div className="p-3 bg-[#FAF7F6] rounded-xl border border-line flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-semibold text-ink-soft flex items-center gap-1">
+                  <Filter className="w-3.5 h-3.5 text-teal-deep" />
+                  Snapshot Filters:
+                </span>
+                <Badge variant="outline" className="bg-white text-[11px]">
+                  Doctor: {selectedReportForDetail.filters?.doctor || "All Doctors"}
+                </Badge>
+                <Badge variant="outline" className="bg-white text-[11px]">
+                  Treatment: {selectedReportForDetail.filters?.treatment || "All Treatments"}
+                </Badge>
+                <Badge variant="outline" className="bg-white text-[11px]">
+                  Status: {selectedReportForDetail.filters?.status || "All Statuses"}
+                </Badge>
+                {(selectedReportForDetail.filters?.startDate || selectedReportForDetail.filters?.endDate) && (
+                  <Badge variant="outline" className="bg-white text-[11px]">
+                    Date: {selectedReportForDetail.filters?.startDate || "Start"} to {selectedReportForDetail.filters?.endDate || "Present"}
+                  </Badge>
+                )}
+              </div>
+
+              {/* KPI Cards Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-white border border-line rounded-xl shadow-2xs">
+                  <span className="text-[11px] text-ink-soft font-medium block">Total Appointments</span>
+                  <span className="text-2xl font-bold text-ink">
+                    {selectedReportForDetail.metrics.totalAppointments}
+                  </span>
+                </div>
+                <div className="p-3 bg-white border border-line rounded-xl shadow-2xs">
+                  <span className="text-[11px] text-ink-soft font-medium block">Completed Consultations</span>
+                  <span className="text-2xl font-bold text-emerald-700">
+                    {selectedReportForDetail.metrics.completedConsultations}
+                  </span>
+                </div>
+                <div className="p-3 bg-white border border-line rounded-xl shadow-2xs">
+                  <span className="text-[11px] text-ink-soft font-medium block">Completion Rate</span>
+                  <span className="text-2xl font-bold text-[#5E3E3B]">
+                    {selectedReportForDetail.metrics.completionRate}%
+                  </span>
+                </div>
+                <div className="p-3 bg-white border border-line rounded-xl shadow-2xs">
+                  <span className="text-[11px] text-ink-soft font-medium block">Cancelled Appointments</span>
+                  <span className="text-2xl font-bold text-rose-600">
+                    {selectedReportForDetail.metrics.cancelledAppointments}
+                  </span>
+                </div>
+                <div className="p-3 bg-white border border-line rounded-xl shadow-2xs">
+                  <span className="text-[11px] text-ink-soft font-medium block">No-Show Appointments</span>
+                  <span className="text-2xl font-bold text-zinc-500">
+                    {selectedReportForDetail.metrics.noShowAppointments}
+                  </span>
+                </div>
+                <div className="p-3 bg-white border border-line rounded-xl shadow-2xs">
+                  <span className="text-[11px] text-ink-soft font-medium block">Online Video Consultations</span>
+                  <span className="text-2xl font-bold text-teal-deep">
+                    {selectedReportForDetail.metrics.onlineConsultations}
+                  </span>
+                </div>
+              </div>
+
+              {/* Treatment Breakdown */}
+              {selectedReportForDetail.metrics.appointmentsByTreatment &&
+                selectedReportForDetail.metrics.appointmentsByTreatment.length > 0 && (
+                  <div className="space-y-2 border border-line rounded-xl p-4 bg-white">
+                    <h5 className="text-xs font-bold text-ink flex items-center gap-1.5">
+                      <Stethoscope className="w-3.5 h-3.5 text-teal-deep" />
+                      Appointments by Treatment
+                    </h5>
+                    <div className="space-y-2 pt-1">
+                      {selectedReportForDetail.metrics.appointmentsByTreatment.map((t) => (
+                        <div key={t.treatment} className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="font-medium text-ink">{t.treatment}</span>
+                            <span className="text-ink-soft font-mono">
+                              {t.count} ({t.percentage}%)
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-line-soft overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-teal-deep"
+                              style={{ width: `${t.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Doctor Breakdown */}
+              {selectedReportForDetail.metrics.appointmentsByDoctor &&
+                selectedReportForDetail.metrics.appointmentsByDoctor.length > 0 && (
+                  <div className="space-y-2 border border-line rounded-xl p-4 bg-white">
+                    <h5 className="text-xs font-bold text-ink flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-teal-deep" />
+                      Appointments by Doctor
+                    </h5>
+                    <div className="space-y-2 pt-1">
+                      {selectedReportForDetail.metrics.appointmentsByDoctor.map((d) => (
+                        <div key={d.doctorName} className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="font-medium text-ink">{d.doctorName}</span>
+                            <span className="text-ink-soft font-mono">
+                              {d.count} ({d.percentage}%)
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-line-soft overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-[#5E3E3B]"
+                              style={{ width: `${d.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Status Breakdown Pills */}
+              {selectedReportForDetail.metrics.appointmentStatusStatistics &&
+                selectedReportForDetail.metrics.appointmentStatusStatistics.length > 0 && (
+                  <div className="space-y-2 border border-line rounded-xl p-4 bg-white">
+                    <h5 className="text-xs font-bold text-ink flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5 text-teal-deep" />
+                      Status Statistics
+                    </h5>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {selectedReportForDetail.metrics.appointmentStatusStatistics.map((s) => (
+                        <span
+                          key={s.status}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[#FAF7F6] border border-line text-ink"
+                        >
+                          <span className="capitalize">{s.status}</span>:
+                          <span className="font-bold text-teal-deep">{s.count}</span>
+                          <span className="text-[10px] text-ink-soft">({s.percentage}%)</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              <DialogFooter className="flex flex-wrap sm:flex-row items-center justify-between gap-2 pt-2 border-t border-line">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExportSavedReportCSV(selectedReportForDetail)}
+                  className="text-xs h-8 gap-1.5 border-line cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-ink-soft" />
+                  Export Snapshot CSV
+                </Button>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedReportForDetail(null)}
+                    className="text-xs h-8 cursor-pointer"
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleApplySnapshotToDashboard(selectedReportForDetail)}
+                    className="text-xs h-8 gap-1.5 bg-[#5E3E3B] text-white hover:bg-[#262525] cursor-pointer font-semibold shadow-xs"
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                    Apply to Dashboard
+                  </Button>
+                </div>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

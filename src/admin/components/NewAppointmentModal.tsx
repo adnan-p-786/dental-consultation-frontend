@@ -27,6 +27,7 @@ import {
   Phone,
   Calendar,
   Stethoscope,
+  Clock,
 } from "lucide-react";
 import type { Appointment, Doctor, TreatmentType } from "../types";
 import { treatmentOptions } from "../data/mockData";
@@ -217,10 +218,6 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
           <DialogTitle className="text-xl font-bold text-ink">
             Create New Appointment
           </DialogTitle>
-          <DialogDescription className="text-xs text-ink-soft">
-            Directly register an appointment booking into the database with the
-            same fields as the booking portal.
-          </DialogDescription>
         </DialogHeader>
 
         {/* Error Banner */}
@@ -238,8 +235,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
           {/* 1. Major Treatment / Case Requirement */}
           <div className="space-y-1">
             <label className="text-xs font-semibold text-ink flex items-center gap-1">
-              Major Treatment / Case Requirement{" "}
-              <span className="text-rose-500">*</span>
+              Major Treatment <span className="text-rose-500">*</span>
             </label>
             <Select
               value={treatment}
@@ -366,7 +362,12 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                   min={new Date().toISOString().split("T")[0]}
                   value={requestedDate}
                   onChange={(e) => setRequestedDate(e.target.value)}
-                  className="text-xs h-9 pr-8"
+                  onClick={(e) => {
+                    try {
+                      e.currentTarget.showPicker();
+                    } catch {}
+                  }}
+                  className="text-xs h-9 pr-8 cursor-pointer hide-native-picker [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
                 />
                 <Calendar className="w-3.5 h-3.5 text-ink-soft/60 absolute right-2.5 top-3 pointer-events-none" />
               </div>
@@ -383,8 +384,14 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
                   type="time"
                   value={requestedTime}
                   onChange={(e) => setRequestedTime(e.target.value)}
-                  className="text-xs h-9 cursor-pointer"
+                  onClick={(e) => {
+                    try {
+                      e.currentTarget.showPicker();
+                    } catch {}
+                  }}
+                  className="text-xs h-9 pr-8 cursor-pointer hide-native-picker [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
                 />
+                <Clock className="w-3.5 h-3.5 text-ink-soft/60 absolute right-2.5 top-3 pointer-events-none" />
               </div>
               <div className="flex flex-wrap items-center gap-1 mt-1.5">
                 <span className="text-[10px] font-semibold text-ink-soft mr-0.5">
@@ -418,7 +425,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
           <div className="space-y-1">
             <label className="text-xs font-semibold text-ink flex items-center gap-1">
               <Stethoscope className="w-3.5 h-3.5 text-teal-deep" />
-              Assign Doctor (Optional)
+              Assign Doctor
             </label>
             <Select
               value={assignedDoctorId}
@@ -427,12 +434,9 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Leave unassigned or select doctor..." />
+                <SelectValue placeholder="Select doctor..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unassigned">
-                  -- Leave Unassigned --
-                </SelectItem>
                 {doctors.map((doc) => (
                   <SelectItem key={doc.id} value={doc.id}>
                     {doc.name}{" "}
@@ -468,7 +472,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             >
               <Upload className="w-5 h-5 text-mint-deep mx-auto mb-1.5 group-hover:-translate-y-0.5 transition-transform" />
               <span className="text-xs font-medium text-ink block">
-                Click to attach a document or scan (.jpg, .jpeg, .png, .pdf)
+                Click to attach a document
               </span>
 
               {supportingFile && (

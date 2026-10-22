@@ -134,6 +134,12 @@ select {
   .btn-primary {
     @apply bg-[#5E3E3B] text-white hover:bg-[#262525] transition-colors duration-150;
   }
+
+  .hide-native-picker::-webkit-calendar-picker-indicator,
+  .hide-native-picker::-webkit-inner-spin-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+  }
 }
 
 /* 32Stories Brand Toast Styling */

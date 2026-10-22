@@ -260,16 +260,7 @@ export const PatientManagementView: React.FC = () => {
                               <span className="font-semibold text-sm text-ink truncate">
                                 {fullName}
                               </span>
-                              <Badge
-                                variant="outline"
-                                className="bg-paper text-ink-soft border-line text-[10px] px-1.5 py-0 font-normal uppercase"
-                              >
-                                #{patient.id}
-                              </Badge>
                             </div>
-                            <span className="text-[11px] text-mint-deep font-medium">
-                              Patient Account
-                            </span>
                           </div>
                         </div>
                       </TableCell>
