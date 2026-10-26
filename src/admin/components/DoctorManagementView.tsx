@@ -443,7 +443,7 @@ export const DoctorManagementView: React.FC<DoctorManagementViewProps> = ({
                       onClick={() =>
                         setDoctorToDelete({ ...doc, activeAppointments: todayCount })
                       }
-                      className="text-xs h-8 w-1/2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-2 cursor-pointer"
+                      className="text-xs h-8 w-1/2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-2 cursor-pointer border border-rose-200"
                       title="Remove Doctor"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

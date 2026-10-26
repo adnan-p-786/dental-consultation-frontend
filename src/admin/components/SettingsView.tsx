@@ -33,6 +33,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   useTreatmentsQuery,
   useCreateTreatmentMutation,
   useUpdateTreatmentMutation,
@@ -388,12 +395,16 @@ export const SettingsView: React.FC = () => {
   const { data: clinicDoctors = [], isLoading: isLoadingDoctors } =
     useDoctorsQuery();
   const updateDoctorStatusMutation = useUpdateDoctorStatusMutation();
+  const [updatingDoctorId, setUpdatingDoctorId] = useState<string | number | null>(
+    null,
+  );
 
   const handleUpdateDoctorAvailability = (
     doctorId: string | number,
     doctorName: string,
     newStatus: "available" | "busy" | "on_leave",
   ) => {
+    setUpdatingDoctorId(doctorId);
     updateDoctorStatusMutation.mutate(
       { id: doctorId, status: newStatus },
       {
@@ -408,6 +419,9 @@ export const SettingsView: React.FC = () => {
         },
         onError: () => {
           toast.error(`Failed to update ${doctorName} availability`);
+        },
+        onSettled: () => {
+          setUpdatingDoctorId(null);
         },
       },
     );
@@ -1267,8 +1281,11 @@ export const SettingsView: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-xs font-semibold shadow-2xs">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                    </span>
                     <span>
                       {
                         clinicDoctors.filter((d) => d.status === "available")
@@ -1277,15 +1294,15 @@ export const SettingsView: React.FC = () => {
                       Available
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200/80 text-xs font-semibold shadow-2xs">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.6)]" />
                     <span>
                       {clinicDoctors.filter((d) => d.status === "busy").length}{" "}
                       Busy
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold">
-                    <span className="w-2 h-2 rounded-full bg-slate-400" />
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold shadow-2xs">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
                     <span>
                       {
                         clinicDoctors.filter(
@@ -1314,7 +1331,10 @@ export const SettingsView: React.FC = () => {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                     {clinicDoctors.map((doc) => {
-                      const statusKey = doc.status || "available";
+                      const statusKey =
+                        (doc.status as "available" | "busy" | "on_leave") ||
+                        "available";
+                      const isUpdating = updatingDoctorId === doc.id;
 
                       return (
                         <div
@@ -1354,30 +1374,33 @@ export const SettingsView: React.FC = () => {
                             <span className="text-[11px] text-ink-soft font-medium">
                               Availability:
                             </span>
-                            <select
+
+                            <Select
                               value={statusKey}
-                              onChange={(e) =>
+                              onValueChange={(
+                                val: "available" | "busy" | "on_leave",
+                              ) =>
                                 handleUpdateDoctorAvailability(
                                   doc.id,
                                   doc.name,
-                                  e.target.value as
-                                    | "available"
-                                    | "busy"
-                                    | "on_leave",
+                                  val,
                                 )
                               }
-                              className={`text-xs font-semibold py-1.5 px-3 rounded-xl border cursor-pointer shadow-2xs transition-all ${
-                                statusKey === "available"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                  : statusKey === "busy"
-                                    ? "bg-amber-50 text-amber-700 border-amber-300"
-                                    : "bg-slate-100 text-slate-700 border-slate-300"
-                              }`}
+                              disabled={isUpdating}
                             >
-                              <option value="available">Available</option>
-                              <option value="busy">Busy</option>
-                              <option value="on_leave">On Leave</option>
-                            </select>
+                              <SelectTrigger className="w-[130px] h-8 text-xs font-medium">
+                                <SelectValue placeholder="Status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="available">
+                                  Available
+                                </SelectItem>
+                                <SelectItem value="busy">Busy</SelectItem>
+                                <SelectItem value="on_leave">
+                                  On Leave
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                       );

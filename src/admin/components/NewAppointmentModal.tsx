@@ -299,7 +299,7 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
             {/* Email Address */}
             <div className="space-y-1">
               <label className="text-xs font-semibold text-ink flex items-center gap-1">
-                Email Address <span className="text-rose-500">*</span>
+                Email Address<span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <Input
