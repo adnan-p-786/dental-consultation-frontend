@@ -231,6 +231,9 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
           <DialogTitle className="text-xl font-bold text-ink">
             Create New Appointment
           </DialogTitle>
+          <DialogDescription className="text-xs text-ink-soft">
+            Enter patient and schedule details to book a consultation.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Error Banner */}

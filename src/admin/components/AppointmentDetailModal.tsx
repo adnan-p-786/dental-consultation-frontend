@@ -1248,19 +1248,19 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* <div className="space-y-1">
+              <div className="space-y-1">
                 <label className="text-xs font-semibold text-ink">
-                  Reason / Message to Patient (Optional for Reschedule)
+                  Appointment Notes
                 </label>
 
                 <Input
                   type="text"
-                  placeholder="e.g. Morning schedule is booked; offering afternoon consultation slot."
+                  placeholder="Add a note for the patient"
                   value={actionNote}
                   onChange={(e) => setActionNote(e.target.value)}
                   className="text-xs"
                 />
-              </div> */}
+              </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button

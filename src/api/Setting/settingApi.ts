@@ -97,17 +97,27 @@ export interface TriggerReminderResponse {
 
 export const settingApi = {
   get: async (): Promise<ClinicSettings> => {
-    const res = await apiClient.get<{ success: boolean; data: ClinicSettings }>("/settings");
+    const res = await apiClient.get<{ success: boolean; data: ClinicSettings }>(
+      "/settings",
+    );
     return res.data.data;
   },
 
   update: async (payload: Partial<ClinicSettings>): Promise<ClinicSettings> => {
-    const res = await apiClient.put<{ success: boolean; data: ClinicSettings }>("/settings", payload);
+    const res = await apiClient.put<{ success: boolean; data: ClinicSettings }>(
+      "/settings",
+      payload,
+    );
     return res.data.data;
   },
 
-  triggerReminders: async (payload: TriggerReminderInput): Promise<TriggerReminderResponse> => {
-    const res = await apiClient.post<TriggerReminderResponse>("/appointment/trigger-reminders", payload);
+  triggerReminders: async (
+    payload: TriggerReminderInput,
+  ): Promise<TriggerReminderResponse> => {
+    const res = await apiClient.post<TriggerReminderResponse>(
+      "/appointment/trigger-reminders",
+      payload,
+    );
     return res.data;
   },
 };

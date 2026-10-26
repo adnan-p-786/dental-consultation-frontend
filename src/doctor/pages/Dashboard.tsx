@@ -869,7 +869,7 @@ export default function DoctorDashboard() {
                               <span>In Progress</span>
                             </span>
                           )}
-                          {apt.meetingLink && (
+                          {/* {apt.meetingLink && (
                             <a
                               href={apt.meetingLink}
                               target="_blank"
@@ -879,7 +879,7 @@ export default function DoctorDashboard() {
                               <Video className="w-3.5 h-3.5 text-mint" />
                               <span>Join</span>
                             </a>
-                          )}
+                          )} */}
                           <button
                             type="button"
                             onClick={() => handleOpenWorkspace(apt)}
