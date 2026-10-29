@@ -137,6 +137,22 @@ export const appointmentService = {
         avatar:
           existingLocal?.patient?.avatar ||
           `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(dbApt.patientName || "Patient")}`,
+        age:
+          dbApt.patientAge !== undefined && dbApt.patientAge !== null
+            ? Number(dbApt.patientAge)
+            : dbApt.age !== undefined && dbApt.age !== null
+              ? Number(dbApt.age)
+              : existingLocal?.patient?.age,
+        gender:
+          dbApt.patientGender ||
+          dbApt.gender ||
+          existingLocal?.patient?.gender ||
+          undefined,
+        location:
+          dbApt.patientAddress ||
+          dbApt.address ||
+          existingLocal?.patient?.location ||
+          undefined,
       },
       treatment: (dbApt.tratmentType ||
         existingLocal?.treatment ||
@@ -199,43 +215,81 @@ export const appointmentService = {
       patientMessage:
         dbApt.additionalDescription || existingLocal?.patientMessage || "",
       documents,
-      consultationNotes: dbApt.consultation
-        ? {
-            chiefComplaint:
-              dbApt.consultation.chiefComplaint ||
-              existingLocal?.consultationNotes?.chiefComplaint ||
-              dbApt.additionalDescription ||
-              "",
-            findings:
-              dbApt.consultation.consultationFindings ||
-              existingLocal?.consultationNotes?.findings ||
-              "",
-            diagnosis:
-              dbApt.consultation.diagnosis ||
-              existingLocal?.consultationNotes?.diagnosis ||
-              "",
-            recommendedTreatment:
-              dbApt.consultation.recommendedTreatment ||
-              existingLocal?.consultationNotes?.recommendedTreatment ||
-              dbApt.tratmentType ||
-              "",
-            additionalInstructions:
-              dbApt.consultation.additionalInstructions ||
-              existingLocal?.consultationNotes?.additionalInstructions ||
-              "",
-            followUpRequirements:
-              dbApt.consultation.followUpDate ||
-              (dbApt.consultation.followUpRequired
-                ? "Follow-up required"
-                : "") ||
-              existingLocal?.consultationNotes?.followUpRequirements ||
-              "",
-            internalNotes:
-              dbApt.consultation.internalNotes ||
-              existingLocal?.consultationNotes?.internalNotes ||
-              "",
-          }
-        : dbApt.consultationNotes || existingLocal?.consultationNotes,
+      consultationNotes: (() => {
+        const rawNotes = dbApt.consultationNotes || {};
+        const consult = dbApt.consultation || {};
+        const localNotes = existingLocal?.consultationNotes || {};
+
+        const chiefComplaint =
+          rawNotes.chiefComplaint ||
+          consult.chiefComplaint ||
+          localNotes.chiefComplaint ||
+          dbApt.additionalDescription ||
+          "";
+
+        const findings =
+          rawNotes.findings ||
+          consult.consultationFindings ||
+          localNotes.findings ||
+          "";
+
+        const diagnosis =
+          rawNotes.diagnosis ||
+          consult.diagnosis ||
+          localNotes.diagnosis ||
+          "";
+
+        const recommendedTreatment =
+          rawNotes.recommendedTreatment ||
+          consult.recommendedTreatment ||
+          localNotes.recommendedTreatment ||
+          dbApt.tratmentType ||
+          "";
+
+        const additionalInstructions =
+          rawNotes.additionalInstructions ||
+          consult.additionalInstructions ||
+          localNotes.additionalInstructions ||
+          "";
+
+        // Preserve actual doctor's notes; only fallback to scheduled followUpDate if present
+        const followUpRequirements =
+          rawNotes.followUpRequirements?.trim() ||
+          localNotes.followUpRequirements?.trim() ||
+          (consult.followUpDate
+            ? `Follow-up scheduled on ${consult.followUpDate}`
+            : "");
+
+        const internalNotes =
+          rawNotes.internalNotes ||
+          consult.internalNotes ||
+          localNotes.internalNotes ||
+          "";
+
+        if (
+          !chiefComplaint &&
+          !findings &&
+          !diagnosis &&
+          !recommendedTreatment &&
+          !additionalInstructions &&
+          !followUpRequirements &&
+          !internalNotes &&
+          !dbApt.consultation &&
+          !dbApt.consultationNotes
+        ) {
+          return undefined;
+        }
+
+        return {
+          chiefComplaint,
+          findings,
+          diagnosis,
+          recommendedTreatment,
+          additionalInstructions,
+          followUpRequirements,
+          internalNotes,
+        };
+      })(),
       consultationStartedAt:
         dbApt.consultationStartedAt ||
         (dbApt as any).consultation_started_at ||

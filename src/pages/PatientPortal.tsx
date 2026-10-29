@@ -1145,10 +1145,10 @@ export const PatientPortal: React.FC = () => {
                     )}
 
                     {selectedAppointment.consultationNotes
-                      .followUpRequirements && (
+                      .followUpRequirements?.trim() && (
                       <div>
                         <span className="font-semibold text-ink-soft block">
-                          6. Follow-up Timeline:
+                          6. Follow-up Requirements:
                         </span>
                         <p className="text-ink mt-0.5">
                           {

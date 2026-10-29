@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/auth/AuthContext";
 import { appointmentService } from "@/lib/appointmentService";
 import { useAppointmentsQuery } from "@/api/Appointment/appointmentHooks";
+import { usePatientsQuery } from "@/api/User/userHooks";
 import type {
   Appointment,
   ConsultationNotes,
@@ -50,6 +51,23 @@ export default function DoctorDashboard() {
   const { user } = useAuth();
   const { data: dbAppointments = [], refetch: refetchAppointments } =
     useAppointmentsQuery();
+  const { data: allPatients = [] } = usePatientsQuery();
+
+  // Lookup map for registered patient profiles (by email and phone)
+  const patientProfileMap = useMemo(() => {
+    const map = new Map<string, any>();
+    allPatients.forEach((p) => {
+      if (p.email) map.set(p.email.toLowerCase().trim(), p);
+      if (p.phoneNumber) {
+        const cleanPhone = p.phoneNumber.replace(/\D/g, "");
+        map.set(p.phoneNumber.trim(), p);
+        if (cleanPhone.length >= 7) {
+          map.set(cleanPhone.slice(-10), p);
+        }
+      }
+    });
+    return map;
+  }, [allPatients]);
 
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     const all = appointmentService.getAppointments();
@@ -262,18 +280,52 @@ export default function DoctorDashboard() {
     >();
 
     doctorAppointments.forEach((apt) => {
-      const email =
+      const emailKey =
         apt.patient?.email?.toLowerCase().trim() ||
         apt.patient?.name?.toLowerCase().trim();
-      if (!email) return;
+      if (!emailKey) return;
 
-      if (!map.has(email)) {
-        map.set(email, {
-          patient: apt.patient,
+      const profile =
+        (apt.patient?.email
+          ? patientProfileMap.get(apt.patient.email.toLowerCase().trim())
+          : undefined) ||
+        (apt.patient?.phone
+          ? patientProfileMap.get(apt.patient.phone.trim())
+          : undefined);
+
+      const patientData = {
+        ...apt.patient,
+        age:
+          apt.patient?.age !== undefined && apt.patient?.age !== null
+            ? apt.patient.age
+            : profile?.age ?? undefined,
+        gender:
+          apt.patient?.gender && apt.patient.gender !== "unspecified"
+            ? apt.patient.gender
+            : profile?.gender && profile.gender !== "unspecified"
+              ? profile.gender
+              : undefined,
+        location: apt.patient?.location || profile?.address || undefined,
+      };
+
+      if (!map.has(emailKey)) {
+        map.set(emailKey, {
+          patient: patientData,
           appointments: [],
         });
+      } else {
+        const existing = map.get(emailKey)!;
+        if (!existing.patient.age && patientData.age) {
+          existing.patient.age = patientData.age;
+        }
+        if (!existing.patient.gender && patientData.gender) {
+          existing.patient.gender = patientData.gender;
+        }
+        if (!existing.patient.location && patientData.location) {
+          existing.patient.location = patientData.location;
+        }
       }
-      map.get(email)!.appointments.push(apt);
+      map.get(emailKey)!.appointments.push(apt);
     });
 
     let list = Array.from(map.values());
@@ -289,7 +341,40 @@ export default function DoctorDashboard() {
     }
 
     return list;
-  }, [doctorAppointments, searchQuery]);
+  }, [doctorAppointments, patientProfileMap, searchQuery]);
+
+  // Enriched selected patient appointment for full record modal
+  const enrichedSelectedPatientInfoApt = useMemo(() => {
+    if (!selectedPatientInfoApt) return null;
+    const email = selectedPatientInfoApt.patient?.email?.toLowerCase().trim();
+    const phone = selectedPatientInfoApt.patient?.phone?.trim();
+    const profile =
+      (email ? patientProfileMap.get(email) : undefined) ||
+      (phone ? patientProfileMap.get(phone) : undefined);
+
+    return {
+      ...selectedPatientInfoApt,
+      patient: {
+        ...selectedPatientInfoApt.patient,
+        age:
+          selectedPatientInfoApt.patient.age !== undefined &&
+          selectedPatientInfoApt.patient.age !== null
+            ? selectedPatientInfoApt.patient.age
+            : profile?.age ?? undefined,
+        gender:
+          selectedPatientInfoApt.patient.gender &&
+          selectedPatientInfoApt.patient.gender !== "unspecified"
+            ? selectedPatientInfoApt.patient.gender
+            : profile?.gender && profile.gender !== "unspecified"
+              ? profile.gender
+              : undefined,
+        location:
+          selectedPatientInfoApt.patient.location ||
+          profile?.address ||
+          undefined,
+      },
+    };
+  }, [selectedPatientInfoApt, patientProfileMap]);
 
   // KPIs strictly for this doctor
   const myAssignedCount = doctorAppointments.length;
@@ -1029,15 +1114,42 @@ export default function DoctorDashboard() {
                               <span className="text-xs font-mono text-ink-soft bg-paper px-2 py-0.5 rounded border border-line">
                                 {apt.referenceNo}
                               </span>
-                              {apt.patient.age && (
-                                <span className="text-xs text-ink-soft">
-                                  ({apt.patient.age} yrs
-                                  {apt.patient.gender
-                                    ? `, ${apt.patient.gender}`
-                                    : ""}
-                                  )
-                                </span>
-                              )}
+                              {(() => {
+                                const prof =
+                                  (apt.patient?.email
+                                    ? patientProfileMap.get(
+                                        apt.patient.email.toLowerCase().trim(),
+                                      )
+                                    : undefined) ||
+                                  (apt.patient?.phone
+                                    ? patientProfileMap.get(
+                                        apt.patient.phone.trim(),
+                                      )
+                                    : undefined);
+                                const age =
+                                  apt.patient?.age !== undefined &&
+                                  apt.patient?.age !== null
+                                    ? apt.patient.age
+                                    : prof?.age;
+                                const gender =
+                                  apt.patient?.gender &&
+                                  apt.patient.gender !== "unspecified"
+                                    ? apt.patient.gender
+                                    : prof?.gender &&
+                                        prof.gender !== "unspecified"
+                                      ? prof.gender
+                                      : undefined;
+                                if (!age && !gender) return null;
+                                return (
+                                  <span className="text-xs text-ink-soft capitalize">
+                                    (
+                                    {age ? `${age} yrs` : ""}
+                                    {age && gender ? ", " : ""}
+                                    {gender || ""}
+                                    )
+                                  </span>
+                                );
+                              })()}
 
                               <span
                                 className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
@@ -1261,6 +1373,28 @@ export default function DoctorDashboard() {
                               </div>
 
                               <div className="flex items-center justify-between">
+                                <span>Age / Gender:</span>
+                                <span className="font-semibold text-ink capitalize">
+                                  {patient.age ? `${patient.age} yrs` : ""}
+                                  {patient.age && patient.gender ? " • " : ""}
+                                  {patient.gender
+                                    ? patient.gender
+                                    : !patient.age
+                                      ? "Not specified"
+                                      : ""}
+                                </span>
+                              </div>
+
+                              {patient.location && (
+                                <div className="flex items-center justify-between">
+                                  <span>Location:</span>
+                                  <span className="font-medium text-ink truncate max-w-[150px]">
+                                    {patient.location}
+                                  </span>
+                                </div>
+                              )}
+
+                              <div className="flex items-center justify-between">
                                 <span>Total Visits / Requests:</span>
                                 <span className="font-bold text-ink">
                                   {patientApts.length}
@@ -1290,7 +1424,15 @@ export default function DoctorDashboard() {
                               <button
                                 type="button"
                                 onClick={() =>
-                                  setSelectedPatientInfoApt(latestApt)
+                                  setSelectedPatientInfoApt({
+                                    ...latestApt,
+                                    patient: {
+                                      ...latestApt.patient,
+                                      age: patient.age,
+                                      gender: patient.gender,
+                                      location: patient.location,
+                                    },
+                                  })
                                 }
                                 className="flex-1 py-2 px-3 rounded-xl border border-line hover:bg-paper text-ink font-semibold text-xs text-center transition-colors cursor-pointer"
                               >
@@ -2109,144 +2251,162 @@ export default function DoctorDashboard() {
       {/* =================================================================== */}
       {/* MODAL 2: PATIENT FULL RECORD & UPLOADED X-RAYS                      */}
       {/* =================================================================== */}
-      {selectedPatientInfoApt && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fadeIn">
-          <div className="bg-white rounded-3xl border border-line shadow-2xl w-full max-w-2xl overflow-hidden">
-            <div className="p-5 sm:p-6 border-b border-line flex items-center justify-between bg-teal-deep text-white">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center">
-                  <User className="w-5 h-5 text-mint" />
-                </div>
-                <div>
-                  <h3 className="font-display font-bold text-lg">
-                    {selectedPatientInfoApt.patient.name}
-                  </h3>
-                  <p className="text-xs text-[#EBD8D5]">
-                    Ref: {selectedPatientInfoApt.referenceNo}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSelectedPatientInfoApt(null)}
-                className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5 text-xs max-h-[75vh] overflow-y-auto">
-              <div className="bg-paper p-4 rounded-2xl border border-line space-y-2.5">
-                <h4 className="font-bold text-teal-deep uppercase tracking-wider text-[11px]">
-                  Contact & Demographics
-                </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <span className="text-ink-soft block">Email Address:</span>
-                    <span className="font-semibold text-ink">
-                      {selectedPatientInfoApt.patient.email || "N/A"}
-                    </span>
+      {selectedPatientInfoApt && (() => {
+        const modalApt =
+          enrichedSelectedPatientInfoApt || selectedPatientInfoApt;
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fadeIn">
+            <div className="bg-white rounded-3xl border border-line shadow-2xl w-full max-w-2xl overflow-hidden">
+              <div className="p-5 sm:p-6 border-b border-line flex items-center justify-between bg-teal-deep text-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center">
+                    <User className="w-5 h-5 text-mint" />
                   </div>
                   <div>
-                    <span className="text-ink-soft block">Phone Number:</span>
-                    <span className="font-semibold text-ink">
-                      {selectedPatientInfoApt.patient.phone || "N/A"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-ink-soft block">
-                      Preferred Contact:
-                    </span>
-                    <span className="font-semibold text-teal-deep capitalize">
-                      {selectedPatientInfoApt.patient.preferredContact ||
-                        "Email"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-ink-soft block">Age / Gender:</span>
-                    <span className="font-medium text-ink">
-                      {selectedPatientInfoApt.patient.age
-                        ? `${selectedPatientInfoApt.patient.age} yrs`
-                        : "Not specified"}
-                      {selectedPatientInfoApt.patient.gender
-                        ? `, ${selectedPatientInfoApt.patient.gender}`
-                        : ""}
-                    </span>
+                    <h3 className="font-display font-bold text-lg">
+                      {modalApt.patient.name}
+                    </h3>
+                    <p className="text-xs text-[#EBD8D5]">
+                      Ref: {modalApt.referenceNo}
+                    </p>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedPatientInfoApt(null)}
+                  className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div className="bg-paper p-4 rounded-2xl border border-line space-y-2">
-                <h4 className="font-bold text-teal-deep uppercase tracking-wider text-[11px]">
-                  Patient Reported Symptoms / Message
-                </h4>
-                <p className="text-ink leading-relaxed">
-                  {selectedPatientInfoApt.patientMessage ||
-                    "No additional message was provided during booking."}
-                </p>
-              </div>
-
-              <div className="bg-paper p-4 rounded-2xl border border-line space-y-3">
-                <h4 className="font-bold text-teal-deep uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <Paperclip className="w-3.5 h-3.5 text-mint-deep" />
-                  <span>Uploaded Dental Attachments / X-Rays</span>
-                </h4>
-
-                {selectedPatientInfoApt.documents &&
-                selectedPatientInfoApt.documents.length > 0 ? (
-                  <div className="space-y-2">
-                    {selectedPatientInfoApt.documents.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="p-3 rounded-xl bg-white border border-line flex items-center justify-between gap-3"
-                      >
-                        <div className="flex items-center gap-2.5 truncate">
-                          <FileText className="w-4 h-4 text-teal-deep shrink-0" />
-                          <div className="truncate">
-                            <span className="font-medium text-ink truncate block">
-                              {doc.name}
-                            </span>
-                            <span className="text-[10px] text-ink-soft">
-                              {doc.size} • {doc.uploadedAt}
-                            </span>
-                          </div>
-                        </div>
-
-                        {doc.url && (
-                          <a
-                            href={doc.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="py-1.5 px-3 rounded-lg bg-teal-deep hover:bg-teal-mid text-white text-[11px] font-semibold flex items-center gap-1 shrink-0"
-                          >
-                            <span>Open File</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
+              <div className="p-6 space-y-5 text-xs max-h-[75vh] overflow-y-auto">
+                <div className="bg-paper p-4 rounded-2xl border border-line space-y-2.5">
+                  <h4 className="font-bold text-teal-deep uppercase tracking-wider text-[11px]">
+                    Contact & Demographics
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-ink-soft block">Email Address:</span>
+                      <span className="font-semibold text-ink">
+                        {modalApt.patient.email || "N/A"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-ink-soft block">Phone Number:</span>
+                      <span className="font-semibold text-ink">
+                        {modalApt.patient.phone || "N/A"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-ink-soft block">
+                        Preferred Contact:
+                      </span>
+                      <span className="font-semibold text-teal-deep capitalize">
+                        {modalApt.patient.preferredContact || "Email"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-ink-soft block">Age / Gender:</span>
+                      <span className="font-medium text-ink capitalize">
+                        {modalApt.patient.age
+                          ? `${modalApt.patient.age} yrs`
+                          : ""}
+                        {modalApt.patient.age && modalApt.patient.gender
+                          ? " • "
+                          : ""}
+                        {modalApt.patient.gender
+                          ? modalApt.patient.gender
+                          : !modalApt.patient.age
+                            ? "Not specified"
+                            : ""}
+                      </span>
+                    </div>
+                    {modalApt.patient.location && (
+                      <div className="col-span-2">
+                        <span className="text-ink-soft block">
+                          Residential Address:
+                        </span>
+                        <span className="font-medium text-ink">
+                          {modalApt.patient.location}
+                        </span>
                       </div>
-                    ))}
+                    )}
                   </div>
-                ) : (
-                  <p className="text-ink-soft italic">
-                    No documents or X-rays were attached for this appointment.
-                  </p>
-                )}
-              </div>
-            </div>
+                </div>
 
-            <div className="p-4 border-t border-line flex justify-end">
-              <button
-                type="button"
-                onClick={() => setSelectedPatientInfoApt(null)}
-                className="py-2 px-5 rounded-xl bg-teal-deep text-white text-xs font-semibold cursor-pointer"
-              >
-                Close Record
-              </button>
+                <div className="bg-paper p-4 rounded-2xl border border-line space-y-2">
+                  <h4 className="font-bold text-teal-deep uppercase tracking-wider text-[11px]">
+                    Patient Reported Symptoms / Message
+                  </h4>
+                  <p className="text-ink leading-relaxed">
+                    {modalApt.patientMessage ||
+                      "No additional message was provided during booking."}
+                  </p>
+                </div>
+
+                <div className="bg-paper p-4 rounded-2xl border border-line space-y-3">
+                  <h4 className="font-bold text-teal-deep uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Paperclip className="w-3.5 h-3.5 text-mint-deep" />
+                    <span>Uploaded Dental Attachments / X-Rays</span>
+                  </h4>
+
+                  {modalApt.documents &&
+                  modalApt.documents.length > 0 ? (
+                    <div className="space-y-2">
+                      {modalApt.documents.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="p-3 rounded-xl bg-white border border-line flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-2.5 truncate">
+                            <FileText className="w-4 h-4 text-teal-deep shrink-0" />
+                            <div className="truncate">
+                              <span className="font-medium text-ink truncate block">
+                                {doc.name}
+                              </span>
+                              <span className="text-[10px] text-ink-soft">
+                                {doc.size} • {doc.uploadedAt}
+                              </span>
+                            </div>
+                          </div>
+
+                          {doc.url && (
+                            <a
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="py-1.5 px-3 rounded-lg bg-teal-deep hover:bg-teal-mid text-white text-[11px] font-semibold flex items-center gap-1 shrink-0"
+                            >
+                              <span>Open File</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-ink-soft italic">
+                      No documents or X-rays were attached for this appointment.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-line flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPatientInfoApt(null)}
+                  className="py-2 px-5 rounded-xl bg-teal-deep text-white text-xs font-semibold cursor-pointer"
+                >
+                  Close Record
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* =================================================================== */}
       {/* MODAL 3: QUICK TREATMENT UPDATE MODAL                              */}

@@ -646,10 +646,22 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
                     {appointment.patient.name}
                   </div>
 
-                  {appointment.patient.age && (
-                    <div className="text-[11px] text-ink-soft">
-                      {appointment.patient.age} yrs •{" "}
-                      {appointment.patient.gender}
+                  {(appointment.patient.age ||
+                    (appointment.patient.gender &&
+                      appointment.patient.gender !== "unspecified")) && (
+                    <div className="text-[11px] text-ink-soft capitalize">
+                      {appointment.patient.age
+                        ? `${appointment.patient.age} yrs`
+                        : ""}
+                      {appointment.patient.age &&
+                      appointment.patient.gender &&
+                      appointment.patient.gender !== "unspecified"
+                        ? " • "
+                        : ""}
+                      {appointment.patient.gender &&
+                      appointment.patient.gender !== "unspecified"
+                        ? appointment.patient.gender
+                        : ""}
                     </div>
                   )}
                 </div>
