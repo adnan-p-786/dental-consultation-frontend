@@ -68,8 +68,6 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         <div className="hidden items-center gap-2 rounded-full border border-line bg-paper/80 px-3 py-1.5 text-xs font-medium text-ink-soft shadow-xs lg:flex">
           <Calendar className="w-3.5 h-3.5 text-mint-deep" />
           <span>{activeDate}</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-emerald-700 font-semibold">Clinic Active</span>
         </div>
 
         {/* Notification Bell with Pending Requests Dropdown */}
