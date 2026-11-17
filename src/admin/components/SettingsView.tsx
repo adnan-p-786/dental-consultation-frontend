@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Bell,
-  Video,
   Check,
   Building,
   Save,
@@ -16,14 +15,11 @@ import {
   ToggleLeft,
   ToggleRight,
   Users,
-  Mail,
-  Layers,
   Settings2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -56,7 +52,6 @@ import type {
   DayWorkingHours,
   DoctorAvailabilitySettings,
   EmailTemplateConfig,
-  AppointmentStatusConfig,
   ConsultationTypeConfig,
   GeneralAppointmentSettings,
 } from "@/api/Setting/settingApi";
@@ -379,9 +374,9 @@ export const SettingsView: React.FC = () => {
   }, []);
 
   // Email Template Edit Modal
-  const [editingTemplate, setEditingTemplate] =
-    useState<EmailTemplateConfig | null>(null);
-  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  // const [editingTemplate, setEditingTemplate] =
+  //   useState<EmailTemplateConfig | null>(null);
+  // const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
   // ------------------------------------------------------------------
   // TanStack Query: Clinic & Reminder Settings
@@ -620,16 +615,6 @@ export const SettingsView: React.FC = () => {
         itemIndex === index ? { ...type, ...updates } : type,
       ),
     );
-  };
-
-  // Email Template Helper
-  const handleSaveEditedTemplate = () => {
-    if (!editingTemplate) return;
-    setEmailTemplates((prev) =>
-      prev.map((t) => (t.id === editingTemplate.id ? editingTemplate : t)),
-    );
-    setIsTemplateModalOpen(false);
-    setEditingTemplate(null);
   };
 
   const shouldShow = (category: SettingsTab) => {
