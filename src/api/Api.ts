@@ -1,14 +1,14 @@
 import axios from "axios";
 
-// export const apiClient = axios.create({
-//   baseURL: "/api",
-//   headers: {
-//     "Content-Type": "application/json",
-//   },
-// });
+const rawBaseUrl = import.meta.env.VITE_API_URL;
+// Use VITE_API_URL if configured; ensure it ends with '/api' if a full origin is passed without it.
+// In local development, falls back to '/api' to use Vite's development proxy.
+const apiBaseUrl = rawBaseUrl
+  ? (rawBaseUrl.endsWith("/api") ? rawBaseUrl : `${rawBaseUrl.replace(/\/$/, "")}/api`)
+  : "/api";
 
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+export const apiClient = axios.create({
+  baseURL: apiBaseUrl,
   headers: {
     "Content-Type": "application/json",
   },
