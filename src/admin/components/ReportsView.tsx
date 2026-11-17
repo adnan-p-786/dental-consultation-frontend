@@ -646,7 +646,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           </p>
         </div>
 
-        {/* <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -691,7 +691,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             )}
             Export Report (CSV)
           </Button>
-        </div> */}
+        </div>
         
       </div>
 
