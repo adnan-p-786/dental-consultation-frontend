@@ -595,27 +595,7 @@ export const SettingsView: React.FC = () => {
     }
   };
 
-  // Working Hours Helper
-  const handleUpdateDayHours = (
-    index: number,
-    updates: Partial<DayWorkingHours>,
-  ) => {
-    setWorkingHours((prev) =>
-      prev.map((day, idx) => (idx === index ? { ...day, ...updates } : day)),
-    );
-  };
 
-
-  const handleUpdateConsultationType = (
-    index: number,
-    updates: Partial<ConsultationTypeConfig>,
-  ) => {
-    setConsultationTypes((prev) =>
-      prev.map((type, itemIndex) =>
-        itemIndex === index ? { ...type, ...updates } : type,
-      ),
-    );
-  };
 
   const shouldShow = (category: SettingsTab) => {
     return activeCategory === "all" || activeCategory === category;
