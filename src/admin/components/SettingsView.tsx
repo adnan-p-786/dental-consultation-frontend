@@ -219,69 +219,6 @@ export const defaultEmailTemplates: EmailTemplateConfig[] = [
   },
 ];
 
-export const defaultAppointmentStatuses: AppointmentStatusConfig[] = [
-  {
-    key: "pending",
-    label: "Requested / Pending",
-    color: "amber",
-    description: "Patient submitted request, awaiting clinic review",
-    patientCanCancel: true,
-    isActive: true,
-  },
-  {
-    key: "under_review",
-    label: "Under Review",
-    color: "teal",
-    description: "Staff is reviewing patient notes and assigning doctor",
-    patientCanCancel: true,
-    isActive: true,
-  },
-  {
-    key: "proposed",
-    label: "Proposed Slot",
-    color: "blue",
-    description: "Clinic suggested an alternative date/time to patient",
-    patientCanCancel: true,
-    autoExpireHours: 48,
-    isActive: true,
-  },
-  {
-    key: "approved",
-    label: "Approved & Scheduled",
-    color: "emerald",
-    description:
-      "Confirmed appointment with assigned dentist and video room link",
-    patientCanCancel: true,
-    isActive: true,
-  },
-  {
-    key: "completed",
-    label: "Completed",
-    color: "indigo",
-    description: "Consultation conducted and clinical doctor notes recorded",
-    patientCanCancel: false,
-    isActive: true,
-  },
-  {
-    key: "cancelled",
-    label: "Cancelled",
-    color: "rose",
-    description:
-      "Booking cancelled by patient or clinic with documented reason",
-    patientCanCancel: false,
-    isActive: true,
-  },
-  {
-    key: "rejected",
-    label: "Rejected",
-    color: "red",
-    description:
-      "Clinic unable to accept case (out of service area or referral needed)",
-    patientCanCancel: false,
-    isActive: true,
-  },
-];
-
 export const defaultConsultationTypes: ConsultationTypeConfig[] = [
   {
     id: "video",
@@ -383,9 +320,6 @@ export const SettingsView: React.FC = () => {
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplateConfig[]>(
     defaultEmailTemplates,
   );
-  const [appointmentStatuses, setAppointmentStatuses] = useState<
-    AppointmentStatusConfig[]
-  >(defaultAppointmentStatuses);
   const [consultationTypes, setConsultationTypes] = useState<
     ConsultationTypeConfig[]
   >(defaultConsultationTypes);
@@ -498,9 +432,7 @@ export const SettingsView: React.FC = () => {
       if (
         serverSettings.appointmentStatuses &&
         Array.isArray(serverSettings.appointmentStatuses)
-      ) {
-        setAppointmentStatuses(serverSettings.appointmentStatuses);
-      }
+      )
       if (
         serverSettings.consultationTypes &&
         Array.isArray(serverSettings.consultationTypes)
@@ -633,7 +565,6 @@ export const SettingsView: React.FC = () => {
         workingHours,
         doctorAvailability,
         emailTemplates,
-        appointmentStatuses,
         consultationTypes,
         generalAppointmentSettings: generalSettings,
       });
@@ -679,16 +610,6 @@ export const SettingsView: React.FC = () => {
     );
   };
 
-  const handleUpdateAppointmentStatus = (
-    index: number,
-    updates: Partial<AppointmentStatusConfig>,
-  ) => {
-    setAppointmentStatuses((prev) =>
-      prev.map((status, itemIndex) =>
-        itemIndex === index ? { ...status, ...updates } : status,
-      ),
-    );
-  };
 
   const handleUpdateConsultationType = (
     index: number,
@@ -767,7 +688,7 @@ export const SettingsView: React.FC = () => {
         </div>
 
         {/* Quick Navigation Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+        {/* <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
           {[
             { id: "all", label: "All Settings", icon: Settings2 },
             { id: "general", label: "General & Duration", icon: Building },
@@ -801,7 +722,7 @@ export const SettingsView: React.FC = () => {
               </button>
             );
           })}
-        </div>
+        </div> */}
 
         {testStatus && (
           <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center gap-2">
@@ -867,7 +788,7 @@ export const SettingsView: React.FC = () => {
                   Default Consultation Duration
                 </label>
                 <div className="flex items-center gap-2">
-                  {[30, 45, 60].map((mins) => (
+                  {[15, 30, 45].map((mins) => (
                     <button
                       type="button"
                       key={mins}
@@ -885,54 +806,6 @@ export const SettingsView: React.FC = () => {
                   ))}
                 </div>
               </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-ink">
-                  Buffer Time Between Appointments
-                </label>
-                <div className="flex items-center gap-2">
-                  {[0, 5, 10, 15].map((mins) => (
-                    <button
-                      type="button"
-                      key={mins}
-                      onClick={() =>
-                        setGeneralSettings({
-                          ...generalSettings,
-                          bufferTimeMinutes: mins,
-                        })
-                      }
-                      className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-                        (generalSettings.bufferTimeMinutes ?? 10) === mins
-                          ? "bg-[#5E3E3B] text-white border-[#5E3E3B] shadow-xs"
-                          : "bg-white text-ink-soft border-line hover:border-mint-deep"
-                      }`}
-                    >
-                      {mins === 0 ? "No Buffer" : `${mins} min`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-ink">
-                  Custom Duration (Minutes)
-                </label>
-                <Input
-                  type="number"
-                  min={10}
-                  max={180}
-                  step={5}
-                  value={settings.defaultDuration}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      defaultDuration: Number(e.target.value) || 30,
-                    })
-                  }
-                  className="text-xs"
-                  placeholder="Custom minutes"
-                />
-              </div>
             </CardContent>
           </Card>
         )}
@@ -940,7 +813,7 @@ export const SettingsView: React.FC = () => {
         {/* ========================================================================= */}
         {/* 2. GENERAL APPOINTMENT SETTINGS (NEW FUNCTION)                             */}
         {/* ========================================================================= */}
-        {shouldShow("general") && (
+        {/* {shouldShow("general") && (
           <Card className="border-line shadow-xs">
             <CardHeader className="pb-3 border-b border-line">
               <CardTitle className="text-base font-semibold text-ink flex items-center gap-2">
@@ -1128,12 +1001,12 @@ export const SettingsView: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {/* ========================================================================= */}
         {/* 3. WORKING HOURS CONFIGURATION (NEW FUNCTION)                              */}
         {/* ========================================================================= */}
-        {shouldShow("hours") && (
+        {/* {shouldShow("hours") && (
           <Card className="border-line shadow-xs">
             <CardHeader className="pb-3 border-b border-line flex flex-row items-center justify-between">
               <div>
@@ -1259,7 +1132,7 @@ export const SettingsView: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {/* ========================================================================= */}
         {/* 4. DOCTOR AVAILABILITY SETTINGS & ROSTER                                 */}
@@ -1576,7 +1449,7 @@ export const SettingsView: React.FC = () => {
         {/* ========================================================================= */}
         {/* 6. APPOINTMENT STATUSES & CONSULTATION TYPES                              */}
         {/* ========================================================================= */}
-        {shouldShow("statuses") && (
+        {/* {shouldShow("statuses") && (
           <Card className="border-line shadow-xs">
             <CardHeader className="pb-3 border-b border-line">
               <CardTitle className="text-base font-semibold text-ink flex items-center gap-2">
@@ -1812,7 +1685,7 @@ export const SettingsView: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {/* ========================================================================= */}
         {/* 8. REMINDER TIMINGS & NOTIFICATIONS (Already implemented, preserved)      */}
@@ -2082,7 +1955,7 @@ export const SettingsView: React.FC = () => {
         {/* ========================================================================= */}
         {/* 9. EMAIL TEMPLATES (NEW FUNCTION)                                         */}
         {/* ========================================================================= */}
-        {shouldShow("templates") && (
+        {/* {shouldShow("templates") && (
           <Card className="border-line shadow-xs">
             <CardHeader className="pb-3 border-b border-line flex flex-row items-center justify-between">
               <div>
@@ -2178,7 +2051,7 @@ export const SettingsView: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
       </form>
 
       {/* ========================================================================= */}
@@ -2294,7 +2167,7 @@ export const SettingsView: React.FC = () => {
       {/* ========================================================================= */}
       {/* EDIT EMAIL TEMPLATE MODAL (NEW)                                           */}
       {/* ========================================================================= */}
-      <Dialog open={isTemplateModalOpen} onOpenChange={setIsTemplateModalOpen}>
+      {/* <Dialog open={isTemplateModalOpen} onOpenChange={setIsTemplateModalOpen}>
         <DialogContent className="sm:max-w-lg bg-white">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-ink flex items-center gap-2">
@@ -2416,7 +2289,7 @@ export const SettingsView: React.FC = () => {
             </div>
           )}
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 };
